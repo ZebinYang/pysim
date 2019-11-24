@@ -2,6 +2,7 @@
 ### To install, run:    
 ### $ pip install -r requirements.txt   
 
+rpy2
 numpy>=1.15.2
 patsy
 sklearn

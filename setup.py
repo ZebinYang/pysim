@@ -9,5 +9,5 @@ setup(name='pysim',
       license='GPL',
       packages=['pysim'],
       install_requires=[
-          'matplotlib','patsy', 'numpy', 'sklearn'],
+          'matplotlib','patsy', 'numpy', 'sklearn', 'rpy2'],
       zip_safe=False)
