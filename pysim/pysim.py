@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from pygam import LinearGAM, s
 
 from sklearn.utils.validation import check_is_fitted
 from sklearn.base import BaseEstimator, RegressorMixin
@@ -72,13 +73,22 @@ class SIM(BaseEstimator, RegressorMixin):
             self.link_fit_.fit(x, y)
         elif self.spline == "sm":
             self.link_fit_ = stats.smooth_spline(x, y)
-
+        elif self.spline == "mono":
+            link_fit1_ = LinearGAM(s(0, constraints='monotonic_inc')).fit(x, y)
+            link_fit2_ = LinearGAM(s(0, constraints='monotonic_dec')).fit(x, y)
+            if np.linalg.norm(link_fit1_.predict(x) - y.ravel()) <= np.linalg.norm(link_fit2_.predict(x) - y.ravel()):
+                self.link_fit_ = link_fit1_
+            else:
+                self.link_fit_ = link_fit2_
+            
     def visualize_shape_function(self):
 
         if self.spline == "bs":
             pred = self.link_fit_.predict(np.linspace(self.xmin_, self.xmax_, 100).reshape([-1, 1]))
         elif self.spline == "sm":
             pred = stats.predict(self.link_fit_, np.linspace(self.xmin_, self.xmax_, 100))[1]
+        elif self.spline == "mono":
+            pred = self.link_fit_.predict(np.linspace(self.xmin_, self.xmax_, 100).reshape([-1, 1]))
         plt.plot(np.linspace(self.xmin_, self.xmax_, 100), pred)
 
     def fit(self, x, y):
@@ -107,4 +117,6 @@ class SIM(BaseEstimator, RegressorMixin):
             pred = self.link_fit_.predict(xb)
         elif self.spline == "sm":
             pred = stats.predict(self.link_fit_, xb)[1]
+        elif self.spline == "mono":
+            pred = self.link_fit_.predict(xb)
         return pred
