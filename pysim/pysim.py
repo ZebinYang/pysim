@@ -74,8 +74,8 @@ class SIM(BaseEstimator, RegressorMixin):
         elif self.spline == "sm":
             self.link_fit_ = stats.smooth_spline(x, y)
         elif self.spline == "mono":
-            link_fit1_ = LinearGAM(s(0, constraints='monotonic_inc')).fit(x, y)
-            link_fit2_ = LinearGAM(s(0, constraints='monotonic_dec')).fit(x, y)
+            link_fit1_ = LinearGAM(s(0, spline_order=2, lam=self.reg_gamma, constraints='monotonic_inc')).fit(x, y)
+            link_fit2_ = LinearGAM(s(0, spline_order=2, lam=self.reg_gamma, constraints='monotonic_dec')).fit(x, y)
             if np.linalg.norm(link_fit1_.predict(x) - y.ravel()) <= np.linalg.norm(link_fit2_.predict(x) - y.ravel()):
                 self.link_fit_ = link_fit1_
             else:
