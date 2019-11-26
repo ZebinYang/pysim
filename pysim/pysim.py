@@ -83,10 +83,7 @@ class SIM(BaseEstimator, RegressorMixin):
 
     def fit(self, x, y):
 
-        n_samples, n_features = x.shape
         np.random.seed(self.random_state)
-
-        # stein's method
         if self.method == "first":
             self.beta_ = self.first_stein(x, y)
         elif self.method == "first_thresholding":
