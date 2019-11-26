@@ -91,6 +91,8 @@ class SIM(BaseEstimator, RegressorMixin):
         # stein's method
         if self.method == "first":
             self.beta_ = self.first_stein(x, y)
+        elif self.method == "first_thresholding":
+            self.beta_ = self.first_stein_hard_thresholding(x, y)
         elif self.method == "second":
             self.beta_ = self.second_stein(x, y)
 
