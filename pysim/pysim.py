@@ -39,7 +39,7 @@ class SIM(BaseEstimator, RegressorMixin):
 
         s1 = (x - self.mu) / self.sigma ** 2
         zbar = np.mean(y.reshape(-1, 1) * s1, axis=0)
-        zbar[zbar < self.reg_lambda * np.max(zbar)] = 0
+        zbar[np.abs(zbar) < self.reg_lambda * np.max(np.abs(zbar))] = 0
         beta = zbar / np.linalg.norm(zbar)
         return beta
 
