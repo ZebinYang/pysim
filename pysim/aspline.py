@@ -1,5 +1,7 @@
+import scipy
 import numpy as np
 import pandas as pd 
+from scipy.linalg import cholesky
 from matplotlib import pyplot as plt
 
 from sklearn.utils.validation import check_is_fitted
@@ -28,10 +30,10 @@ def diff_matrix(order, knot_num):
 
 class ASpline(BaseEstimator, RegressorMixin):
 
-    def __init__(self, knot_num=100, ridge_gamma=0.1, xmin=1, xmax=-1, degree=2, epsilon=0.00001, threshold=0.99, maxiter=10):
+    def __init__(self, knot_num=100, reg_gamma=0.1, xmin=1, xmax=-1, degree=2, epsilon=0.00001, threshold=0.99, maxiter=10):
 
         self.knot_num = knot_num
-        self.ridge_gamma = ridge_gamma
+        self.reg_gamma = reg_gamma
         self.xmin = xmin
         self.xmax = xmax
         self.degree = degree
@@ -49,8 +51,13 @@ class ASpline(BaseEstimator, RegressorMixin):
         D = diff_matrix(self.degree, self.knot_num)
         w = np.ones([self.knot_num], dtype=np.float32) 
         W = np.diag(w)
+        BB = np.dot(basis.T, basis)
         for i in range(self.maxiter):
-            update_a = np.dot(np.linalg.inv(np.dot(basis.T, basis) + self.ridge_gamma * np.dot(np.dot(D.T, W), D)), np.dot(basis.T, y))
+            U = cholesky(BB + self.reg_gamma * np.dot(np.dot(D.T, W), D))
+            M = scipy.linalg.lapack.clapack.dtrtri(U)[0]
+            update_a = np.dot(np.dot(M, M.T.conj()), np.dot(basis.T, y))
+            # The original implementation of matrix inversion is very slow and so it is commented. 
+            # update_a = np.dot(np.linalg.inv(np.dot(basis.T, basis) + self.reg_gamma * np.dot(np.dot(D.T, W), D)), np.dot(basis.T, y))
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
             W = np.diag(update_w.reshape([-1]))
 
@@ -65,8 +72,8 @@ class ASpline(BaseEstimator, RegressorMixin):
     def predict(self, x):
         
         check_is_fitted(self, "coef_")
-        x[x<self.xmin] = self.xmin
-        x[x>self.xmax] = self.xmax
+        x[x < self.xmin] = self.xmin
+        x[x > self.xmax] = self.xmax
         design_matrix = np.asarray(build_design_matrices([self.selected_xphi.design_info],
                                   {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
         pred = np.dot(design_matrix, self.coef_)
