@@ -103,7 +103,8 @@ class SIM(BaseEstimator, RegressorMixin):
             self.beta_ = self.first_stein_hard_thresholding(x, y)
         elif self.method == "second":
             self.beta_ = self.second_stein(x, y)
-
+        
+        self.beta_ = - self.beta_ if (self.beta_[np.abs(self.beta_) > 0][0] < 0) else self.beta_
         xb = np.dot(x, self.beta_)
         self.xmin_ = np.min(xb)
         self.xmax_ = np.max(xb)
