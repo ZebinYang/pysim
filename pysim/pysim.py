@@ -89,7 +89,8 @@ class SIM(BaseEstimator, RegressorMixin):
             pred = stats.predict(self.link_fit_, np.linspace(self.xmin_, self.xmax_, 100))[1]
         elif self.spline == "mono":
             pred = self.link_fit_.predict(np.linspace(self.xmin_, self.xmax_, 100).reshape([-1, 1]))
-        plt.plot(np.linspace(self.xmin_, self.xmax_, 100), pred)
+        fig = plt.plot(np.linspace(self.xmin_, self.xmax_, 100), pred)
+        return fig
 
     def fit(self, x, y):
 
