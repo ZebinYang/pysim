@@ -13,10 +13,8 @@ from rpy2.robjects.packages import importr
 from .aspline import ASpline
 
 utils = importr('utils')
-utils.install_packages('stats')
 utils.install_packages('fps')
 
-stats = importr('stats')
 fps = importr('fps')
 numpy2ri.activate()
 
