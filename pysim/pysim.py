@@ -54,11 +54,11 @@ class SIM(BaseEstimator, RegressorMixin):
     def second_stein(self, x, y):
         
         n_samples, n_features = x.shape
-        beta_svd, _, _ = np.linalg.svd(sigmat)
         s1 = (x - self.mu) / self.sigma ** 2
         sigmat = np.tensordot(s1 * y.reshape([-1, 1]), s1, axes=([0], [0])) / n_samples
         sigmat[np.diag_indices_from(sigmat)] += - np.mean(y) / self.sigma ** 2        
 
+        beta_svd, _, _ = np.linalg.svd(sigmat)
         spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * np.sum(np.abs(beta_svd))))
         beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * np.sum(np.abs(beta_svd))))
         return beta
