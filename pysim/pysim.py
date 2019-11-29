@@ -58,7 +58,7 @@ class SIM(BaseEstimator, RegressorMixin):
         sigmat = np.tensordot(s1 * y.reshape([-1, 1]), s1, axes=([0], [0])) / n_samples
         sigmat[np.diag_indices_from(sigmat)] += - np.mean(y) / self.sigma ** 2        
 
-        beta_svd, _, _ = np.linalg.svd(sigmat)
+        beta_svd = np.linalg.svd(sigmat)[0][:, 0]
         spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * np.sum(np.abs(beta_svd))))
         beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * np.sum(np.abs(beta_svd))))
         return beta
