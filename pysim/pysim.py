@@ -41,6 +41,8 @@ class SIM(BaseEstimator, RegressorMixin):
         zbar[np.abs(zbar) < self.reg_lambda * np.sum(np.abs(zbar))] = 0
         if np.linalg.norm(zbar) > 0:
             beta = zbar / np.linalg.norm(zbar)
+        else:
+            beta = zbar
         return beta
 
     def first_stein(self, x, y):
