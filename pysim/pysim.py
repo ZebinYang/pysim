@@ -38,7 +38,7 @@ class SIM(BaseEstimator, RegressorMixin):
 
         s1 = (x - self.mu) / self.sigma ** 2
         zbar = np.mean(y.reshape(-1, 1) * s1, axis=0)
-        zbar[np.abs(zbar) < self.reg_lambda * np.max(np.abs(zbar))] = 0
+        zbar[np.abs(zbar) < self.reg_lambda * np.sum(np.abs(zbar))] = 0
         beta = zbar / np.linalg.norm(zbar)
         return beta
 
@@ -47,20 +47,20 @@ class SIM(BaseEstimator, RegressorMixin):
         s1 = (x - self.mu) / self.sigma ** 2
         zbar = np.mean(y.reshape(-1, 1) * s1, axis=0)
         sigmat = np.dot(zbar.reshape([-1, 1]), zbar.reshape([-1, 1]).T)
-        spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * np.max(np.abs(zbar))))
-        beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda))
+        spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * np.sum(np.abs(zbar))))
+        beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * np.sum(np.abs(zbar))))
         return beta
 
     def second_stein(self, x, y):
         
         n_samples, n_features = x.shape
+        beta_svd, _, _ = np.linalg.svd(sigmat)
         s1 = (x - self.mu) / self.sigma ** 2
-        sigmat = np.zeros((n_features, n_features))
         sigmat = np.tensordot(s1 * y.reshape([-1, 1]), s1, axes=([0], [0])) / n_samples
         sigmat[np.diag_indices_from(sigmat)] += - np.mean(y) / self.sigma ** 2        
 
-        spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * np.max(np.abs(zbar))))
-        beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda))
+        spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * np.sum(np.abs(beta_svd))))
+        beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * np.sum(np.abs(beta_svd))))
         return beta
     
     def estimate_shape_function(self, x, y):
