@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from pygam import LinearGAM, s
 
 from sklearn.utils.validation import check_is_fitted
 from sklearn.base import BaseEstimator, RegressorMixin
@@ -11,6 +10,7 @@ from rpy2.robjects import numpy2ri
 from rpy2.robjects.packages import importr
 
 from .aspline import ASpline
+from pygam import LinearGAM, s
 
 utils = importr('utils')
 utils.install_packages('fps')
@@ -47,7 +47,7 @@ class SIM(BaseEstimator, RegressorMixin):
         s1 = (x - self.mu) / self.sigma ** 2
         zbar = np.mean(y.reshape(-1, 1) * s1, axis=0)
         sigmat = np.dot(zbar.reshape([-1, 1]), zbar.reshape([-1, 1]).T)
-        spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda))
+        spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * np.max(np.abs(zbar))))
         beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda))
         return beta
 
@@ -59,7 +59,7 @@ class SIM(BaseEstimator, RegressorMixin):
         sigmat = np.tensordot(s1 * y.reshape([-1, 1]), s1, axes=([0], [0])) / n_samples
         sigmat[np.diag_indices_from(sigmat)] += - np.mean(y) / self.sigma ** 2        
 
-        spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda))
+        spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * np.max(np.abs(zbar))))
         beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda))
         return beta
     
