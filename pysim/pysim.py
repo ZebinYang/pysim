@@ -92,12 +92,7 @@ class SIM(BaseEstimator, RegressorMixin):
             
     def visualize_shape_function(self, return_data=False):
 
-        if self.spline == "augbs":
-            pred = self.link_fit_.predict(np.linspace(self.xmin_, self.xmax_, 100).reshape([-1, 1]))
-            
-        elif self.spline in ("ps", "mono"):
-            pred = self.link_fit_.predict(np.linspace(self.xmin_, self.xmax_, 100).reshape([-1, 1]))
-
+        pred = self.link_fit_.predict(np.linspace(self.xmin_, self.xmax_, 100).reshape([-1, 1]))
         if return_data:
             return np.linspace(self.xmin_, self.xmax_, 100), pred
         else:
