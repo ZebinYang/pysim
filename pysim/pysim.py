@@ -21,7 +21,7 @@ numpy2ri.activate()
 
 class SIM(BaseEstimator, RegressorMixin):
 
-    def __init__(self, mu=0, sigma=1, method="first", spline="bs", reg_lambda=0.5, reg_gamma=0.1, knot_num=10, degree=2, random_state=0):
+    def __init__(self, mu=0, sigma=1, method="first", spline="ps", reg_lambda=0.5, reg_gamma=0.1, knot_num=10, degree=2, random_state=0):
 
         self.mu = mu 
         self.sigma = sigma
@@ -55,7 +55,7 @@ class SIM(BaseEstimator, RegressorMixin):
         return beta
 
     def second_stein(self, x, y):
-        
+
         n_samples, n_features = x.shape
         s1 = (x - self.mu) / self.sigma ** 2
         sigmat = np.tensordot(s1 * y.reshape([-1, 1]), s1, axes=([0], [0])) / n_samples
@@ -68,11 +68,17 @@ class SIM(BaseEstimator, RegressorMixin):
     
     def estimate_shape_function(self, x, y):
 
-        if self.spline == "bs":
+        if self.spline == "augbs":
             #augmented bspline
             self.link_fit_ = ASpline(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
                              xmin=self.xmin_, xmax=self.xmax_, degree=self.degree)
             self.link_fit_.fit(x, y)
+
+        elif self.spline == "ps":
+            #p-spline
+            self.link_fit_ = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+                             lam=self.reg_gamma)).fit(x, y)
+
         elif self.spline == "mono":
             #p-spline with monotonic constraint
             link_fit1_ = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
@@ -86,10 +92,12 @@ class SIM(BaseEstimator, RegressorMixin):
             
     def visualize_shape_function(self, return_data=False):
 
-        if self.spline == "bs":
+        if self.spline == "augbs":
             pred = self.link_fit_.predict(np.linspace(self.xmin_, self.xmax_, 100).reshape([-1, 1]))
-        elif self.spline == "mono":
+            
+        elif self.spline in ("ps", "mono"):
             pred = self.link_fit_.predict(np.linspace(self.xmin_, self.xmax_, 100).reshape([-1, 1]))
+
         if return_data:
             return np.linspace(self.xmin_, self.xmax_, 100), pred
         else:
@@ -119,9 +127,5 @@ class SIM(BaseEstimator, RegressorMixin):
         check_is_fitted(self, "beta_")
         check_is_fitted(self, "link_fit_")
         xb = np.dot(x, self.beta_)
-
-        if self.spline == "bs":
-            pred = self.link_fit_.predict(xb)
-        elif self.spline == "mono":
-            pred = self.link_fit_.predict(xb)
+        pred = self.link_fit_.predict(xb)
         return pred
