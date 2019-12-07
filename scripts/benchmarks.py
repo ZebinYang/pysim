@@ -163,7 +163,7 @@ def py_sim(train_x, train_y, test_x, val_ratio=0.2, rand_seed=0):
     param_grid = {"method": ["first", "second"],
                   "reg_lambda": [0.01, 0.05, 0.1],
                   "reg_gamma": np.logspace(-2, 2, 5)}
-    grid = GridSearchCV(SIM(mu=train_x.mean(0), sigma=train_x.std(0), degree=2, knot_num=20, spline="bs", random_state=0), 
+    grid = GridSearchCV(SIM(mu=train_x.mean(0), sigma=train_x.std(0), degree=2, knot_num=20, spline="ps", random_state=0), 
                   scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit="mse",
                   cv=PredefinedSplit(val_fold), param_grid=param_grid, n_jobs=1, verbose=0, error_score=np.nan)
     grid.fit(train_x, train_y)

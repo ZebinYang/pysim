@@ -21,10 +21,8 @@ numpy2ri.activate()
 
 class SIM(BaseEstimator, RegressorMixin):
 
-    def __init__(self, mu=0, sigma=1, method="first", spline="ps", reg_lambda=0.5, reg_gamma=0.1, knot_num=10, degree=2, random_state=0):
+    def __init__(self, method="first", spline="ps", reg_lambda=0.5, reg_gamma=0.1, knot_num=10, degree=2, random_state=0):
 
-        self.mu = mu 
-        self.sigma = sigma
         self.method = method
         self.spline = spline
         self.reg_lambda = reg_lambda
@@ -36,7 +34,9 @@ class SIM(BaseEstimator, RegressorMixin):
 
     def first_stein_hard_thresholding(self, x, y):
 
-        s1 = (x - self.mu) / self.sigma ** 2
+        self.mu = x.mean(0) 
+        self.cov = np.cov(x.T)
+        s1 = np.dot(inv_cov, (x - self.mu).T).T
         zbar = np.mean(y.reshape(-1, 1) * s1, axis=0)
         zbar[np.abs(zbar) < self.reg_lambda * np.sum(np.abs(zbar))] = 0
         if np.linalg.norm(zbar) > 0:
@@ -47,7 +47,9 @@ class SIM(BaseEstimator, RegressorMixin):
 
     def first_stein(self, x, y):
 
-        s1 = (x - self.mu) / self.sigma ** 2
+        self.mu = x.mean(0) 
+        self.cov = np.cov(x.T)
+        s1 = np.dot(inv_cov, (x - self.mu).T).T
         zbar = np.mean(y.reshape(-1, 1) * s1, axis=0)
         sigmat = np.dot(zbar.reshape([-1, 1]), zbar.reshape([-1, 1]).T)
         spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * np.sum(np.abs(zbar))))
@@ -56,14 +58,16 @@ class SIM(BaseEstimator, RegressorMixin):
 
     def second_stein(self, x, y):
 
+        self.mu = x.mean(0) 
+        self.cov = np.cov(x.T)
         n_samples, n_features = x.shape
-        s1 = (x - self.mu) / self.sigma ** 2
+        s1 = np.dot(inv_cov, (x - self.mu).T).T
         sigmat = np.tensordot(s1 * y.reshape([-1, 1]), s1, axes=([0], [0])) / n_samples
-        sigmat[np.diag_indices_from(sigmat)] += - np.mean(y) / self.sigma ** 2        
+        sigmat -= np.mean(y) * inv_cov
 
-        beta_svd = np.linalg.svd(sigmat)[0][:, 0]
-        spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * np.sum(np.abs(beta_svd))))
-        beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * np.sum(np.abs(beta_svd))))
+        beta_svd_l1norm = np.sum(np.abs(np.linalg.svd(sigmat)[0][:, 0]))  
+        spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * beta_svd_l1norm))
+        beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * np.sum(np.abs(beta_svd_l1norm))))
         return beta
     
     def estimate_shape_function(self, x, y):
