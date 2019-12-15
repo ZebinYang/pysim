@@ -99,11 +99,12 @@ class SIM(BaseEstimator, RegressorMixin):
             
     def visualize_shape_function(self, return_data=False):
 
-        pred = self.link_fit_.predict(np.linspace(self.xmin_, self.xmax_, 100).reshape([-1, 1]))
+        xgrid = np.linspace(self.xmin_, self.xmax_, 100).reshape([-1, 1])
+        ygrid = self.link_fit_.predict(xgrid)
         if return_data:
-            return np.linspace(self.xmin_, self.xmax_, 100), pred
+            return xgrid, ygrid
         else:
-            return plt.plot(np.linspace(self.xmin_, self.xmax_, 100), pred)
+            return plt.plot(xgrid, ygrid)
 
     def fit(self, x, y):
 
