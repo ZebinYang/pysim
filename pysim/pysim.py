@@ -96,7 +96,7 @@ class SIM(BaseEstimator, RegressorMixin):
                 self.link_fit_ = link_fit1_
             else:
                 self.link_fit_ = link_fit2_
-            
+
     def visualize_shape_function(self, return_data=False):
 
         xgrid = np.linspace(self.xmin_, self.xmax_, 100).reshape([-1, 1])

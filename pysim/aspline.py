@@ -30,7 +30,7 @@ def diff_matrix(order, knot_num):
 
 class ASpline(BaseEstimator, RegressorMixin):
 
-    def __init__(self, knot_num=100, reg_gamma=0.1, xmin=1, xmax=-1, degree=2, epsilon=0.00001, threshold=0.99, maxiter=10):
+    def __init__(self, knot_num=100, reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99, maxiter=10):
 
         self.knot_num = knot_num
         self.reg_gamma = reg_gamma
@@ -70,8 +70,9 @@ class ASpline(BaseEstimator, RegressorMixin):
         return self
     
     def predict(self, x):
-        
+
         check_is_fitted(self, "coef_")
+        x = x.copy()
         x[x < self.xmin] = self.xmin
         x[x > self.xmax] = self.xmax
         design_matrix = np.asarray(build_design_matrices([self.selected_xphi.design_info],
