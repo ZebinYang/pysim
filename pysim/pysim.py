@@ -54,6 +54,9 @@ class SIM(BaseEstimator, RegressorMixin):
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
         zbar = np.mean(y.reshape(-1, 1) * s1, axis=0)
         sigmat = np.dot(zbar.reshape([-1, 1]), zbar.reshape([-1, 1]).T)
+        u, s, v = np.linalg.svd(sigmat)
+        sigmat = np.dot(np.dot(u, np.diag(s)), u.T)
+        
         spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * np.sum(np.abs(zbar))))
         beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * np.sum(np.abs(zbar))))
         return beta
@@ -67,6 +70,8 @@ class SIM(BaseEstimator, RegressorMixin):
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
         sigmat = np.tensordot(s1 * y.reshape([-1, 1]), s1, axes=([0], [0])) / n_samples
         sigmat -= np.mean(y) * self.inv_cov
+        u, s, v = np.linalg.svd(sigmat)
+        sigmat = np.dot(np.dot(u, np.diag(s)), u.T)
 
         beta_svd_l1norm = np.sum(np.abs(np.linalg.svd(sigmat)[0][:, 0]))  
         spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * beta_svd_l1norm))

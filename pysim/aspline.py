@@ -66,7 +66,7 @@ class ASpline(BaseEstimator, RegressorMixin):
                {"x": [self.xmin, self.xmax], "knots": self.selected_knots_, "degree": self.degree})
         selected_basis = np.asarray(build_design_matrices([self.selected_xphi.design_info],
                           {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
-        self.coef_ = np.dot(np.linalg.inv(np.dot(selected_basis.T, selected_basis)), np.dot(selected_basis.T, y))
+        self.coef_ = np.dot(np.linalg.pinv(np.dot(selected_basis.T, selected_basis)), np.dot(selected_basis.T, y))
         return self
     
     def predict(self, x):
