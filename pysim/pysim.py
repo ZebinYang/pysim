@@ -21,7 +21,7 @@ numpy2ri.activate()
 
 class SIM(BaseEstimator, RegressorMixin):
 
-    def __init__(self, method="first", spline="ps", reg_lambda=0.5, reg_gamma=0.1, knot_num=10, degree=2, random_state=0):
+    def __init__(self, method="first", spline="augbs", reg_lambda=0.1, reg_gamma=0.1, knot_num=10, degree=2, random_state=0):
 
         self.method = method
         self.spline = spline
