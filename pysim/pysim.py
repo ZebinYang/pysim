@@ -36,7 +36,7 @@ class SIM(BaseEstimator, RegressorMixin):
 
         self.mu = x.mean(0) 
         self.cov = np.cov(x.T)
-        self.inv_cov = np.linalg.inv(self.cov)
+        self.inv_cov = np.linalg.pinv(self.cov)
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
         zbar = np.mean(y.reshape(-1, 1) * s1, axis=0)
         zbar[np.abs(zbar) < self.reg_lambda * np.sum(np.abs(zbar))] = 0
@@ -50,7 +50,7 @@ class SIM(BaseEstimator, RegressorMixin):
 
         self.mu = x.mean(0) 
         self.cov = np.cov(x.T)
-        self.inv_cov = np.linalg.inv(self.cov)
+        self.inv_cov = np.linalg.pinv(self.cov)
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
         zbar = np.mean(y.reshape(-1, 1) * s1, axis=0)
         sigmat = np.dot(zbar.reshape([-1, 1]), zbar.reshape([-1, 1]).T)
@@ -65,7 +65,7 @@ class SIM(BaseEstimator, RegressorMixin):
 
         self.mu = x.mean(0) 
         self.cov = np.cov(x.T)
-        self.inv_cov = np.linalg.inv(self.cov)
+        self.inv_cov = np.linalg.pinv(self.cov)
         n_samples, n_features = x.shape
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
         sigmat = np.tensordot(s1 * y.reshape([-1, 1]), s1, axes=([0], [0])) / n_samples
