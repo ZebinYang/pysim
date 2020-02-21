@@ -9,7 +9,7 @@ import rpy2.robjects as ro
 from rpy2.robjects import numpy2ri
 from rpy2.robjects.packages import importr
 
-from .aspline import ASpline
+from .aspline import ASplineClassifier, ASplineRegressor
 from pygam import LinearGAM, s
 
 utils = importr('utils')
@@ -21,8 +21,9 @@ numpy2ri.activate()
 
 class SIM(BaseEstimator, RegressorMixin):
 
-    def __init__(self, method="first", spline="augbs", reg_lambda=0.1, reg_gamma=0.1, knot_num=20, degree=2, random_state=0):
+    def __init__(self, task="Regression", method="first", spline="augbs", reg_lambda=0.1, reg_gamma=0.1, knot_num=20, degree=2, random_state=0):
 
+        self.task = task
         self.method = method
         self.spline = spline
         self.reg_lambda = reg_lambda
@@ -82,8 +83,12 @@ class SIM(BaseEstimator, RegressorMixin):
 
         if self.spline == "augbs":
             #augmented bspline
-            self.link_fit_ = ASpline(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
-                             xmin=self.xmin_, xmax=self.xmax_, degree=self.degree)
+            if self.task == "Regression":
+                self.link_fit_ = ASplineRegressor(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
+                                 xmin=self.xmin_, xmax=self.xmax_, degree=self.degree)
+            elif self.task == "Classification":
+                self.link_fit_ = ASplineClassifier(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
+                                 xmin=self.xmin_, xmax=self.xmax_, degree=self.degree)
             self.link_fit_.fit(x, y)
 
         elif self.spline == "ps":
