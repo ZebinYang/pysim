@@ -43,7 +43,8 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
         self.threshold = threshold
         self.maxiter = maxiter
         self.maxiter_irls = maxiter_irls
-        
+        self.EPS = 10**(-5)
+
     def link(self, x):
         return 1 / (1 + np.exp(-x))
 
@@ -74,7 +75,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
                 lp = np.dot(basis, update_a)
                 mu = self.link(lp)
                 omega = mu * (1 - mu)
-                mask = (np.abs(omega) >= EPS) * np.isfinite(omega)
+                mask = (np.abs(omega) >= self.EPS) * np.isfinite(omega)
                 if np.sum(mask) == 0:
                     break
 
@@ -104,7 +105,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
             lp = np.dot(basis, self.coef_)
             mu = self.link(lp)
             omega = mu * (1 - mu)
-            mask = (np.abs(omega) >= EPS) * np.isfinite(omega)
+            mask = (np.abs(omega) >= self.EPS) * np.isfinite(omega)
             if np.sum(mask) == 0:
                 break
             tempy = tempy[mask] # update
