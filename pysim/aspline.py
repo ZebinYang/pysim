@@ -64,7 +64,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
         tempy = y.copy()
         tempy[tempy==0] = 0.01
         tempy[tempy==1] = 0.99
-        update_a = np.dot(np.linalg.inv(np.dot(Basis.T, Basis)), np.dot(Basis.T, inv_link(tempy)))
+        update_a = np.dot(np.linalg.inv(np.dot(Basis.T, Basis)), np.dot(Basis.T, self.inv_link(tempy)))
 
         for i in range(self.maxiter):
             tempy = y.copy()
@@ -72,7 +72,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
             # The original implementation of matrix inversion is very slow and so it is commented. 
             for j in range(self.maxiter_irls):
                 lp = np.dot(basis, update_a)
-                mu = link(lp)
+                mu = self.link(lp)
                 omega = mu * (1 - mu)
                 mask = (np.abs(omega) >= EPS) * np.isfinite(omega)
                 if np.sum(mask) == 0:
@@ -99,10 +99,10 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
         basis = selected_basis.copy()
         tempy[tempy==0] = 0.01
         tempy[tempy==1] = 0.99
-        self.coef_ = np.dot(np.linalg.inv(np.dot(basis.T, basis)), np.dot(basis.T, inv_link(tempy)))
+        self.coef_ = np.dot(np.linalg.inv(np.dot(basis.T, basis)), np.dot(basis.T, self.inv_link(tempy)))
         for j in range(self.maxiter_irls):
             lp = np.dot(basis, self.coef_)
-            mu = link(lp)
+            mu = self.link(lp)
             omega = mu * (1 - mu)
             mask = (np.abs(omega) >= EPS) * np.isfinite(omega)
             if np.sum(mask) == 0:
