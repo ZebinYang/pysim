@@ -87,7 +87,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
                 left_ = np.linalg.pinv(basis.T.dot(omega).dot(basis) + self.reg_gamma * D.T.dot(W).dot(D))
                 right = basis.T.dot(omega.dot(basis).dot(update_a) + tempy - mu)
                 update_a = left_.dot(right)
-            update_w = 1 / (np.dot(D, update_a) ** 2 + epsilon ** 2)
+            update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
             W = np.diag(update_w.reshape([-1]))
 
         self.selected_knots_ = list(np.array(knots)[np.reshape(update_w * np.dot(D, update_a) ** 2 > self.threshold, [-1])])
