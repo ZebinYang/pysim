@@ -56,7 +56,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
         knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
         xphi = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1",
                        {"x": [self.xmin, self.xmax], "knots": knots, "degree": self.degree})
-        Basis = np.asarray(build_design_matrices([xphi.design_info],
+        init_basis = np.asarray(build_design_matrices([xphi.design_info],
                           {"x": x, "knots": knots, "degree": self.degree})[0])
         D = diff_matrix(self.degree, self.knot_num)
         w = np.ones([self.knot_num], dtype=np.float32) 
@@ -65,11 +65,11 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
         tempy = y.copy()
         tempy[tempy==0] = 0.01
         tempy[tempy==1] = 0.99
-        update_a = np.dot(np.linalg.inv(np.dot(Basis.T, Basis)), np.dot(Basis.T, self.inv_link(tempy)))
+        update_a = np.dot(np.linalg.pinv(np.dot(init_basis.T, init_basis)), np.dot(init_basis.T, self.inv_link(tempy)))
 
         for i in range(self.maxiter):
             tempy = y.copy()
-            basis = Basis.copy()
+            basis = init_basis.copy()
             # The original implementation of matrix inversion is very slow and so it is commented. 
             for j in range(self.maxiter_irls):
                 lp = np.dot(basis, update_a)
@@ -100,7 +100,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
         basis = selected_basis.copy()
         tempy[tempy==0] = 0.01
         tempy[tempy==1] = 0.99
-        self.coef_ = np.dot(np.linalg.inv(np.dot(basis.T, basis)), np.dot(basis.T, self.inv_link(tempy)))
+        self.coef_ = np.dot(np.linalg.pinv(np.dot(basis.T, basis)), np.dot(basis.T, self.inv_link(tempy)))
         for j in range(self.maxiter_irls):
             lp = np.dot(basis, self.coef_)
             mu = self.link(lp)
