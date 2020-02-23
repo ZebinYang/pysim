@@ -17,7 +17,7 @@ clf = SIM(method="first", spline="augbs", reg_lambda=0.1, reg_gamma=0.1, knot_nu
 ```
 
 **Hyperparameters**
-
+- task: the task type, including "Regression" and "Classification". default="Regression"
 - method: the base method for estimating the projection coefficients in sparse SIM. default="first"
 
         "first": First-order Stein's Identity via sparse PCA solver
