@@ -76,6 +76,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
                 mu = self.link(lp)
                 omega = mu * (1 - mu)
                 mask = (np.abs(omega) >= self.EPS) * np.isfinite(omega)
+                mask = mask.ravel()
                 if np.sum(mask) == 0:
                     break
 
@@ -106,6 +107,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
             mu = self.link(lp)
             omega = mu * (1 - mu)
             mask = (np.abs(omega) >= self.EPS) * np.isfinite(omega)
+            mask = mask.ravel()
             if np.sum(mask) == 0:
                 break
             tempy = tempy[mask] # update

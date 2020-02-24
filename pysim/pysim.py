@@ -21,7 +21,8 @@ numpy2ri.activate()
 
 class SIM(BaseEstimator, RegressorMixin):
 
-    def __init__(self, task="Regression", method="first", spline="augbs", reg_lambda=0.1, reg_gamma=0.1, knot_num=20, degree=2, random_state=0):
+    def __init__(self, task="Regression", method="first", spline="augbs", reg_lambda=0.1,
+                 reg_gamma=0.1, knot_num=20, degree=2, random_state=0):
 
         self.task = task
         self.method = method
@@ -33,13 +34,13 @@ class SIM(BaseEstimator, RegressorMixin):
         
         self.random_state = random_state
 
-    def first_stein_hard_thresholding(self, x, y):
+    def first_stein_hard_thresholding(self, x, y, weights=None):
 
-        self.mu = x.mean(0) 
-        self.cov = np.cov(x.T)
+        self.mu = np.average(x, axis=0, weights=weights) 
+        self.cov = np.cov(x.T, aweights=weights)
         self.inv_cov = np.linalg.pinv(self.cov)
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
-        zbar = np.mean(y.reshape(-1, 1) * s1, axis=0)
+        zbar = np.average(y.reshape(-1, 1) * s1, axis=0, weights=weights)
         zbar[np.abs(zbar) < self.reg_lambda * np.sum(np.abs(zbar))] = 0
         if np.linalg.norm(zbar) > 0:
             beta = zbar / np.linalg.norm(zbar)
@@ -47,13 +48,13 @@ class SIM(BaseEstimator, RegressorMixin):
             beta = zbar
         return beta
 
-    def first_stein(self, x, y):
+    def first_stein(self, x, y, weights=None):
 
-        self.mu = x.mean(0) 
-        self.cov = np.cov(x.T)
+        self.mu = np.average(x, axis=0, weights=weights) 
+        self.cov = np.cov(x.T, aweights=weights)
         self.inv_cov = np.linalg.pinv(self.cov)
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
-        zbar = np.mean(y.reshape(-1, 1) * s1, axis=0)
+        zbar = np.average(y.reshape(-1, 1) * s1, axis=0, weights=weights)
         sigmat = np.dot(zbar.reshape([-1, 1]), zbar.reshape([-1, 1]).T)
         u, s, v = np.linalg.svd(sigmat)
         sigmat = np.dot(np.dot(u, np.diag(s)), u.T)
@@ -62,15 +63,18 @@ class SIM(BaseEstimator, RegressorMixin):
         beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * np.sum(np.abs(zbar))))
         return beta
 
-    def second_stein(self, x, y):
+    def second_stein(self, x, y, weights=None):
 
-        self.mu = x.mean(0) 
-        self.cov = np.cov(x.T)
-        self.inv_cov = np.linalg.pinv(self.cov)
         n_samples, n_features = x.shape
+        self.mu = np.average(x, axis=0, weights=weights) 
+        self.cov = np.cov(x.T, aweights=weights)
+        self.inv_cov = np.linalg.pinv(self.cov)
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
-        sigmat = np.tensordot(s1 * y.reshape([-1, 1]), s1, axes=([0], [0])) / n_samples
-        sigmat -= np.mean(y) * self.inv_cov
+        if weights is not None:
+            sigmat = np.tensordot(s1 * y.reshape([-1, 1]) * weights.reshape([-1, 1]), s1, axes=([0], [0]))
+        else:
+            sigmat = np.tensordot(s1 * y.reshape([-1, 1]), s1, axes=([0], [0])) / n_samples
+        sigmat -= np.average(y, weights=weights) * self.inv_cov
         u, s, v = np.linalg.svd(sigmat)
         sigmat = np.dot(np.dot(u, np.diag(s)), u.T)
 
@@ -116,16 +120,20 @@ class SIM(BaseEstimator, RegressorMixin):
         else:
             return plt.plot(xgrid, ygrid)
 
-    def fit(self, x, y):
+    def fit(self, x, y, sample_weight=None):
 
         np.random.seed(self.random_state)
+        n_samples, n_features = x.shape
+        if sample_weight is None:
+            sample_weight = np.ones(n_samples) / n_samples
+
         if self.method == "first":
-            self.beta_ = self.first_stein(x, y)
+            self.beta_ = self.first_stein(x, y, sample_weight)
         elif self.method == "first_thresholding":
-            self.beta_ = self.first_stein_hard_thresholding(x, y)
+            self.beta_ = self.first_stein_hard_thresholding(x, y, sample_weight)
         elif self.method == "second":
-            self.beta_ = self.second_stein(x, y)
-        
+            self.beta_ = self.second_stein(x, y, sample_weight)
+
         if len(self.beta_[np.abs(self.beta_) > 0]) > 0:
             if (self.beta_[np.abs(self.beta_) > 0][0] < 0):
                 self.beta_ = - self.beta_
