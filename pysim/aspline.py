@@ -44,7 +44,7 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
 
     def fit(self, x, y, sample_weight=None):
 
-        n_samples, n_features = x.shape
+        n_samples = x.shape[0]
         if sample_weight is None:
             sample_weight = np.ones(n_samples) / n_samples
 
