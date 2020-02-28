@@ -90,7 +90,7 @@ class SIM(BaseEstimator, RegressorMixin):
             elif self.task == "Classification":
                 self.link_fit_ = ASplineClassifier(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
                                  xmin=self.xmin_, xmax=self.xmax_, degree=self.degree)
-            self.link_fit_.fit(x, y)
+            self.link_fit_.fit(x, y, sample_weight)
 
         elif self.spline == "ps":
             #p-spline
