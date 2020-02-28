@@ -34,13 +34,13 @@ class SIM(BaseEstimator, RegressorMixin):
         
         self.random_state = random_state
 
-    def first_stein_hard_thresholding(self, x, y, weights=None):
+    def first_stein_hard_thresholding(self, x, y, sample_weight=None):
 
-        self.mu = np.average(x, axis=0, weights=weights) 
-        self.cov = np.cov(x.T, aweights=weights)
+        self.mu = np.average(x, axis=0, weights=sample_weight) 
+        self.cov = np.cov(x.T, aweights=sample_weight)
         self.inv_cov = np.linalg.pinv(self.cov)
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
-        zbar = np.average(y.reshape(-1, 1) * s1, axis=0, weights=weights)
+        zbar = np.average(y.reshape(-1, 1) * s1, axis=0, weights=sample_weight)
         zbar[np.abs(zbar) < self.reg_lambda * np.sum(np.abs(zbar))] = 0
         if np.linalg.norm(zbar) > 0:
             beta = zbar / np.linalg.norm(zbar)
@@ -48,13 +48,13 @@ class SIM(BaseEstimator, RegressorMixin):
             beta = zbar
         return beta
 
-    def first_stein(self, x, y, weights=None):
+    def first_stein(self, x, y, sample_weight=None):
 
-        self.mu = np.average(x, axis=0, weights=weights) 
-        self.cov = np.cov(x.T, aweights=weights)
+        self.mu = np.average(x, axis=0, weights=sample_weight) 
+        self.cov = np.cov(x.T, aweights=sample_weight)
         self.inv_cov = np.linalg.pinv(self.cov)
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
-        zbar = np.average(y.reshape(-1, 1) * s1, axis=0, weights=weights)
+        zbar = np.average(y.reshape(-1, 1) * s1, axis=0, weights=sample_weight)
         sigmat = np.dot(zbar.reshape([-1, 1]), zbar.reshape([-1, 1]).T)
         u, s, v = np.linalg.svd(sigmat)
         sigmat = np.dot(np.dot(u, np.diag(s)), u.T)
@@ -63,18 +63,15 @@ class SIM(BaseEstimator, RegressorMixin):
         beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * np.sum(np.abs(zbar))))
         return beta
 
-    def second_stein(self, x, y, weights=None):
+    def second_stein(self, x, y, sample_weight=None):
 
         n_samples, n_features = x.shape
-        self.mu = np.average(x, axis=0, weights=weights) 
-        self.cov = np.cov(x.T, aweights=weights)
+        self.mu = np.average(x, axis=0, weights=sample_weight) 
+        self.cov = np.cov(x.T, aweights=sample_weight)
         self.inv_cov = np.linalg.pinv(self.cov)
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
-        if weights is not None:
-            sigmat = np.tensordot(s1 * y.reshape([-1, 1]) * weights.reshape([-1, 1]), s1, axes=([0], [0]))
-        else:
-            sigmat = np.tensordot(s1 * y.reshape([-1, 1]), s1, axes=([0], [0])) / n_samples
-        sigmat -= np.average(y, weights=weights) * self.inv_cov
+        sigmat = np.tensordot(s1 * y.reshape([-1, 1]) * sample_weight.reshape([-1, 1]), s1, axes=([0], [0]))
+        sigmat -= np.average(y, weights=sample_weight) * self.inv_cov
         u, s, v = np.linalg.svd(sigmat)
         sigmat = np.dot(np.dot(u, np.diag(s)), u.T)
 
