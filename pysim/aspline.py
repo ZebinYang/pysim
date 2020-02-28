@@ -75,7 +75,7 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
         selected_basis = np.asarray(build_design_matrices([self.selected_xphi.design_info],
                           {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
         self.coef_ = np.dot(np.linalg.pinv(selected_basis.T.dot(np.diag(sample_weight)).dot(selected_basis),
-                      selected_basis.T.dot(np.diag(sample_weight)).dot(y))
+                      selected_basis.T.dot(np.diag(sample_weight)).dot(y)))
         return self
 
     def predict(self, x):
