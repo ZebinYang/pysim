@@ -44,6 +44,7 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
 
     def fit(self, x, y, sample_weight=None):
 
+        n_samples, n_features = x.shape
         if sample_weight is None:
             sample_weight = np.ones(n_samples) / n_samples
 
@@ -55,7 +56,7 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
         D = diff_matrix(self.degree, self.knot_num)
         w = np.ones([self.knot_num], dtype=np.float32) 
         W = np.diag(w)
-        
+
         BB = basis.T.dot(sample_weight).dot(basis)
         for i in range(self.maxiter):
             U = cholesky(BB + self.reg_gamma * np.dot(np.dot(D.T, W), D))
