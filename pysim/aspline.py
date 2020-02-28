@@ -48,7 +48,7 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
         if sample_weight is None:
             sample_weight = np.ones(n_samples)
         else:
-            sample_weight *= n_samples
+            sample_weight = sample_weight * n_samples
         knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
         xphi = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1",
                    {"x": [self.xmin, self.xmax], "knots": knots, "degree": self.degree})
