@@ -80,7 +80,7 @@ class SIM(BaseEstimator, RegressorMixin):
         beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * np.sum(np.abs(beta_svd_l1norm))))
         return beta
     
-    def estimate_shape_function(self, x, y):
+    def estimate_shape_function(self, x, y, sample_weight=None):
 
         if self.spline == "augbs":
             #augmented bspline
@@ -122,7 +122,7 @@ class SIM(BaseEstimator, RegressorMixin):
         np.random.seed(self.random_state)
         n_samples, n_features = x.shape
         if sample_weight is None:
-            sample_weight = np.ones(n_samples) / n_samples
+            sample_weight = np.reshape(np.ones(n_samples) / n_samples, [-1, 1])
 
         if self.method == "first":
             self.beta_ = self.first_stein(x, y, sample_weight)
@@ -137,7 +137,7 @@ class SIM(BaseEstimator, RegressorMixin):
         xb = np.dot(x, self.beta_)
         self.xmin_ = np.min(xb)
         self.xmax_ = np.max(xb)
-        self.estimate_shape_function(xb, y)
+        self.estimate_shape_function(xb, y, sample_weight)
         return self
 
     def predict(self, x):
