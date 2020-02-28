@@ -46,8 +46,9 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
 
         n_samples = x.shape[0]
         if sample_weight is None:
-            sample_weight = np.ones(n_samples) / n_samples
-
+            sample_weight = np.ones(n_samples)
+        else:
+            sample_weight *= n_samples
         knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
         xphi = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1",
                    {"x": [self.xmin, self.xmax], "knots": knots, "degree": self.degree})
@@ -58,10 +59,11 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
         W = np.diag(w)
 
         BB = basis.T.dot(np.diag(sample_weight)).dot(basis)
+        BY = basis.T.dot(np.diag(sample_weight)).dot(y)
         for i in range(self.maxiter):
             U = cholesky(BB + self.reg_gamma * np.dot(np.dot(D.T, W), D))
             M = scipy.linalg.lapack.clapack.dtrtri(U)[0]
-            update_a = np.dot(np.dot(M, M.T.conj()), basis.T.dot(np.diag(sample_weight)).dot(y))
+            update_a = np.dot(np.dot(M, M.T.conj()), BY)
             # The original implementation of matrix inversion is very slow and so it is commented. 
             # update_a = np.dot(np.linalg.inv(np.dot(basis.T, basis) + self.reg_gamma * np.dot(np.dot(D.T, W), D)), np.dot(basis.T, y))
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
@@ -72,7 +74,8 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
                {"x": [self.xmin, self.xmax], "knots": self.selected_knots_, "degree": self.degree})
         selected_basis = np.asarray(build_design_matrices([self.selected_xphi.design_info],
                           {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
-        self.coef_ = np.dot(np.linalg.pinv(np.dot(selected_basis.T, selected_basis)), np.dot(selected_basis.T, y))
+        self.coef_ = np.dot(np.linalg.pinv(selected_basis.T.dot(np.diag(sample_weight)).dot(selected_basis),
+                      selected_basis.T.dot(np.diag(sample_weight)).dot(y))
         return self
 
     def predict(self, x):
