@@ -46,7 +46,7 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
 
         n_samples, n_features = x.shape
         if sample_weight is None:
-            sample_weight = np.reshape(np.ones(n_samples) / n_samples, [-1, 1])
+            sample_weight = np.ones(n_samples) / n_samples
 
         knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
         xphi = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1",
@@ -57,11 +57,11 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
         w = np.ones([self.knot_num], dtype=np.float32) 
         W = np.diag(w)
 
-        BB = basis.T.dot(sample_weight).dot(basis)
+        BB = basis.T.dot(sample_weight.reshape([-1, 1])).dot(basis)
         for i in range(self.maxiter):
             U = cholesky(BB + self.reg_gamma * np.dot(np.dot(D.T, W), D))
             M = scipy.linalg.lapack.clapack.dtrtri(U)[0]
-            update_a = np.dot(np.dot(M, M.T.conj()), basis.T.dot(sample_weight).dot(y))
+            update_a = np.dot(np.dot(M, M.T.conj()), basis.T.dot(sample_weight.reshape([-1, 1])).dot(y))
             # The original implementation of matrix inversion is very slow and so it is commented. 
             # update_a = np.dot(np.linalg.inv(np.dot(basis.T, basis) + self.reg_gamma * np.dot(np.dot(D.T, W), D)), np.dot(basis.T, y))
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)

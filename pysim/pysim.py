@@ -122,7 +122,7 @@ class SIM(BaseEstimator, RegressorMixin):
         np.random.seed(self.random_state)
         n_samples, n_features = x.shape
         if sample_weight is None:
-            sample_weight = np.reshape(np.ones(n_samples) / n_samples, [-1, 1])
+            sample_weight = np.ones(n_samples) / n_samples
 
         if self.method == "first":
             self.beta_ = self.first_stein(x, y, sample_weight)
