@@ -112,7 +112,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
     def inv_link(self, x):
         return np.log(x) - np.log(1 - x)
     
-    def fit(self, x, y):
+    def fit(self, x, y, sample_weight=None):
 
         knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
         xphi = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1",
