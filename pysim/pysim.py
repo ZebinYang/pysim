@@ -71,7 +71,7 @@ class SIM(BaseEstimator, RegressorMixin):
         self.inv_cov = np.linalg.pinv(self.cov)
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
         sigmat = np.tensordot(s1 * y.reshape([-1, 1]) * sample_weight.reshape([-1, 1]), s1, axes=([0], [0]))
-        sigmat -= np.average(y, weights=sample_weight) * self.inv_cov
+        sigmat -= np.average(y, axis=0, weights=sample_weight) * self.inv_cov
         u, s, v = np.linalg.svd(sigmat)
         sigmat = np.dot(np.dot(u, np.diag(s)), u.T)
 
