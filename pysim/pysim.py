@@ -123,7 +123,9 @@ class SIM(BaseEstimator, RegressorMixin):
         n_samples, n_features = x.shape
         if sample_weight is None:
             sample_weight = np.ones(n_samples) / n_samples
-
+        else:
+            sample_weight = sample_weight / np.sum(sample_weight)
+        
         if self.method == "first":
             self.beta_ = self.first_stein(x, y, sample_weight)
         elif self.method == "first_thresholding":

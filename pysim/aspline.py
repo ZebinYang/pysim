@@ -58,8 +58,8 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
         w = np.ones([self.knot_num], dtype=np.float32) 
         W = np.diag(w)
 
-        BB = basis.T.dot(np.diag(sample_weight)).dot(basis)
-        BY = basis.T.dot(np.diag(sample_weight)).dot(y)
+        BB = np.tensordot(basis * sample_weight.reshape([-1, 1]), basis, axes=([0], [0]))
+        BY = np.tensordot(basis * sample_weight.reshape([-1, 1]), y, axes=([0], [0]))
         for i in range(self.maxiter):
             U = cholesky(BB + self.reg_gamma * np.dot(np.dot(D.T, W), D))
             M = scipy.linalg.lapack.clapack.dtrtri(U)[0]
@@ -74,8 +74,9 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
                {"x": [self.xmin, self.xmax], "knots": self.selected_knots_, "degree": self.degree})
         selected_basis = np.asarray(build_design_matrices([self.selected_xphi.design_info],
                           {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
-        self.coef_ = np.dot(np.linalg.pinv(selected_basis.T.dot(np.diag(sample_weight)).dot(selected_basis)),
-                      selected_basis.T.dot(np.diag(sample_weight)).dot(y))
+        seBB = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), selected_basis, axes=([0], [0]))
+        seBY = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), y, axes=([0], [0]))
+        self.coef_ = np.dot(np.linalg.pinv(seBB), seBY)
         return self
 
     def predict(self, x):
