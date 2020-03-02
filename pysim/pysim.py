@@ -167,7 +167,7 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
 
 class SIMRegressor(BaseSIM, RegressorMixin):
 
-    def __init__(self, method="first_order", spline="A-Spline", reg_lambda=0.1,
+    def __init__(self, method="first_order", spline="a_spline", reg_lambda=0.1,
                  reg_gamma=0.1, knot_num=20, degree=2, random_state=0):
 
         super(SIMRegressor, self).__init__(method=method,
@@ -187,13 +187,13 @@ class SIMRegressor(BaseSIM, RegressorMixin):
 
     def _estimate_shape(self, x, y, sample_weight=None):
 
-        if self.spline == "a_pline":
+        if self.spline == "a_spline":
             #adaptive spline
             self.shape_fit_ = ASplineRegressor(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
                                  xmin=self.xmin_, xmax=self.xmax_, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
 
-        elif self.spline == "p_pline":
+        elif self.spline == "p_spline":
             #penalized spline
             self.shape_fit_ = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
                              lam=self.reg_gamma)).fit(x, y)
@@ -242,7 +242,7 @@ class SIMClassifier(BaseSIM, ClassifierMixin):
 
     def _estimate_shape(self, x, y, sample_weight=None):
 
-        if self.spline == "a_pline":
+        if self.spline == "a_spline":
             #adaptive spline
             self.shape_fit_ = ASplineClassifier(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
                              xmin=self.xmin_, xmax=self.xmax_, degree=self.degree)
