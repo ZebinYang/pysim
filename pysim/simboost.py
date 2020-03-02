@@ -1,10 +1,10 @@
 import time 
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 
 from abc import ABCMeta, abstractmethod
 from sklearn.preprocessing import LabelBinarizer
+from sklearn.model_selection import train_test_split
 from sklearn.utils.validation import check_is_fitted
 from sklearn.utils import check_array, check_X_y, column_or_1d
 from sklearn.model_selection import GridSearchCV, PredefinedSplit
