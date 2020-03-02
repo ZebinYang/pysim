@@ -126,7 +126,6 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
         tempy[tempy==0] = 0.01
         tempy[tempy==1] = 0.99
         update_a = np.dot(np.linalg.pinv(np.dot(init_basis.T, init_basis)), np.dot(init_basis.T, self.inv_link(tempy)))
-
         for i in range(self.maxiter):
             tempy = y.copy()
             basis = init_basis.copy()
@@ -140,13 +139,15 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
                 if np.sum(mask) == 0:
                     break
 
-                tempy = tempy[mask] # update
-                lp = lp[mask] # update
-                mu = mu[mask] # update
-                omega = np.diag(omega[mask]) # update
+                tempy = tempy[mask] 
+                lp = lp[mask] 
+                mu = mu[mask] 
+                omega = omega[mask] 
                 basis = basis[mask,:]
-                left_ = np.linalg.pinv(basis.T.dot(omega).dot(basis) + self.reg_gamma * D.T.dot(W).dot(D))
-                right = basis.T.dot(omega.dot(basis).dot(update_a) + tempy - mu)
+            
+                BB = np.tensordot(basis * omega.reshape([-1, 1]), basis, axes=([0], [0]))
+                left_ = np.linalg.pinv(BB + self.reg_gamma * D.T.dot(W).dot(D))
+                right = BB.dot(update_a) + basis.T.dot(tempy - mu)
                 update_a = left_.dot(right)
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
             W = np.diag(update_w.reshape([-1]))
