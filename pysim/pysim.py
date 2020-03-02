@@ -57,7 +57,7 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("degree must be >= 0, got" % self.degree)
         
         if not isinstance(self.knot_num, int):
-            raise ValueError("knot_num must be an integer, got %s." % self.degree)
+            raise ValueError("knot_num must be an integer, got %s." % self.knot_num)
 
         if self.knot_num <= 0:
             raise ValueError("knot_num must be > 0, got" % self.knot_num)
