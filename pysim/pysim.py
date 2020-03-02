@@ -202,7 +202,7 @@ class SIMRegressor(BaseSIM, RegressorMixin):
         if self.spline == "a_spline":
             #adaptive spline
             self.shape_fit_ = ASplineRegressor(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
-                                 xmin=self.xmin_, xmax=self.xmax_, degree=self.degree)
+                                 xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
 
         elif self.spline == "p_spline":
