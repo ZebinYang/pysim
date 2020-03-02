@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from matplotlib import gridspec
 import matplotlib.pyplot as plt
 from pygam import LinearGAM, LogisticGAM, s
 
