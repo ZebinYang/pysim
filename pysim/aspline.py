@@ -64,8 +64,6 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
             U = cholesky(BB + self.reg_gamma * np.dot(np.dot(D.T, W), D))
             M = scipy.linalg.lapack.clapack.dtrtri(U)[0]
             update_a = np.dot(np.dot(M, M.T.conj()), BY)
-            # The original implementation of matrix inversion is very slow and so it is commented. 
-            # update_a = np.dot(np.linalg.inv(np.dot(basis.T, basis) + self.reg_gamma * np.dot(np.dot(D.T, W), D)), np.dot(basis.T, y))
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
             W = np.diag(update_w.reshape([-1]))
 
@@ -182,18 +180,13 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
             self.coef_ = left_.dot(right)
         return self
     
-    def decision_function(self, x):
+    def predict(self, x):
 
         check_is_fitted(self, "coef_")
         x = x.copy()
         x[x < self.xmin] = self.xmin
         x[x > self.xmax] = self.xmax
         design_matrix = np.asarray(build_design_matrices([self.selected_xphi.design_info],
-                                  {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
+                                         {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
         pred = np.dot(design_matrix, self.coef_)
         return pred
-
-    def predict(self, x):
-
-        check_is_fitted(self, "coef_")
-        return self.decision_function(x) > 0
