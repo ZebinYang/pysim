@@ -57,7 +57,7 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
         max_ids = len(self.sim_estimators_)
         fig = plt.figure(figsize=(12, 4.2 * max_ids))
         outer = gridspec.GridSpec(max_ids, 1, hspace=0.2)
-        for indice, model in enumerate(clf.sim_estimators_):
+        for indice, model in enumerate(self.sim_estimators_):
 
             inner = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=outer[indice], wspace=0.15)
             ax1 = plt.Subplot(fig, inner[0]) 
