@@ -165,7 +165,7 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
         return pred
 
 
-class SIMRegressor(BaseEstimator, RegressorMixin, BaseSIM):
+class SIMRegressor(BaseSIM, RegressorMixin):
 
     def __init__(self, method="first_order", spline="A-Spline", reg_lambda=0.1,
                  reg_gamma=0.1, knot_num=20, degree=2, random_state=0):
@@ -216,7 +216,7 @@ class SIMRegressor(BaseEstimator, RegressorMixin, BaseSIM):
         pred = self._predict(x)
         return pred
 
-class SIMClassifier(BaseEstimator, ClassifierMixin):
+class SIMClassifier(BaseSIM, ClassifierMixin):
 
     def __init__(self, method="first_order", spline="a_pline", reg_lambda=0.1,
                  reg_gamma=0.1, knot_num=20, degree=2, random_state=0):
