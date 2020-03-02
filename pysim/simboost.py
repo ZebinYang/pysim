@@ -62,7 +62,7 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
             inner = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer[idx], wspace=0.1, hspace=0.25, height_ratios=[4, 1])
             ax1 = plt.Subplot(fig, inner[0]) 
             xgrid = np.linspace(model.shape_fit_.xmin, model.shape_fit_.xmax, 100).reshape([-1, 1])
-            ygrid = self.shape_fit_.predict(xgrid)
+            ygrid = model.shape_fit_.predict(xgrid)
             ax1.plot(xgrid, ygrid)
             if idx == 0:
                 ax1.set_title("Shape Function", fontsize=12)
@@ -73,7 +73,7 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
             ax2 = plt.Subplot(fig, inner[1]) 
             active_beta = []
             active_beta_inx = []
-            for idx, beta in enumerate(self.beta_.ravel()):
+            for idx, beta in enumerate(model.beta_.ravel()):
                 if np.abs(beta) > 0:
                     active_beta.append(beta)
                     active_beta_inx.append(idx)
