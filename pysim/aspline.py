@@ -122,7 +122,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
         w = np.ones([self.knot_num], dtype=np.float32) 
         W = np.diag(w)
 
-        tempy = y.ravel().copy()
+        tempy = y.copy()
         tempy[tempy==0] = 0.01
         tempy[tempy==1] = 0.99
         update_a = np.dot(np.linalg.pinv(np.dot(init_basis.T, init_basis)), np.dot(init_basis.T, self.inv_link(tempy)))
@@ -158,7 +158,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
         selected_basis = np.asarray(build_design_matrices([self.selected_xphi_.design_info],
                           {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
 
-        tempy = y.ravel().copy()
+        tempy = y.copy()
         basis = selected_basis.copy()
         tempy[tempy==0] = 0.01
         tempy[tempy==1] = 0.99

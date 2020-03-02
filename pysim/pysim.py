@@ -165,7 +165,7 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
             if (self.beta_[np.abs(self.beta_) > 0][0] < 0):
                 self.beta_ = - self.beta_
         xb = np.dot(x, self.beta_)
-        self._estimate_shape(xb, y, sample_weight, xmin=np.min(xb), xmax=np.max(xb))
+        self._estimate_shape(xb, y.ravel(), sample_weight, xmin=np.min(xb), xmax=np.max(xb))
         return self
 
     def _predict(self, x):
