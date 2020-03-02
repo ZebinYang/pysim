@@ -50,7 +50,7 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
 
     def visualize(self, cols_per_row=3):
 
-        check_is_fitted(self, "")
+        check_is_fitted(self, "sim_estimators_")
 
         idx = 0
         max_ids = len(self.sim_estimators_)
