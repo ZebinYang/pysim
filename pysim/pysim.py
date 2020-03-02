@@ -165,9 +165,7 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
             if (self.beta_[np.abs(self.beta_) > 0][0] < 0):
                 self.beta_ = - self.beta_
         xb = np.dot(x, self.beta_)
-        self.xmin_ = np.min(xb)
-        self.xmax_ = np.max(xb)
-        self._estimate_shape(xb, y, sample_weight)
+        self._estimate_shape(xb, y, sample_weight, xmin=np.min(xb), xmax=np.max(xb))
         return self
 
     def _predict(self, x):
@@ -199,7 +197,7 @@ class SIMRegressor(BaseSIM, RegressorMixin):
             y = column_or_1d(y, warn=True)
         return x, y
 
-    def _estimate_shape(self, x, y, sample_weight=None):
+    def _estimate_shape(self, x, y, sample_weight=None, xmin=-1, xmax=1):
 
         if self.spline == "a_spline":
             #adaptive spline
@@ -254,12 +252,12 @@ class SIMClassifier(BaseSIM, ClassifierMixin):
         y = self._label_binarizer.transform(y)
         return x, y
 
-    def _estimate_shape(self, x, y, sample_weight=None):
+    def _estimate_shape(self, x, y, sample_weight=None, xmin=-1, xmax=1):
 
         if self.spline == "a_spline":
             #adaptive spline
             self.shape_fit_ = ASplineClassifier(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
-                             xmin=self.xmin_, xmax=self.xmax_, degree=self.degree)
+                             xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
 
         elif self.spline == "p_spline":

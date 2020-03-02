@@ -68,9 +68,9 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
             W = np.diag(update_w.reshape([-1]))
 
         self.selected_knots_ = list(np.array(knots)[np.reshape(update_w * np.dot(D, update_a) ** 2 > self.threshold, [-1])])
-        self.selected_xphi = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1", 
+        self.selected_xphi_ = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1", 
                {"x": [self.xmin, self.xmax], "knots": self.selected_knots_, "degree": self.degree})
-        selected_basis = np.asarray(build_design_matrices([self.selected_xphi.design_info],
+        selected_basis = np.asarray(build_design_matrices([self.selected_xphi_.design_info],
                           {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
         seBB = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), selected_basis, axes=([0], [0]))
         seBY = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), y, axes=([0], [0]))
@@ -83,7 +83,7 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
         x = x.copy()
         x[x < self.xmin] = self.xmin
         x[x > self.xmax] = self.xmax
-        design_matrix = np.asarray(build_design_matrices([self.selected_xphi.design_info],
+        design_matrix = np.asarray(build_design_matrices([self.selected_xphi_.design_info],
                                   {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
         pred = np.dot(design_matrix, self.coef_)
         return pred
@@ -153,9 +153,9 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
             W = np.diag(update_w.reshape([-1]))
 
         self.selected_knots_ = list(np.array(knots)[np.reshape(update_w * np.dot(D, update_a) ** 2 > self.threshold, [-1])])
-        self.selected_xphi = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1", 
+        self.selected_xphi_ = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1", 
                {"x": [self.xmin, self.xmax], "knots": self.selected_knots_, "degree": self.degree})
-        selected_basis = np.asarray(build_design_matrices([self.selected_xphi.design_info],
+        selected_basis = np.asarray(build_design_matrices([self.selected_xphi_.design_info],
                           {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
 
         tempy = y.copy()
@@ -188,7 +188,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
         x = x.copy()
         x[x < self.xmin] = self.xmin
         x[x > self.xmax] = self.xmax
-        design_matrix = np.asarray(build_design_matrices([self.selected_xphi.design_info],
+        design_matrix = np.asarray(build_design_matrices([self.selected_xphi_.design_info],
                                          {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
         pred = np.dot(design_matrix, self.coef_)
         return pred
