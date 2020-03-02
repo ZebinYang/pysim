@@ -116,8 +116,8 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
     
     def visualize(self):
 
-        fig = plt.figure(figsize=(14, 4))
-        visu = gridspec.GridSpec(1, 2, wspace=0.25, hspace=0.1)
+        fig = plt.figure(figsize=(12, 4))
+        visu = gridspec.GridSpec(1, 2, wspace=0.15, hspace=0.1)
         ax1 = plt.Subplot(fig, visu[0]) 
         xgrid = np.linspace(self.xmin_, self.xmax_, 100).reshape([-1, 1])
         ygrid = self.shape_fit_.predict(xgrid)
@@ -136,10 +136,6 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
         rects = ax2.barh(np.arange(len(active_beta)), [beta for beta,_ in sorted(zip(active_beta, active_beta_inx))])
         ax2.set_yticks(np.arange(len(active_beta)))
         ax2.set_yticklabels(["X" + str(idx + 1) for _, idx in sorted(zip(active_beta, active_beta_inx))])
-        for rect in rects:
-            _, height = rect.get_xy()
-            ax2.text(rect.get_x() + rect.get_width() + 0.005, height + 0.3,
-                    "%0.3f" % (rect.get_width()))
         ax2.set_xlim(np.min(active_beta) - 0.1, np.max(active_beta) + 0.1)
         ax2.set_ylim(-1, len(active_beta_inx))
         ax2.set_title("Projection Indice", fontsize=12)
