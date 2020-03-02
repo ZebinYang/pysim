@@ -197,7 +197,7 @@ class SIMRegressor(BaseSIM, RegressorMixin):
         x, y = check_X_y(x, y, accept_sparse=['csr', 'csc', 'coo'],
                          multi_output=True, y_numeric=True)
         if y.ndim == 2 and y.shape[1] == 1:
-            y = column_or_1d(y, warn=True)
+            y = column_or_1d(y, warn=False)
         return x, y
 
     def _estimate_shape(self, x, y, sample_weight=None, xmin=-1, xmax=1):
@@ -246,7 +246,7 @@ class SIMClassifier(BaseSIM, ClassifierMixin):
         x, y = check_X_y(x, y, accept_sparse=['csr', 'csc', 'coo'],
                          multi_output=True)
         if y.ndim == 2 and y.shape[1] == 1:
-            y = column_or_1d(y, warn=True)
+            y = column_or_1d(y, warn=False)
 
         self._label_binarizer = LabelBinarizer()
         self._label_binarizer.fit(y)
