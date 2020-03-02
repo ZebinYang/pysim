@@ -86,7 +86,7 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
             ax2.set_ylim(-1, len(active_beta_inx))
             if indice == 0:
                 ax2.set_title("Projection Indice", fontsize=12)
-                    fig.add_subplot(ax2)
+            fig.add_subplot(ax2)
         plt.show()
 
     def _predict(self, x):
