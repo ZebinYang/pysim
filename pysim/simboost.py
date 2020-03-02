@@ -48,6 +48,51 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
         if self.early_stop_thres <= 0:
             raise ValueError("early_stop_thres must be > 0, got %s." % self.early_stop_thres)
 
+    def visualize(self, cols_per_row=3):
+
+        check_is_fitted(self, "beta_")
+        check_is_fitted(self, "shape_fit_")
+
+        idx = 0
+        max_ids = len(model_list)
+        fig = plt.figure(figsize=(6 * cols_per_row, 4.6 * int(np.ceil(max_ids / cols_per_row))))
+        outer = gridspec.GridSpec(int(np.ceil(max_ids / cols_per_row)), cols_per_row, wspace=0.25, hspace=0.2)
+        for indice, model in enumerate(self.sim_estimators_):
+
+            inner = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer[idx], wspace=0.1, hspace=0.25, height_ratios=[4, 1])
+            ax1 = plt.Subplot(fig, inner[0]) 
+            xgrid = np.linspace(model.shape_fit_.xmin, model.shape_fit_.xmax, 100).reshape([-1, 1])
+            ygrid = self.shape_fit_.predict(xgrid)
+            ax1.plot(xgrid, ygrid)
+            if idx == 0:
+                ax1.set_title("Shape Function", fontsize=12)
+            ax1.text(0.25, 0.9, 'IR: ' + str(np.round(100 * self.importance_ratio_[indice], 2)) + "%",
+                  fontsize=24, horizontalalignment='center', verticalalignment='center', transform=ax1.transAxes)
+            fig.add_subplot(ax1)
+
+            ax2 = plt.Subplot(fig, inner[1]) 
+            active_beta = []
+            active_beta_inx = []
+            for idx, beta in enumerate(self.beta_.ravel()):
+                if np.abs(beta) > 0:
+                    active_beta.append(beta)
+                    active_beta_inx.append(idx)
+
+            rects = ax2.barh(np.arange(len(active_beta)), [beta for beta,_ in sorted(zip(active_beta, active_beta_inx))])
+            ax2.set_yticks(np.arange(len(active_beta)))
+            ax2.set_yticklabels(["X" + str(idx + 1) for _, idx in sorted(zip(active_beta, active_beta_inx))])
+            ax2.set_xlim(np.min(active_beta) - 0.1, np.max(active_beta) + 0.1)
+            ax2.set_ylim(-1, len(active_beta_inx))
+            if idx == 0:
+                ax2.set_title("Projection Indice", fontsize=12)
+            fig.add_subplot(ax2)
+            idx = idx + 1
+
+
+        ax2 = plt.Subplot(fig, visu[1]) 
+        fig.add_subplot(ax2)
+        plt.show()
+
     def _predict(self, x):
 
         check_is_fitted(self, "sim_estimators_")
@@ -56,12 +101,12 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
             pred += sim_clf.predict(x)
         return pred
 
-            
+
 class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, random_state=0):
 
-        super(SIMLogitBoostRegressor, self).__init__(n_estimators=n_estimators,
+        super(SIMBoostRegressor, self).__init__(n_estimators=n_estimators,
                                                      val_ratio=val_ratio,
                                                      early_stop_thres=early_stop_thres,
                                                      random_state=random_state)
@@ -91,10 +136,12 @@ class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
 
         pred_train = 0 
         pred_val = 0
+        z = y.ravel().copy()
+
         mse_opt = np.inf
         self.time_cost_ = 0
         self.sim_estimators_ = []
-        z = y.ravel().copy()
+        self.importance_ratio_ = []
         for i in range(self.n_estimators):
 
             # fit SIM model
@@ -126,7 +173,11 @@ class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
             pred_train += model.predict(x[idx1, :]).reshape([-1, 1])
             pred_val += model.predict(x[idx2, :]).reshape([-1, 1])
             z = z - model.predict(x)
+            
             self.sim_estimators_.append(model)
+            xgrid = np.linspace(self.shape_fit_.xmin, self.shape_fit_.xmax, 100).reshape([-1, 1])
+            ygrid = model.shape_fit_.predict(xgrid)
+            self.importance_ratio_.append(np.std(ygrid))
 
         self.betas_ = np.array([model.beta_.flatten() for model in self.sim_estimators_])
         self.ortho_measure_ = np.linalg.norm(np.dot(self.betas_, self.betas_.T) - np.eye(self.betas_.shape[0]))
@@ -180,12 +231,13 @@ class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
 
         pred_train = 0 
         pred_val = 0
-        roc_auc_opt = -np.inf
         probs = 0.5 * np.ones(n_samples)
         sample_weight = 1 / n_samples * np.ones(n_samples)
 
+        roc_auc_opt = -np.inf
         self.time_cost_ = 0
         self.sim_estimators_ = []
+        self.importance_ratio_ = []
         for i in range(self.n_estimators):
 
             sample_weight = probs * (1 - probs)
@@ -226,6 +278,9 @@ class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
             pred_val += 0.5 * model.predict(x[idx2, :])
             probs = 1 / (1 + np.exp(-2 * np.hstack([pred_train, pred_val])))
             self.sim_estimators_.append(model)
+            xgrid = np.linspace(self.shape_fit_.xmin, self.shape_fit_.xmax, 100).reshape([-1, 1])
+            ygrid = model.shape_fit_.predict_(xgrid)
+            self.importance_ratio_.append(np.std(ygrid))
 
         self.betas_ = np.array([model.beta_.flatten() for model in self.sim_estimators_])
         self.ortho_measure_ = np.linalg.norm(np.dot(self.betas_, self.betas_.T) - np.eye(self.betas_.shape[0]))
