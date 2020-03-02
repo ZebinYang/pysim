@@ -55,16 +55,16 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
 
         idx = 0
         max_ids = len(self.sim_estimators_)
-        fig = plt.figure(figsize=(12, 4.5 * max_ids))
-        outer = gridspec.GridSpec(max_ids + 1, 2, wspace=0.25, hspace=0.2)
-        for indice, model in enumerate(self.sim_estimators_):
+        fig = plt.figure(figsize=(12, 4.2 * max_ids))
+        outer = gridspec.GridSpec(max_ids, 1, hspace=0.2)
+        for indice, model in enumerate(clf.sim_estimators_):
 
-            inner = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=outer[idx], wspace=0.1, hspace=0.25)
+            inner = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=outer[indice], wspace=0.15)
             ax1 = plt.Subplot(fig, inner[0]) 
             xgrid = np.linspace(model.shape_fit_.xmin, model.shape_fit_.xmax, 100).reshape([-1, 1])
             ygrid = model.shape_fit_.predict(xgrid)
             ax1.plot(xgrid, ygrid)
-            if idx == 0:
+            if indice == 0:
                 ax1.set_title("Shape Function", fontsize=12)
             ax1.text(0.25, 0.9, 'IR: ' + str(np.round(100 * self.importance_ratio_[indice], 2)) + "%",
                   fontsize=24, horizontalalignment='center', verticalalignment='center', transform=ax1.transAxes)
@@ -78,15 +78,15 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
                     active_beta.append(beta)
                     active_beta_inx.append(idx)
 
-            rects = ax2.barh(np.arange(len(active_beta)), [beta for beta,_ in sorted(zip(active_beta, active_beta_inx))])
+            rects = ax2.barh(np.arange(len(active_beta)),
+                        [model.beta_.ravel()[idx] for _, idx in sorted(zip(np.abs(active_beta), active_beta_inx))])
             ax2.set_yticks(np.arange(len(active_beta)))
-            ax2.set_yticklabels(["X" + str(idx + 1) for _, idx in sorted(zip(active_beta, active_beta_inx))])
+            ax2.set_yticklabels(["X" + str(idx + 1) for _, idx in sorted(zip(np.abs(active_beta), active_beta_inx))])
             ax2.set_xlim(np.min(active_beta) - 0.1, np.max(active_beta) + 0.1)
             ax2.set_ylim(-1, len(active_beta_inx))
-            if idx == 0:
+            if indice == 0:
                 ax2.set_title("Projection Indice", fontsize=12)
-            fig.add_subplot(ax2)
-            idx = idx + 1
+                    fig.add_subplot(ax2)
         plt.show()
 
     def _predict(self, x):

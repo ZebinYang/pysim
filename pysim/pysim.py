@@ -120,7 +120,7 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
         check_is_fitted(self, "shape_fit_")
 
         fig = plt.figure(figsize=(12, 4))
-        visu = gridspec.GridSpec(1, 2, wspace=0.15, hspace=0.1)
+        visu = gridspec.GridSpec(1, 2, wspace=0.15)
         ax1 = plt.Subplot(fig, visu[0]) 
         xgrid = np.linspace(self.shape_fit_.xmin, self.shape_fit_.xmax, 100).reshape([-1, 1])
         ygrid = self.shape_fit_.predict(xgrid)
@@ -136,9 +136,10 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
                 active_beta.append(beta)
                 active_beta_inx.append(idx)
 
-        rects = ax2.barh(np.arange(len(active_beta)), [beta for beta,_ in sorted(zip(active_beta, active_beta_inx))])
+        rects = ax2.barh(np.arange(len(active_beta)),
+                    [self.beta_.ravel()[idx] for _, idx in sorted(zip(np.abs(active_beta), active_beta_inx))])
         ax2.set_yticks(np.arange(len(active_beta)))
-        ax2.set_yticklabels(["X" + str(idx + 1) for _, idx in sorted(zip(active_beta, active_beta_inx))])
+        ax2.set_yticklabels(["X" + str(idx + 1) for _, idx in sorted(zip(np.abs(active_beta), active_beta_inx))])
         ax2.set_xlim(np.min(active_beta) - 0.1, np.max(active_beta) + 0.1)
         ax2.set_ylim(-1, len(active_beta_inx))
         ax2.set_title("Projection Indice", fontsize=12)
