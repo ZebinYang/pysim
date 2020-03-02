@@ -159,7 +159,7 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
     def _predict(self, x):
 
         check_is_fitted(self, "beta_")
-        check_is_fitted(self, "link_fit_")
+        check_is_fitted(self, "shape_fit_")
         xb = np.dot(x, self.beta_)
         pred = self.link_fit_.predict(xb)
         return pred
@@ -211,8 +211,6 @@ class SIMRegressor(BaseSIM, RegressorMixin):
 
     def predict(self, x):
 
-        check_is_fitted(self, "beta_")
-        check_is_fitted(self, "link_fit_")
         pred = self._predict(x)
         return pred
 
@@ -268,15 +266,11 @@ class SIMClassifier(BaseSIM, ClassifierMixin):
 
     def predict_proba(self, x):
 
-        check_is_fitted(self, "beta_")
-        check_is_fitted(self, "link_fit_")
         pred_proba_inv = self._predict(x)
         pred_proba = 1 / (1 + np.exp(- pred_proba_inv))
         return pred_proba
 
     def predict(self, x):
 
-        check_is_fitted(self, "beta_")
-        check_is_fitted(self, "link_fit_")
         pred_proba = self.predict_proba(x)
         return self._label_binarizer.inverse_transform(pred_proba)
