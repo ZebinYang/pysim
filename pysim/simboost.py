@@ -175,7 +175,7 @@ class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
             z = z - model.predict(x)
             
             self.sim_estimators_.append(model)
-            xgrid = np.linspace(self.shape_fit_.xmin, self.shape_fit_.xmax, 100).reshape([-1, 1])
+            xgrid = np.linspace(model.shape_fit_.xmin, model.shape_fit_.xmax, 100).reshape([-1, 1])
             ygrid = model.shape_fit_.predict(xgrid)
             self.importance_ratio_.append(np.std(ygrid))
 
@@ -278,8 +278,8 @@ class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
             pred_val += 0.5 * model.predict(x[idx2, :])
             probs = 1 / (1 + np.exp(-2 * np.hstack([pred_train, pred_val])))
             self.sim_estimators_.append(model)
-            xgrid = np.linspace(self.shape_fit_.xmin, self.shape_fit_.xmax, 100).reshape([-1, 1])
-            ygrid = model.shape_fit_.predict_(xgrid)
+            xgrid = np.linspace(model.shape_fit_.xmin, model.shape_fit_.xmax, 100).reshape([-1, 1])
+            ygrid = model.shape_fit_.predict(xgrid)
             self.importance_ratio_.append(np.std(ygrid))
 
         self.betas_ = np.array([model.beta_.flatten() for model in self.sim_estimators_])
