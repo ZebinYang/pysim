@@ -146,9 +146,9 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
                 basis = basis[mask,:]
             
                 BB = np.tensordot(basis * omega.reshape([-1, 1]), basis, axes=([0], [0]))
-                left_ = np.linalg.pinv(BB + self.reg_gamma * D.T.dot(W).dot(D))
+                left = np.linalg.pinv(BB + self.reg_gamma * D.T.dot(W).dot(D))
                 right = BB.dot(update_a) + basis.T.dot(tempy - mu)
-                update_a = left_.dot(right)
+                update_a = np.dot(left, right)
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
             W = np.diag(update_w.reshape([-1]))
 
@@ -171,13 +171,14 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
             mask = mask.ravel()
             if np.sum(mask) == 0:
                 break
-            tempy = tempy[mask] # update
-            lp = lp[mask] # update
-            mu = mu[mask] # update
-            omega = np.diag(omega[mask]) # update
+            tempy = tempy[mask] 
+            lp = lp[mask] 
+            mu = mu[mask] 
+            omega = omega[mask]
             basis = basis[mask,:]
-            left_ = np.linalg.pinv(basis.T.dot(omega).dot(basis))
-            right = basis.T.dot(omega.dot(basis).dot(self.coef_) + tempy - mu)
+            BB = np.tensordot(basis * omega.reshape([-1, 1]), basis, axes=([0], [0]))
+            left_ = np.linalg.pinv(BB)
+            right = BB.dot(self.coef_) + basis.T.dot(tempy - mu)
             self.coef_ = left_.dot(right)
         return self
     
