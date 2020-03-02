@@ -104,9 +104,9 @@ class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, random_state=0):
 
         super(SIMBoostRegressor, self).__init__(n_estimators=n_estimators,
-                                                     val_ratio=val_ratio,
-                                                     early_stop_thres=early_stop_thres,
-                                                     random_state=random_state)
+                                   val_ratio=val_ratio,
+                                   early_stop_thres=early_stop_thres,
+                                   random_state=random_state)
 
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=['csr', 'csc', 'coo'],
@@ -144,9 +144,9 @@ class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
             # fit SIM model
             param_grid = {"method": ["second_order", 'first_order']}
             grid = GridSearchCV(SIMRegressor(degree=2, knot_num=20, spline="a_spline", reg_lambda=0.1, reg_gamma=10,
-                                             random_state=self.random_state), 
-                                scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
-                                cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
+                                  random_state=self.random_state), 
+                         scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
+                         cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             # time
             start = time.time()
             grid.fit(x, z, sample_weight=sample_weight)
@@ -194,9 +194,9 @@ class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, random_state=0):
 
         super(SIMLogitBoostClassifier, self).__init__(n_estimators=n_estimators,
-                                                      val_ratio=val_ratio,
-                                                      early_stop_thres=early_stop_thres,
-                                                      random_state=random_state)
+                                       val_ratio=val_ratio,
+                                       early_stop_thres=early_stop_thres,
+                                       random_state=random_state)
 
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=['csr', 'csc', 'coo'],
@@ -249,9 +249,9 @@ class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
             # fit SIM model
             param_grid = {"method": ["second_order", 'first_order']}
             grid = GridSearchCV(SIMRegressor(degree=2, knot_num=20, spline="a_spline", reg_lambda=0.1, reg_gamma=10,
-                                    random_state=self.random_state), 
-                                scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
-                                cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
+                                  random_state=self.random_state), 
+                          scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
+                          cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             # time
             start = time.time()
             grid.fit(x, z, sample_weight=sample_weight)
