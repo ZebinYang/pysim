@@ -249,7 +249,7 @@ class SIMClassifier(BaseSIM, ClassifierMixin):
         self._label_binarizer.fit(y)
         self.classes_ = self._label_binarizer.classes_
 
-        y = self._label_binarizer.transform(y)
+        y = self._label_binarizer.transform(y) * 1.0
         return x, y
 
     def _estimate_shape(self, x, y, sample_weight=None, xmin=-1, xmax=1):
