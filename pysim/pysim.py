@@ -116,6 +116,7 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
     
     def visualize(self):
 
+        fig = plt.figure(figsize=(6, 4))
         visu = gridspec.GridSpec(2, 1, wspace=0.1, hspace=0.25)
         ax1 = plt.Subplot(fig, visu[0]) 
         xgrid = np.linspace(self.xmin_, self.xmax_, 100).reshape([-1, 1])
