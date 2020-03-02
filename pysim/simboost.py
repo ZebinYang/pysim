@@ -50,10 +50,10 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
 
     def visualize(self, cols_per_row=3):
 
-        check_is_fitted(self, "sim_estimators_")
+        check_is_fitted(self, "")
 
         idx = 0
-        max_ids = len(model_list)
+        max_ids = len(self.sim_estimators_)
         fig = plt.figure(figsize=(6 * cols_per_row, 4.6 * int(np.ceil(max_ids / cols_per_row))))
         outer = gridspec.GridSpec(int(np.ceil(max_ids / cols_per_row)), cols_per_row, wspace=0.25, hspace=0.2)
         for indice, model in enumerate(self.sim_estimators_):
