@@ -45,7 +45,7 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
     def _validate_hyperparameters(self):
         
         if self.method not in ["first_order", "second_order", "first_order_thres"]:
-            raise ValueError("method must be an element of [a_spline, p_sline, p_spline_mono], got %s." % self.method)
+            raise ValueError("method must be an element of [first_order, second_order, first_order_thres], got %s." % self.method)
         
         if self.spline not in ["a_spline", "p_sline", "p_spline_mono"]:
             raise ValueError("spline must be an element of [a_spline, p_sline, p_spline_mono], got %s." % self.spline)
