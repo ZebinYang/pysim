@@ -50,8 +50,7 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
 
     def visualize(self, cols_per_row=3):
 
-        check_is_fitted(self, "beta_")
-        check_is_fitted(self, "shape_fit_")
+        check_is_fitted(self, "sim_estimators_")
 
         idx = 0
         max_ids = len(model_list)
@@ -96,6 +95,7 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
     def _predict(self, x):
 
         check_is_fitted(self, "sim_estimators_")
+        
         pred = 0
         for sim_clf in self.sim_estimators_:
             pred += sim_clf.predict(x)
