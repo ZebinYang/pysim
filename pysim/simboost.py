@@ -138,7 +138,7 @@ class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
         mse_opt = np.inf
         self.time_cost_ = 0
         self.sim_estimators_ = []
-        self.importance_ratio_ = []
+        self.sim_importance_ = []
         for i in range(self.n_estimators):
 
             # fit SIM model
@@ -174,8 +174,9 @@ class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
             self.sim_estimators_.append(model)
             xgrid = np.linspace(model.shape_fit_.xmin, model.shape_fit_.xmax, 100).reshape([-1, 1])
             ygrid = model.shape_fit_.predict(xgrid)
-            self.importance_ratio_.append(np.std(ygrid))
-
+            self.sim_importance_.append(np.std(ygrid))
+        
+        self.importance_ratio_ = self.sim_importance_ / np.sum(self.sim_importance_)
         self.betas_ = np.array([model.beta_.flatten() for model in self.sim_estimators_])
         self.ortho_measure_ = np.linalg.norm(np.dot(self.betas_, self.betas_.T) - np.eye(self.betas_.shape[0]))
 
@@ -234,7 +235,7 @@ class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
         roc_auc_opt = -np.inf
         self.time_cost_ = 0
         self.sim_estimators_ = []
-        self.importance_ratio_ = []
+        self.sim_importance_ = []
         for i in range(self.n_estimators):
 
             sample_weight = probs * (1 - probs)
@@ -277,8 +278,9 @@ class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
             self.sim_estimators_.append(model)
             xgrid = np.linspace(model.shape_fit_.xmin, model.shape_fit_.xmax, 100).reshape([-1, 1])
             ygrid = model.shape_fit_.predict(xgrid)
-            self.importance_ratio_.append(np.std(ygrid))
-
+            self.sim_importance_.append(np.std(ygrid))
+        
+        self.importance_ratio_ = self.sim_importance_ / np.sum(self.sim_importance_)
         self.betas_ = np.array([model.beta_.flatten() for model in self.sim_estimators_])
         self.ortho_measure_ = np.linalg.norm(np.dot(self.betas_, self.betas_.T) - np.eye(self.betas_.shape[0]))
 
