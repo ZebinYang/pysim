@@ -118,7 +118,7 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
         visu = gridspec.GridSpec(2, 1, wspace=0.1, hspace=0.25)
         ax1 = plt.Subplot(fig, visu[0]) 
         xgrid = np.linspace(self.xmin_, self.xmax_, 100).reshape([-1, 1])
-        ygrid = self.link_fit_.predict(xgrid)
+        ygrid = self.shape_fit_.predict(xgrid)
         ax1.plot(xgrid, ygrid)
         ax1.set_title("Shape Function", fontsize=12)
         fig.add_subplot(ax1)
@@ -161,7 +161,7 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
         check_is_fitted(self, "beta_")
         check_is_fitted(self, "shape_fit_")
         xb = np.dot(x, self.beta_)
-        pred = self.link_fit_.predict(xb)
+        pred = self.shape_fit_.predict(xb)
         return pred
 
 
