@@ -116,8 +116,8 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
     
     def visualize(self):
 
-        fig = plt.figure(figsize=(6, 4))
-        visu = gridspec.GridSpec(2, 1, wspace=0.1, hspace=0.25)
+        fig = plt.figure(figsize=(10, 4))
+        visu = gridspec.GridSpec(1, 2, wspace=0.1, hspace=0.25)
         ax1 = plt.Subplot(fig, visu[0]) 
         xgrid = np.linspace(self.xmin_, self.xmax_, 100).reshape([-1, 1])
         ygrid = self.shape_fit_.predict(xgrid)
@@ -126,7 +126,23 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
         fig.add_subplot(ax1)
 
         ax2 = plt.Subplot(fig, visu[1]) 
-        ax2.bar(["X" + str(i + 1) for i in range(len(self.beta_))], self.beta_.ravel())
+        active_beta = []
+        active_beta_inx = []
+        for idx, beta in enumerate(self.beta_.ravel()):
+            if np.abs(beta) > 0:
+                active_beta.append(beta)
+                active_beta_inx.append(idx)
+
+        rects = ax.barh(np.arange(len(active_beta)), [beta for beta,_ in sorted(zip(active_beta, active_beta_inx))])
+        ax.set_yticks(np.arange(len(active_beta)))
+        ax.set_yticklabels(["X" + str(idx + 1) for _, idx in sorted(zip(active_beta, active_beta_inx))])
+        for rect in rects:
+            _, height = rect.get_xy()
+            ax.text(rect.get_x() + rect.get_width() + 0.005, height + 0.3,
+                    "%0.3f" % (rect.get_width()))
+        ax2.set_xlim(0, np.max(active_beta) + 0.05)
+        ax2.set_ylim(-1, len(active_beta_inx))
+        ax2.set_title("Projection Indice", fontsize=12)
         fig.add_subplot(ax2)
         plt.show()
 
