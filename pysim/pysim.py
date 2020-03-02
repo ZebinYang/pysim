@@ -116,10 +116,13 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
     
     def visualize(self):
 
+        check_is_fitted(self, "beta_")
+        check_is_fitted(self, "shape_fit_")
+
         fig = plt.figure(figsize=(12, 4))
         visu = gridspec.GridSpec(1, 2, wspace=0.15, hspace=0.1)
         ax1 = plt.Subplot(fig, visu[0]) 
-        xgrid = np.linspace(self.xmin_, self.xmax_, 100).reshape([-1, 1])
+        xgrid = np.linspace(self.shape_fit_.xmin, self.shape_fit_.xmax, 100).reshape([-1, 1])
         ygrid = self.shape_fit_.predict(xgrid)
         ax1.plot(xgrid, ygrid)
         ax1.set_title("Shape Function", fontsize=12)
@@ -258,7 +261,7 @@ class SIMClassifier(BaseSIM, ClassifierMixin):
             #adaptive spline
             self.shape_fit_ = ASplineClassifier(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
                              xmin=xmin, xmax=xmax, degree=self.degree)
-            self.shape_fit_.fit(x, y.ravel(), sample_weight)
+            self.shape_fit_.fit(x, y, sample_weight)
 
         elif self.spline == "p_spline":
             #penalized spline
