@@ -49,14 +49,14 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
         if self.early_stop_thres <= 0:
             raise ValueError("early_stop_thres must be > 0, got %s." % self.early_stop_thres)
 
-    def visualize(self, cols_per_row=3):
+    def visualize(self):
 
         check_is_fitted(self, "sim_estimators_")
 
         idx = 0
         max_ids = len(self.sim_estimators_)
-        fig = plt.figure(figsize=(6 * cols_per_row, 4.6 * int(np.ceil(max_ids / cols_per_row))))
-        outer = gridspec.GridSpec(int(np.ceil(max_ids / cols_per_row)), cols_per_row, wspace=0.25, hspace=0.2)
+        fig = plt.figure(figsize=(12, 4.5 * max_ids))
+        outer = gridspec.GridSpec(max_ids, 2, wspace=0.25, hspace=0.2)
         for indice, model in enumerate(self.sim_estimators_):
 
             inner = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer[idx], wspace=0.1, hspace=0.25, height_ratios=[4, 1])
@@ -87,10 +87,6 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
                 ax2.set_title("Projection Indice", fontsize=12)
             fig.add_subplot(ax2)
             idx = idx + 1
-
-
-        ax2 = plt.Subplot(fig, visu[1]) 
-        fig.add_subplot(ax2)
         plt.show()
 
     def _predict(self, x):
