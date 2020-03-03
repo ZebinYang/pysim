@@ -367,12 +367,7 @@ class SIMAdaBoostClassifier(BaseSIMBooster, ClassifierMixin):
 
         roc_auc_opt = -np.inf
         self.estimators_ = []
-        sample_weight = 1 / n_samples * np.ones(n_samples)
         for i in range(self.n_estimators):
-
-            sample_weight = probs * (1 - probs)
-            sample_weight /= np.sum(sample_weight)
-            sample_weight = np.maximum(sample_weight, 2 * np.finfo(np.float64).eps)
 
             # fit SIM estimator
             param_grid = {"method": ["second_order", 'first_order']}
