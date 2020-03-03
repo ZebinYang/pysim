@@ -50,11 +50,11 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("early_stop_thres must be > 0, got %s." % self.early_stop_thres)
 
     @property
-    def estimator_importances_(self):
-        """Return the estimator importances (the higher, the more important the feature).
+    def importance_ratios_(self):
+        """Return the estimator importance ratios (the higher, the more important the feature).
         Returns
         -------
-        estimator_importances_ : ndarray of shape (n_estimators,)
+        importance_ratios_ : ndarray of shape (n_estimators,)
             The estimator importances.
         """
         if self.estimators_ is None or len(self.estimators_) == 0:
@@ -111,7 +111,7 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
             ax1.plot(xgrid, ygrid)
             if indice == 0:
                 ax1.set_title("Shape Function", fontsize=12)
-            ax1.text(0.25, 0.9, 'IR: ' + str(np.round(100 * self.importance_ratio_[indice], 2)) + "%",
+            ax1.text(0.25, 0.9, 'IR: ' + str(np.round(100 * self.importance_ratios_[indice], 2)) + "%",
                   fontsize=24, horizontalalignment='center', verticalalignment='center', transform=ax1.transAxes)
             fig.add_subplot(ax1)
 
