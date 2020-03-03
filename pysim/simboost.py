@@ -22,7 +22,7 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
-                 degree=2, knot_num=20, reg_gamma=0.1, reg_gamma=0.1, random_state=0):
+                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=0.1, random_state=0):
 
         self.n_estimators = n_estimators
         self.val_ratio = val_ratio
@@ -30,7 +30,7 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
         self.spline = spline
         self.degree = degree
         self.knot_num = knot_num
-        self.reg_gamma = reg_gamma
+        self.reg_lambda = reg_lambda
         self.reg_gamma = reg_gamma
         self.random_state = random_state
 
@@ -152,7 +152,7 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
 class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
-                 degree=2, knot_num=20, reg_gamma=0.1, reg_gamma=0.1, random_state=0):
+                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=0.1, random_state=0):
 
         super(SIMBoostRegressor, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
@@ -238,7 +238,7 @@ class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
 class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
-                 degree=2, knot_num=20, reg_gamma=0.1, reg_gamma=0.1, random_state=0):
+                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=0.1, random_state=0):
 
         super(SIMLogitBoostClassifier, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
@@ -346,7 +346,7 @@ class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
 class SIMAdaBoostClassifier(BaseSIMBooster, ClassifierMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
-                 degree=2, knot_num=20, reg_gamma=0.1, reg_gamma=0.1, random_state=0):
+                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=0.1, random_state=0):
 
         super(SIMAdaBoostClassifier, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
