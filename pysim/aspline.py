@@ -112,7 +112,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
         self.threshold = threshold
         self.maxiter = maxiter
         self.maxiter_irls = maxiter_irls
-        self.EPS = 10**(-5)
+        self.EPS = 10**(-8)
 
     def link(self, x):
         with np.errstate(divide='ignore', over='ignore'):
@@ -123,7 +123,9 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
             return np.log(x) - np.log(1 - x)
     
     def get_loss(self, label, pred):
-        return - np.mean(label * np.log(pred) + (1 - label) * np.log(1 - pred))
+        with np.errstate(divide='ignore', over='ignore'):
+            pred = np.clip(pred, self.EPS, 1. - self.EPS)
+            return - np.mean(label * np.log(pred) + (1 - label) * np.log(1 - pred))
         
     def fit(self, x, y, sample_weight=None):
 
