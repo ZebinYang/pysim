@@ -111,14 +111,14 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
 
     def __init__(self, knot_num=20, reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99, maxiter=10):
 
-        super(ASplineRegressor, self).__init__(knot_num=knot_num
-                                reg_gamma=reg_gamma
-                                xmin=xmin
-                                xmax=xmax
-                                degree=degree
-                                epsilon=epsilon
-                                threshold=threshold
-                                maxiter=maxiter)
+        super(ASplineRegressor, self).__init__(knot_num=knot_num,
+                                  reg_gamma=reg_gamma,
+                                  xmin=xmin,
+                                  xmax=xmax,
+                                  degree=degree,
+                                  epsilon=epsilon,
+                                  threshold=threshold,
+                                  maxiter=maxiter)
 
     @staticmethod
     def _get_loss(label, pred):
@@ -185,14 +185,14 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
     def __init__(self, knot_num=20, reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99,
                  maxiter=10, maxiter_irls=10):
 
-        super(ASplineClassifier, self).__init__(knot_num=knot_num
-                                reg_gamma=reg_gamma
-                                xmin=xmin
-                                xmax=xmax
-                                degree=degree
-                                epsilon=epsilon
-                                threshold=threshold
-                                maxiter=maxiter)
+        super(ASplineClassifier, self).__init__(knot_num=knot_num,
+                                   reg_gamma=reg_gamma,
+                                   xmin=xmin,
+                                   xmax=xmax,
+                                   degree=degree,
+                                   epsilon=epsilon,
+                                   threshold=threshold,
+                                   maxiter=maxiter)
 
         self.maxiter_irls = maxiter_irls
         self.EPS = 10**(-8)
