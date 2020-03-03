@@ -12,7 +12,7 @@ Note pysim will call the R package fps (https://github.com/vqv/fps) using rpy2 i
 
 ```python
 from pysim import SIMRegressor
-clf = SIMRegressor(method="first_order", spline="a_spline", reg_lambda=0.1, reg_gamma=0.1, knot_num=20, degree=2, random_state=0)
+clf = SIMRegressor(method="first_order", spline="a_spline", reg_lambda=0.1, reg_gamma=10, knot_num=20, degree=2, random_state=0)
 ## clf.fit(x, y)
 ```
 
@@ -36,7 +36,7 @@ clf = SIMRegressor(method="first_order", spline="a_spline", reg_lambda=0.1, reg_
 
 - reg_lambda: The regularization strength of sparsity of beta. default=0.1, from 0 to 1 
 
-- reg_gamma: The regularization strength of the spline algorithm. default=0.1, from 0 to $+\infty$
+- reg_gamma: The regularization strength of the spline algorithm. default=10, from 0 to $+\infty$
 
 - degree: The order of the spline basis. default=2
 
