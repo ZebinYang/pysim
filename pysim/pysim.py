@@ -172,7 +172,7 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
         self._estimate_shape(xb, y, sample_weight, xmin=np.min(xb), xmax=np.max(xb))
         return self
 
-    def _predict(self, x):
+    def decision_function(self, x):
 
         check_is_fitted(self, "beta_")
         check_is_fitted(self, "shape_fit_")
@@ -227,7 +227,7 @@ class SIMRegressor(BaseSIM, RegressorMixin):
 
     def predict(self, x):
 
-        pred = self._predict(x)
+        pred = self.decision_function(x)
         return pred
 
 class SIMClassifier(BaseSIM, ClassifierMixin):
@@ -282,11 +282,11 @@ class SIMClassifier(BaseSIM, ClassifierMixin):
 
     def predict_proba(self, x):
 
-        pred_proba_inv = self._predict(x)
+        pred_proba_inv = self.decision_function(x)
         pred_proba = 1 / (1 + np.exp(- pred_proba_inv))
         return pred_proba
 
     def predict(self, x):
 
         pred_proba = self.predict_proba(x)
-        return self._label_binarizer.inverse_transform(pred_proba)
+        return self._label_binarizer.inverse_transform(pred_proba).reshape([-1, 1])

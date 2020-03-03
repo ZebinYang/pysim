@@ -310,4 +310,4 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
     def predict(self, x):
 
         pred_proba = self.predict_proba(x)
-        return self._label_binarizer.inverse_transform(pred_proba)
+        return self._label_binarizer.inverse_transform(pred_proba).reshape([-1, 1])
