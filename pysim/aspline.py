@@ -289,7 +289,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
         self.coef_ = np.dot(np.linalg.pinv(seBWB), seBWY)
         for j in range(self.maxiter_irls):
             lp = np.dot(selected_basis, self.coef_)
-            mu = self.link(lp)
+            mu = self._link(lp)
             omega = mu * (1 - mu)
             mask = (np.abs(omega) >= self.EPS) * np.isfinite(omega)
             mask = mask.ravel()
