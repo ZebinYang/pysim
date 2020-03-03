@@ -17,10 +17,10 @@ from rpy2 import robjects as ro
 from rpy2.robjects import numpy2ri
 from rpy2.robjects.packages import importr
 
-utils = importr('utils')
-utils.install_packages('fps')
+utils = importr("utils")
+utils.install_packages("fps")
 
-fps = importr('fps')
+fps = importr("fps")
 numpy2ri.activate()
 
 
@@ -31,7 +31,7 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, method="first_order", spline="a_spline", reg_lambda=0.1,
-                 reg_gamma=0.1, knot_num=20, degree=2, random_state=0):
+                 reg_gamma=10, knot_num=20, degree=2, random_state=0):
 
         self.method = method
         self.spline = spline
@@ -184,7 +184,7 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
 class SIMRegressor(BaseSIM, RegressorMixin):
 
     def __init__(self, method="first_order", spline="a_spline", reg_lambda=0.1,
-                 reg_gamma=0.1, knot_num=20, degree=2, random_state=0):
+                 reg_gamma=10, knot_num=20, degree=2, random_state=0):
 
         super(SIMRegressor, self).__init__(method=method,
                                spline=spline,
@@ -195,7 +195,7 @@ class SIMRegressor(BaseSIM, RegressorMixin):
                                random_state=random_state)
 
     def _validate_input(self, x, y):
-        x, y = check_X_y(x, y, accept_sparse=['csr', 'csc', 'coo'],
+        x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True, y_numeric=True)
         if y.ndim == 2 and y.shape[1] == 1:
             y = column_or_1d(y, warn=False)
@@ -217,9 +217,9 @@ class SIMRegressor(BaseSIM, RegressorMixin):
         elif self.spline == "p_spline_mono":
             #p-spline with monotonic constraint
             shape_fit1 = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints='monotonic_inc')).fit(x, y)
+                             lam=self.reg_gamma, constraints="monotonic_inc")).fit(x, y)
             shape_fit2 = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints='monotonic_dec')).fit(x, y)
+                             lam=self.reg_gamma, constraints="monotonic_dec")).fit(x, y)
             if mean_squared_error(y.ravel(), shape_fit1.predict(x)) <= mean_squared_error(y.ravel(), shape_fit2.predict(x)):
                 self.shape_fit_ = shape_fit1
             else:
@@ -233,7 +233,7 @@ class SIMRegressor(BaseSIM, RegressorMixin):
 class SIMClassifier(BaseSIM, ClassifierMixin):
 
     def __init__(self, method="first_order", spline="a_spline", reg_lambda=0.1,
-                 reg_gamma=0.1, knot_num=20, degree=2, random_state=0):
+                 reg_gamma=10, knot_num=20, degree=2, random_state=0):
 
         super(SIMClassifier, self).__init__(method=method,
                                spline=spline,
@@ -244,7 +244,7 @@ class SIMClassifier(BaseSIM, ClassifierMixin):
                                random_state=random_state)
 
     def _validate_input(self, x, y):
-        x, y = check_X_y(x, y, accept_sparse=['csr', 'csc', 'coo'],
+        x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True)
         if y.ndim == 2 and y.shape[1] == 1:
             y = column_or_1d(y, warn=False)
@@ -272,9 +272,9 @@ class SIMClassifier(BaseSIM, ClassifierMixin):
         elif self.spline == "p_spline_mono":
             #p-spline with monotonic constraint
             shape_fit1 = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints='monotonic_inc')).fit(x, y)
+                             lam=self.reg_gamma, constraints="monotonic_inc")).fit(x, y)
             shape_fit2 = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints='monotonic_dec')).fit(x, y)
+                             lam=self.reg_gamma, constraints="monotonic_dec")).fit(x, y)
             if roc_auc_score(y.ravel(), shape_fit1.predict_proba(x)) <= roc_auc_score(y.ravel(), shape_fit2.predict_proba(x)):
                 self.shape_fit_ = shape_fit1
             else:
@@ -282,8 +282,8 @@ class SIMClassifier(BaseSIM, ClassifierMixin):
 
     def predict_proba(self, x):
 
-        pred_proba_inv = self.decision_function(x)
-        pred_proba = 1 / (1 + np.exp(- pred_proba_inv))
+        pred = self.decision_function(x)
+        pred_proba = 1 / (1 + np.exp(-pred))
         return pred_proba
 
     def predict(self, x):

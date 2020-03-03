@@ -22,7 +22,7 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=0.1, random_state=0):
+                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, random_state=0):
 
         self.n_estimators = n_estimators
         self.val_ratio = val_ratio
@@ -115,8 +115,8 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
             ax1.plot(xgrid, ygrid)
             if indice == 0:
                 ax1.set_title("Shape Function", fontsize=12)
-            ax1.text(0.25, 0.9, 'IR: ' + str(np.round(100 * self.importance_ratios_[indice], 2)) + "%",
-                  fontsize=24, horizontalalignment='center', verticalalignment='center', transform=ax1.transAxes)
+            ax1.text(0.25, 0.9, "IR: " + str(np.round(100 * self.importance_ratios_[indice], 2)) + "%",
+                  fontsize=24, horizontalalignment="center", verticalalignment="center", transform=ax1.transAxes)
             fig.add_subplot(ax1)
 
             ax2 = plt.Subplot(fig, inner[1]) 
@@ -151,7 +151,7 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
 class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=0.1, random_state=0):
+                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, random_state=0):
 
         super(SIMBoostRegressor, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
@@ -164,7 +164,7 @@ class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
                                       random_state=random_state)
 
     def _validate_input(self, x, y):
-        x, y = check_X_y(x, y, accept_sparse=['csr', 'csc', 'coo'],
+        x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True, y_numeric=True)
         if y.ndim == 2 and y.shape[1] == 1:
             y = column_or_1d(y, warn=False)
@@ -195,14 +195,14 @@ class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
         for i in range(self.n_estimators):
 
             # fit SIM estimator
-            param_grid = {"method": ["second_order", 'first_order']}
+            param_grid = {"method": ["second_order", "first_order"]}
             grid = GridSearchCV(SIMRegressor(degree=self.degree, knot_num=self.knot_num, spline=self.spline,
                                   reg_lambda=self.reg_lambda, reg_gamma=self.reg_gamma, random_state=self.random_state), 
                          scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                          cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             # time
             grid.fit(x, z, sample_weight=sample_weight)
-            estimator = grid.estimator.set_params(**grid.cv_results_['params'][np.where((grid.cv_results_['rank_test_mse'] == 1))[0][0]])
+            estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
             estimator.fit(x[idx1, :], z[idx1], sample_weight=sample_weight[idx1])
 
             # early stop
@@ -237,7 +237,7 @@ class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
 class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=0.1, random_state=0):
+                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, random_state=0):
 
         super(SIMLogitBoostClassifier, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
@@ -250,7 +250,7 @@ class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
                                       random_state=random_state)
 
     def _validate_input(self, x, y):
-        x, y = check_X_y(x, y, accept_sparse=['csr', 'csc', 'coo'],
+        x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True)
         if y.ndim == 2 and y.shape[1] == 1:
             y = column_or_1d(y, warn=False)
@@ -292,19 +292,19 @@ class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
             sample_weight /= np.sum(sample_weight)
             sample_weight = np.maximum(sample_weight, 2 * np.finfo(np.float64).eps)
 
-            with np.errstate(divide='ignore', over='ignore'):
+            with np.errstate(divide="ignore", over="ignore"):
                 z = np.where(y.ravel(), 1. / probs, -1. / (1. - probs)) 
                 z = np.clip(z, a_min=-8, a_max=8)
 
             # fit SIM estimator
-            param_grid = {"method": ["second_order", 'first_order']}
+            param_grid = {"method": ["second_order", "first_order"]}
             grid = GridSearchCV(SIMRegressor(degree=self.degree, knot_num=self.knot_num, spline=self.spline,
                                   reg_lambda=self.reg_lambda, reg_gamma=self.reg_gamma, random_state=self.random_state), 
                           scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                           cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             # time
             grid.fit(x, z, sample_weight=sample_weight)
-            estimator = grid.estimator.set_params(**grid.cv_results_['params'][np.where((grid.cv_results_['rank_test_mse'] == 1))[0][0]])
+            estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
             estimator.fit(x[idx1, :], z[idx1], sample_weight=sample_weight[idx1])
 
             # stop criterion
@@ -345,7 +345,7 @@ class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
 class SIMAdaBoostClassifier(BaseSIMBooster, ClassifierMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=0.1, random_state=0):
+                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, random_state=0):
 
         super(SIMAdaBoostClassifier, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
@@ -358,7 +358,7 @@ class SIMAdaBoostClassifier(BaseSIMBooster, ClassifierMixin):
                                       random_state=random_state)
         
     def _validate_input(self, x, y):
-        x, y = check_X_y(x, y, accept_sparse=['csr', 'csc', 'coo'],
+        x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True)
         if y.ndim == 2 and y.shape[1] == 1:
             y = column_or_1d(y, warn=False)
@@ -392,7 +392,7 @@ class SIMAdaBoostClassifier(BaseSIMBooster, ClassifierMixin):
         for i in range(self.n_estimators):
 
             # fit SIM estimator
-            param_grid = {"method": ["second_order", 'first_order']}
+            param_grid = {"method": ["second_order", "first_order"]}
             grid = GridSearchCV(SIMClassifier(degree=self.degree, knot_num=self.knot_num, spline=self.spline,
                                    reg_lambda=self.reg_lambda, reg_gamma=self.reg_gamma,
                                    random_state=self.random_state), 
@@ -400,12 +400,12 @@ class SIMAdaBoostClassifier(BaseSIMBooster, ClassifierMixin):
                           cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             # time
             grid.fit(x, y, sample_weight=sample_weight)
-            estimator = grid.estimator.set_params(**grid.cv_results_['params'][np.where((grid.cv_results_['rank_test_auc'] == 1))[0][0]])
+            estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_auc"] == 1))[0][0]])
             estimator.fit(x[idx1, :], y[idx1], sample_weight=sample_weight[idx1])
             
             y_codes = np.array([-1., 1.])
             y_coding = y_codes.take([0, 1] == y)
-            with np.errstate(divide='ignore', over='ignore'):
+            with np.errstate(divide="ignore", over="ignore"):
                 sample_weight *= np.exp(-0.5 * np.sum(y_coding * np.log(np.hstack([1 - estimator.predict_proba(x),
                                                              estimator.predict_proba(x)])), axis=1))
 

@@ -35,7 +35,7 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         n_rows = order + 2
         for _ in range(n_rows): 
             row = [1] # a starter 1 in the row
-            if results: # then we're in the second row or beyond
+            if results: # then we are in the second row or beyond
                 last_row = results[-1] # reference the previous row
                 row.extend([sum(pair) for pair in zip(last_row, last_row[1:])])
                 row.append(1)
@@ -124,7 +124,7 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
         return - np.mean((label - pred) ** 2)
 
     def _validate_input(self, x, y):
-        x, y = check_X_y(x, y, accept_sparse=['csr', 'csc', 'coo'],
+        x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True, y_numeric=True)
         if y.ndim == 2 and y.shape[1] == 1:
             y = column_or_1d(y, warn=False)
@@ -198,22 +198,22 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
 
     @staticmethod
     def _link(x):
-        with np.errstate(divide='ignore', over='ignore'):
+        with np.errstate(divide="ignore", over="ignore"):
             return 1 / (1 + np.exp(-x))
 
     @staticmethod
     def _inv_link(x):
-        with np.errstate(divide='ignore', over='ignore'):
+        with np.errstate(divide="ignore", over="ignore"):
             return np.log(x) - np.log(1 - x)
     
     @staticmethod
     def _get_loss(label, pred):
-        with np.errstate(divide='ignore', over='ignore'):
+        with np.errstate(divide="ignore", over="ignore"):
             pred = np.clip(pred, 10 ** (-8), 1. - 10 ** (-8))
             return - np.mean(label * np.log(pred) + (1 - label) * np.log(1 - pred))
        
     def _validate_input(self, x, y):
-        x, y = check_X_y(x, y, accept_sparse=['csr', 'csc', 'coo'],
+        x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True)
         if y.ndim == 2 and y.shape[1] == 1:
             y = column_or_1d(y, warn=False)
