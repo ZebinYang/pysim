@@ -62,9 +62,6 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         if self.knot_num <= 0:
             raise ValueError("knot_num must be > 0, got" % self.knot_num)
 
-        if self.reg_lambda <= 0:
-            raise ValueError("reg_lambda must be > 0, got %s." % self.reg_lambda)
-
         if self.reg_gamma <= 0:
             raise ValueError("reg_gamma must be > 0, got %s." % self.reg_gamma)
 
