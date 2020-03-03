@@ -52,14 +52,14 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
         knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
         xphi = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1",
                    {"x": [self.xmin, self.xmax], "knots": knots, "degree": self.degree})
-        basis = np.asarray(build_design_matrices([xphi.design_info],
+        init_basis = np.asarray(build_design_matrices([xphi.design_info],
                    {"x": x, "knots": knots, "degree": self.degree})[0])
         D = diff_matrix(self.degree, self.knot_num)
         w = np.ones([self.knot_num], dtype=np.float32) 
         W = np.diag(w)
 
-        BWB = np.tensordot(basis * sample_weight.reshape([-1, 1]), basis, axes=([0], [0]))
-        BWY = np.tensordot(basis * sample_weight.reshape([-1, 1]), y, axes=([0], [0]))
+        BWB = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), init_basis, axes=([0], [0]))
+        BWY = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), y, axes=([0], [0]))
         for i in range(self.maxiter):
             U = cholesky(BWB + self.reg_gamma * np.dot(np.dot(D.T, W), D))
             M = scipy.linalg.lapack.clapack.dtrtri(U)[0]
@@ -138,7 +138,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
         update_a = np.dot(np.linalg.pinv(BWB + self.reg_gamma * D.T.dot(W).dot(D)), BWY)
         for i in range(self.maxiter):
             for j in range(self.maxiter_irls):
-                lp = np.dot(basis, update_a)
+                lp = np.dot(init_basis, update_a)
                 mu = self.link(lp)
                 omega = mu * (1 - mu)
                 mask = (np.abs(omega) >= self.EPS) * np.isfinite(omega)
@@ -146,8 +146,8 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
                 if np.sum(mask) == 0:
                     break
 
-                BW = basis[mask, :] * sample_weight[mask].reshape([-1, 1])
-                BWOB = np.tensordot(BW * omega[mask].reshape([-1, 1]), basis[mask, :], axes=([0], [0]))
+                BW = init_basis[mask, :] * sample_weight[mask].reshape([-1, 1])
+                BWOB = np.tensordot(BW * omega[mask].reshape([-1, 1]), init_basis[mask, :], axes=([0], [0]))
                 update_a = np.dot(np.linalg.pinv(BWOB + self.reg_gamma * D.T.dot(W).dot(D)),
                             BWOB.dot(update_a) + np.tensordot(BW, tempy[mask] - mu[mask], axes=([0], [0])))
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
