@@ -155,7 +155,8 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
                 lp = np.dot(init_basis, update_a)
                 mu = self.link(lp)
                 omega = mu * (1 - mu)
-                mask = (np.abs(omega).ravel() >= self.EPS) * np.isfinite(omega)
+                mask = (np.abs(omega) >= self.EPS) * np.isfinite(omega)
+                mask = mask.ravel()
                 if np.sum(mask) == 0:
                     break
 
@@ -188,7 +189,8 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
             lp = np.dot(selected_basis, self.coef_)
             mu = self.link(lp)
             omega = mu * (1 - mu)
-            mask = (np.abs(omega).ravel() >= self.EPS) * np.isfinite(omega)
+            mask = (np.abs(omega) >= self.EPS) * np.isfinite(omega)
+            mask = mask.ravel()
             if np.sum(mask) == 0:
                 break
             seBW = selected_basis[mask, :] * sample_weight[mask].reshape([-1, 1])
