@@ -137,9 +137,6 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
         BWY = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), self.inv_link(tempy), axes=([0], [0]))
         update_a = np.dot(np.linalg.pinv(BWB + self.reg_gamma * D.T.dot(W).dot(D)), BWY)
         for i in range(self.maxiter):
-            tempy = y.copy()
-            basis = init_basis.copy()
-            # The original implementation of matrix inversion is very slow and so it is commented. 
             for j in range(self.maxiter_irls):
                 lp = np.dot(basis, update_a)
                 mu = self.link(lp)
