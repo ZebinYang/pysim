@@ -381,12 +381,12 @@ class SIMAdaBoostClassifier(BaseSIMBooster, ClassifierMixin):
             estimator.fit(x[idx1, :], y[idx1], sample_weight=sample_weight[idx1])
             
             y_codes = np.array([-1., 1.])
-            y_coding = y_codes.take([0, 1] == y[:, np.newaxis])
+            y_coding = y_codes.take([0, 1] == y)
             with np.errstate(divide='ignore', over='ignore'):
                 sample_weight *= np.exp(-0.5 * np.sum(y_coding * np.log(np.hstack([1 - estimator.predict_proba(x),
                                                              estimator.predict_proba(x)])), axis=1))
 
-            pred_proba = estimators_.predict_proba(x[idx2, :])
+            pred_proba = estimator.predict_proba(x[idx2, :])
             pred_proba = np.clip(pred_proba, np.finfo(pred_proba.dtype).eps, None)
             log_proba = np.log(pred_proba)
             pred_val = self.decision_function(x[idx2, :]) + (log_proba - (1. / 2) * log_proba.sum(axis=1)[:, np.newaxis])
@@ -413,8 +413,8 @@ class SIMAdaBoostClassifier(BaseSIMBooster, ClassifierMixin):
     def decision_function(self, x):
 
         pred = 0
-        for i in self.estimators_:
-            pred_proba = estimators_.predict_proba(x)
+        for estimator in self.estimators_:
+            pred_proba = estimator.predict_proba(x)
             pred_proba = np.clip(pred_proba, np.finfo(pred_proba.dtype).eps, None)
             log_proba = np.log(pred_proba)
             pred += (log_proba - (1. / 2) * log_proba.sum(axis=1)[:, np.newaxis])
