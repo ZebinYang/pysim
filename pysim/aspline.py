@@ -68,7 +68,7 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
             U = cholesky(BWB + self.reg_gamma * np.dot(np.dot(D.T, W), D))
             M = scipy.linalg.lapack.clapack.dtrtri(U)[0]
             update_a_temp = np.dot(np.dot(M, M.T.conj()), BWY)
-            new_loss = self.get_loss(y, self.link(np.dot(init_basis, update_a_temp)))
+            new_loss = self.get_loss(y, np.dot(init_basis, update_a_temp))
             if new_loss - best_loss >= 0:
                 break
             best_loss = new_loss
