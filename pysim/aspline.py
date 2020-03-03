@@ -149,7 +149,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
                 if np.sum(mask) == 0:
                     break
 
-                BW = basis[mask, :] * sample_weight[mask, :].reshape([-1, 1])
+                BW = basis[mask, :] * sample_weight[mask].reshape([-1, 1])
                 BWOB = np.tensordot(BW * omega[mask].reshape([-1, 1]), basis[mask, :], axes=([0], [0]))
                 update_a = np.dot(np.linalg.pinv(BWOB + self.reg_gamma * D.T.dot(W).dot(D)),
                             BWOB.dot(update_a) + np.tensordot(BW, tempy[mask] - mu[mask], axes=([0], [0])))
@@ -162,9 +162,6 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
         selected_basis = np.asarray(build_design_matrices([self.selected_xphi_.design_info],
                           {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
 
-        tempy = y.copy()
-        tempy[tempy==0] = 0.01
-        tempy[tempy==1] = 0.99
         seBWB = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), selected_basis, axes=([0], [0]))
         seBWY = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), self.inv_link(tempy), axes=([0], [0]))
         update_a = np.dot(np.linalg.pinv(seBWB), seBWY)
@@ -176,7 +173,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
             mask = mask.ravel()
             if np.sum(mask) == 0:
                 break
-            seBW = selected_basis[mask, :] * sample_weight[mask, :].reshape([-1, 1])
+            seBW = selected_basis[mask, :] * sample_weight[mask].reshape([-1, 1])
             seBWOB = np.tensordot(seBW * omega[mask].reshape([-1, 1]), selected_basis[mask, :], axes=([0], [0]))
             self.coef_ = np.dot(np.linalg.pinv(seBWOB),
                           seBWOB.dot(self.coef_) + np.tensordot(seBW, tempy[mask] - mu[mask], axes=([0], [0])))
