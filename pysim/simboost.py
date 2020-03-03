@@ -111,7 +111,7 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
             inner = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=outer[indice], wspace=0.15)
             ax1 = plt.Subplot(fig, inner[0]) 
             xgrid = np.linspace(estimator.shape_fit_.xmin, estimator.shape_fit_.xmax, 100).reshape([-1, 1])
-            ygrid = estimator.shape_fit_.predict(xgrid)
+            ygrid = estimator.shape_fit_.decision_function(xgrid)
             ax1.plot(xgrid, ygrid)
             if indice == 0:
                 ax1.set_title("Shape Function", fontsize=12)
