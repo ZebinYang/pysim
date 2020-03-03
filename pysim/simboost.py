@@ -282,6 +282,8 @@ class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
             ygrid = model.shape_fit_.predict(xgrid)
             self.sim_importance_.append(np.std(ygrid))
         
+        self.tr_idx = idx1
+        self.val_idx = idx2
         self.importance_ratio_ = self.sim_importance_ / np.sum(self.sim_importance_)
         self.betas_ = np.array([model.beta_.flatten() for model in self.sim_estimators_])
         self.ortho_measure_ = np.linalg.norm(np.dot(self.betas_, self.betas_.T) - np.eye(self.betas_.shape[0]))
