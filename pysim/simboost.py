@@ -372,7 +372,7 @@ class SIMAdaBoostClassifier(BaseSIMBooster, ClassifierMixin):
             if estimator_error <= 0:
                 break
             
-            estimator_weight = np.log((1 − estimator_error) / estimator_error)
+            estimator_weight = np.log((1 - estimator_error) / estimator_error)
             pred_val_temp = pred_val + model.predict(x[idx2, :])
             roc_auc_new = roc_auc_score(y[idx2], 1 / (1 + np.exp(-2 * pred_val_temp)))
 
