@@ -21,12 +21,17 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
      """
 
     @abstractmethod
-    def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, random_state=0):
+    def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
+                 degree=2, knot_num=20, reg_gamma=0.1, reg_gamma=0.1, random_state=0):
 
-        self.val_ratio = val_ratio
         self.n_estimators = n_estimators
+        self.val_ratio = val_ratio
         self.early_stop_thres = early_stop_thres
-        
+        self.spline = spline
+        self.degree = degree
+        self.knot_num = knot_num
+        self.reg_gamma = reg_gamma
+        self.reg_gamma = reg_gamma
         self.random_state = random_state
 
     def _validate_hyperparameters(self):
@@ -146,12 +151,18 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
 
 class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
 
-    def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, random_state=0):
+    def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
+                 degree=2, knot_num=20, reg_gamma=0.1, reg_gamma=0.1, random_state=0):
 
         super(SIMBoostRegressor, self).__init__(n_estimators=n_estimators,
-                                   val_ratio=val_ratio,
-                                   early_stop_thres=early_stop_thres,
-                                   random_state=random_state)
+                                      val_ratio=val_ratio,
+                                      early_stop_thres=early_stop_thres,
+                                      degree=degree,
+                                      knot_num=knot_num,
+                                      spline=spline,
+                                      reg_lambda=reg_lambda,
+                                      reg_gamma=reg_gamma,
+                                      random_state=random_state)
 
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=['csr', 'csc', 'coo'],
@@ -186,8 +197,8 @@ class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
 
             # fit SIM estimator
             param_grid = {"method": ["second_order", 'first_order']}
-            grid = GridSearchCV(SIMRegressor(degree=2, knot_num=20, spline="a_spline", reg_lambda=0.1, reg_gamma=10,
-                                  random_state=self.random_state), 
+            grid = GridSearchCV(SIMRegressor(degree=self.degree, knot_num=self.knot_num, spline=self.spline,
+                                  reg_lambda=self.reg_lambda, reg_gamma=self.reg_gamma, random_state=self.random_state), 
                          scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                          cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             # time
@@ -226,12 +237,18 @@ class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
 
 class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
 
-    def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, random_state=0):
+    def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
+                 degree=2, knot_num=20, reg_gamma=0.1, reg_gamma=0.1, random_state=0):
 
         super(SIMLogitBoostClassifier, self).__init__(n_estimators=n_estimators,
-                                       val_ratio=val_ratio,
-                                       early_stop_thres=early_stop_thres,
-                                       random_state=random_state)
+                                      val_ratio=val_ratio,
+                                      early_stop_thres=early_stop_thres,
+                                      degree=degree,
+                                      knot_num=knot_num,
+                                      spline=spline,
+                                      reg_lambda=reg_lambda,
+                                      reg_gamma=reg_gamma,
+                                      random_state=random_state)
 
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=['csr', 'csc', 'coo'],
@@ -282,8 +299,8 @@ class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
 
             # fit SIM estimator
             param_grid = {"method": ["second_order", 'first_order']}
-            grid = GridSearchCV(SIMRegressor(degree=2, knot_num=20, spline="a_spline", reg_lambda=0.1, reg_gamma=10,
-                                  random_state=self.random_state), 
+            grid = GridSearchCV(SIMRegressor(degree=self.degree, knot_num=self.knot_num, spline=self.spline,
+                                  reg_lambda=self.reg_lambda, reg_gamma=self.reg_gamma, random_state=self.random_state), 
                           scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                           cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             # time
@@ -328,13 +345,19 @@ class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
 
 class SIMAdaBoostClassifier(BaseSIMBooster, ClassifierMixin):
 
-    def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, random_state=0):
+    def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
+                 degree=2, knot_num=20, reg_gamma=0.1, reg_gamma=0.1, random_state=0):
 
         super(SIMAdaBoostClassifier, self).__init__(n_estimators=n_estimators,
-                                       val_ratio=val_ratio,
-                                       early_stop_thres=early_stop_thres,
-                                       random_state=random_state)
-
+                                      val_ratio=val_ratio,
+                                      early_stop_thres=early_stop_thres,
+                                      degree=degree,
+                                      knot_num=knot_num,
+                                      spline=spline,
+                                      reg_lambda=reg_lambda,
+                                      reg_gamma=reg_gamma,
+                                      random_state=random_state)
+        
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=['csr', 'csc', 'coo'],
                          multi_output=True)
@@ -371,7 +394,8 @@ class SIMAdaBoostClassifier(BaseSIMBooster, ClassifierMixin):
 
             # fit SIM estimator
             param_grid = {"method": ["second_order", 'first_order']}
-            grid = GridSearchCV(SIMClassifier(degree=2, knot_num=20, spline="a_spline", reg_lambda=0.1, reg_gamma=10,
+            grid = GridSearchCV(SIMClassifier(degree=self.degree, knot_num=self.knot_num, spline=self.spline,
+                                   reg_lambda=self.reg_lambda, reg_gamma=self.reg_gamma,
                                    random_state=self.random_state), 
                           scoring={"auc": make_scorer(roc_auc_score)}, refit=False,
                           cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
