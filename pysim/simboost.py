@@ -84,7 +84,9 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
         if self.estimators_ is None or len(self.estimators_) == 0:
             raise ValueError("Estimator not fitted, "
                              "call `fit` before `feature_importances_`.")
-        return np.linalg.norm(np.dot(self.betas_, self.betas_.T) - np.eye(self.betas_.shape[0]))
+            
+        return np.linalg.norm(np.dot(self.projection_indices_,
+                            self.projection_indices_.T) - np.eye(self.projection_indices_.shape[0]))
     
     @property
     def projection_indices_(self):
