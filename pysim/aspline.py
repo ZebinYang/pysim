@@ -60,7 +60,7 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
 
         best_loss = np.inf
         D = diff_matrix(self.degree, self.knot_num)
-        update_w = np.ones([self.knot_num], dtype=np.float32) 
+        update_w = np.ones([self.knot_num, 1], dtype=np.float32) 
         BWB = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), init_basis, axes=([0], [0]))
         BWY = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), y, axes=([0], [0]))
         for i in range(self.maxiter):
@@ -75,7 +75,7 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
             update_a = update_a_temp
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
 
-        self.selected_knots_ = list(np.array(knots)[np.reshape(update_w * np.dot(D, update_a) ** 2 > self.threshold, [-1])])
+        self.selected_knots_ = list(np.array(knots)[(update_w * np.dot(D, update_a) ** 2 > self.threshold).ravel()])
         self.selected_xphi_ = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1", 
                {"x": [self.xmin, self.xmax], "knots": self.selected_knots_, "degree": self.degree})
         selected_basis = np.asarray(build_design_matrices([self.selected_xphi_.design_info],
@@ -144,14 +144,14 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
         tempy[tempy==0] = 0.01
         tempy[tempy==1] = 0.99
         D = diff_matrix(self.degree, self.knot_num)
-        update_w = np.ones([self.knot_num], dtype=np.float32) 
+        update_w = np.ones([self.knot_num, 1], dtype=np.float32) 
         DWD = np.tensordot(D * update_w.reshape([-1, 1]), D, axes=([0], [0]))
         BWB = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), init_basis, axes=([0], [0]))
         BWY = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), self.inv_link(tempy), axes=([0], [0]))
         update_a = np.dot(np.linalg.pinv(BWB + self.reg_gamma * DWD), BWY)
         best_loss = self.get_loss(y, self.link(np.dot(init_basis, update_a)))
         for i in range(self.maxiter):
-            best_loss_irls = best_loss
+            best_loss_irls = np.inf
             for j in range(self.maxiter_irls):
                 lp = np.dot(init_basis, update_a)
                 mu = self.link(lp)
@@ -177,7 +177,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
             best_loss = best_loss_irls
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
 
-        self.selected_knots_ = list(np.array(knots)[np.reshape(update_w * np.dot(D, update_a) ** 2 > self.threshold, [-1])])
+        self.selected_knots_ = list(np.array(knots)[(update_w * np.dot(D, update_a) ** 2 > self.threshold).ravel()])
         self.selected_xphi_ = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1", 
                {"x": [self.xmin, self.xmax], "knots": self.selected_knots_, "degree": self.degree})
         selected_basis = np.asarray(build_design_matrices([self.selected_xphi_.design_info],
