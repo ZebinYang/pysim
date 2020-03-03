@@ -135,7 +135,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
         tempy[tempy==1] = 0.99
         BWB = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), init_basis, axes=([0], [0]))
         BWY = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), self.inv_link(tempy), axes=([0], [0]))
-        update_a = np.dot(np.linalg.pinv(BWB), BWY)
+        update_a = np.dot(np.linalg.pinv(BWB + self.reg_gamma * D.T.dot(W).dot(D)), BWY)
         for i in range(self.maxiter):
             tempy = y.copy()
             basis = init_basis.copy()
@@ -164,7 +164,7 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
 
         seBWB = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), selected_basis, axes=([0], [0]))
         seBWY = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), self.inv_link(tempy), axes=([0], [0]))
-        update_a = np.dot(np.linalg.pinv(seBWB), seBWY)
+        self.coef_ = np.dot(np.linalg.pinv(seBWB), seBWY)
         for j in range(self.maxiter_irls):
             lp = np.dot(selected_basis, self.coef_)
             mu = self.link(lp)
