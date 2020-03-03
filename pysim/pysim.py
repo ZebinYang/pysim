@@ -232,7 +232,7 @@ class SIMRegressor(BaseSIM, RegressorMixin):
 
 class SIMClassifier(BaseSIM, ClassifierMixin):
 
-    def __init__(self, method="first_order", spline="a_pline", reg_lambda=0.1,
+    def __init__(self, method="first_order", spline="a_spline", reg_lambda=0.1,
                  reg_gamma=0.1, knot_num=20, degree=2, random_state=0):
 
         super(SIMClassifier, self).__init__(method=method,

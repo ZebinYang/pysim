@@ -57,15 +57,15 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
                    {"x": [self.xmin, self.xmax], "knots": knots, "degree": self.degree})
         init_basis = np.asarray(build_design_matrices([xphi.design_info],
                    {"x": x, "knots": knots, "degree": self.degree})[0])
-        D = diff_matrix(self.degree, self.knot_num)
-        w = np.ones([self.knot_num], dtype=np.float32) 
-        W = np.diag(w)
 
         best_loss = np.inf
+        D = diff_matrix(self.degree, self.knot_num)
+        update_w = np.ones([self.knot_num], dtype=np.float32) 
         BWB = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), init_basis, axes=([0], [0]))
         BWY = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), y, axes=([0], [0]))
         for i in range(self.maxiter):
-            U = cholesky(BWB + self.reg_gamma * np.dot(np.dot(D.T, W), D))
+            DWD = np.tensordot(D * update_w.reshape([-1, 1]), D, axes=([0], [0]))
+            U = cholesky(BWB + self.reg_gamma * DWD)
             M = scipy.linalg.lapack.clapack.dtrtri(U)[0]
             update_a_temp = np.dot(np.dot(M, M.T.conj()), BWY)
             new_loss = self.get_loss(y, np.dot(init_basis, update_a_temp))
@@ -74,7 +74,6 @@ class ASplineRegressor(BaseEstimator, RegressorMixin):
             best_loss = new_loss
             update_a = update_a_temp
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
-            W = np.diag(update_w.reshape([-1]))
 
         self.selected_knots_ = list(np.array(knots)[np.reshape(update_w * np.dot(D, update_a) ** 2 > self.threshold, [-1])])
         self.selected_xphi_ = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1", 
@@ -140,16 +139,16 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
                        {"x": [self.xmin, self.xmax], "knots": knots, "degree": self.degree})
         init_basis = np.asarray(build_design_matrices([xphi.design_info],
                           {"x": x, "knots": knots, "degree": self.degree})[0])
-        D = diff_matrix(self.degree, self.knot_num)
-        w = np.ones([self.knot_num], dtype=np.float32) 
-        W = np.diag(w)
 
         tempy = y.copy()
         tempy[tempy==0] = 0.01
         tempy[tempy==1] = 0.99
+        D = diff_matrix(self.degree, self.knot_num)
+        update_w = np.ones([self.knot_num], dtype=np.float32) 
+        DWD = np.tensordot(D * update_w.reshape([-1, 1]), D, axes=([0], [0]))
         BWB = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), init_basis, axes=([0], [0]))
         BWY = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), self.inv_link(tempy), axes=([0], [0]))
-        update_a = np.dot(np.linalg.pinv(BWB + self.reg_gamma * D.T.dot(W).dot(D)), BWY)
+        update_a = np.dot(np.linalg.pinv(BWB + self.reg_gamma * DWD), BWY)
         best_loss = self.get_loss(y, self.link(np.dot(init_basis, update_a)))
         for i in range(self.maxiter):
             best_loss_irls = best_loss
@@ -163,8 +162,9 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
                     break
 
                 BW = init_basis[mask, :] * sample_weight[mask].reshape([-1, 1])
+                DWD = np.tensordot(D * update_w.reshape([-1, 1]), D, axes=([0], [0]))
                 BWOB = np.tensordot(BW * omega[mask].reshape([-1, 1]), init_basis[mask, :], axes=([0], [0]))
-                update_a_temp = np.dot(np.linalg.pinv(BWOB + self.reg_gamma * D.T.dot(W).dot(D)),
+                update_a_temp = np.dot(np.linalg.pinv(BWOB + self.reg_gamma * DWD),
                                 BWOB.dot(update_a) + np.tensordot(BW, y[mask] - mu[mask], axes=([0], [0])))
                 new_loss = self.get_loss(y, self.link(np.dot(init_basis, update_a_temp)))
                 if new_loss - best_loss_irls >= 0:
@@ -176,7 +176,6 @@ class ASplineClassifier(BaseEstimator, ClassifierMixin):
                 break
             best_loss = best_loss_irls
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
-            W = np.diag(update_w.reshape([-1]))
 
         self.selected_knots_ = list(np.array(knots)[np.reshape(update_w * np.dot(D, update_a) ** 2 > self.threshold, [-1])])
         self.selected_xphi_ = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1", 

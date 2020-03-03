@@ -300,3 +300,114 @@ class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
 
         pred_proba = self.predict_proba(x)
         return self._label_binarizer.inverse_transform(pred_proba)
+    
+
+class SIMAdaBoostClassifier(BaseSIMBooster, ClassifierMixin):
+
+    def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, random_state=0):
+
+        super(SIMAdaBoostClassifier, self).__init__(n_estimators=n_estimators,
+                                       val_ratio=val_ratio,
+                                       early_stop_thres=early_stop_thres,
+                                       random_state=random_state)
+
+    def _validate_input(self, x, y):
+        x, y = check_X_y(x, y, accept_sparse=['csr', 'csc', 'coo'],
+                         multi_output=True)
+        if y.ndim == 2 and y.shape[1] == 1:
+            y = column_or_1d(y, warn=False)
+
+        self._label_binarizer = LabelBinarizer()
+        self._label_binarizer.fit(y)
+        self.classes_ = self._label_binarizer.classes_
+
+        y = self._label_binarizer.transform(y) * 1.0
+        return x, y
+
+    def fit(self, x, y, sample_weight=None):
+
+        self._validate_hyperparameters()
+        x, y = self._validate_input(x, y)
+        n_samples, n_features = x.shape
+        
+        if sample_weight is None:
+            sample_weight = np.ones(n_samples) / n_samples
+        else:
+            sample_weight = sample_weight / np.sum(sample_weight)
+
+        indices = np.arange(n_samples)
+        idx1, idx2 = train_test_split(indices, test_size=self.val_ratio, random_state=self.random_state)
+        val_fold = np.ones((len(indices)))
+        val_fold[idx1] = -1
+
+        pred_train = 0 
+        pred_val = 0
+        probs = 0.5 * np.ones(n_samples)
+        sample_weight = 1 / n_samples * np.ones(n_samples)
+
+        roc_auc_opt = -np.inf
+        self.time_cost_ = 0
+        self.sim_estimators_ = []
+        self.sim_importance_ = []
+        for i in range(self.n_estimators):
+
+            sample_weight = probs * (1 - probs)
+            sample_weight /= np.sum(sample_weight)
+            sample_weight = np.maximum(sample_weight, 2 * np.finfo(np.float64).eps)
+
+            # fit SIM model
+            param_grid = {"method": ["second_order", 'first_order']}
+            grid = GridSearchCV(SIMClassifier(degree=2, knot_num=20, spline="a_spline", reg_lambda=0.1, reg_gamma=10,
+                                   random_state=self.random_state), 
+                          scoring={"auc": make_scorer(roc_auc_score)}, refit=False,
+                          cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
+            # time
+            start = time.time()
+            grid.fit(x, y, sample_weight=sample_weight)
+            model = grid.estimator.set_params(**grid.cv_results_['params'][np.where((grid.cv_results_['rank_test_mse'] == 1))[0][0]])
+            model.fit(x[idx1, :], y[idx1], sample_weight=sample_weight[idx1])
+            self.time_cost_ += time.time() - start
+
+            estimator_error = np.average((model.predict(x[idx1, :]) != y[idx1]), axis=0, weights=sample_weight)
+            if estimator_error <= 0:
+                break
+            
+            estimator_weight = np.log((1 − estimator_error) / estimator_error)
+            pred_val_temp = pred_val + model.predict(x[idx2, :])
+            roc_auc_new = roc_auc_score(y[idx2], 1 / (1 + np.exp(-2 * pred_val_temp)))
+
+            sample_weight = sample_weight * np.exp(estimator_weight * (pred_train != y[idx1]))
+            # stop criterion
+            if roc_auc_opt < roc_auc_new:           
+                roc_auc_opt = roc_auc_new
+                early_stop_count = 0
+            else:
+                early_stop_count +=1
+
+            if early_stop_count >= self.early_stop_thres:
+                break
+
+            # update
+            self.sim_estimators_.append(model)
+            xgrid = np.linspace(model.shape_fit_.xmin, model.shape_fit_.xmax, 100).reshape([-1, 1])
+            ygrid = model.shape_fit_.predict(xgrid)
+            self.sim_importance_.append(np.std(ygrid))
+        
+        self.tr_idx = idx1
+        self.val_idx = idx2
+        self.importance_ratio_ = self.sim_importance_ / np.sum(self.sim_importance_)
+        self.betas_ = np.array([model.beta_.flatten() for model in self.sim_estimators_])
+        self.ortho_measure_ = np.linalg.norm(np.dot(self.betas_, self.betas_.T) - np.eye(self.betas_.shape[0]))
+
+        return self
+    
+    def predict_proba(self, x):
+
+        pred_proba_inv = 0.5 * self._predict(x)
+        pred_prob = 1 / (1 + np.exp(-2 * pred_proba_inv))
+        return pred_prob
+
+    def predict(self, x):
+
+        pred_proba = self.predict_proba(x)
+        return self._label_binarizer.inverse_transform(pred_proba)
