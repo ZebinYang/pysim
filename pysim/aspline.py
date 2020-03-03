@@ -89,7 +89,7 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
 
         fig = plt.figure(figsize=(6, 4))
         xgrid = np.linspace(self.xmin, self.xmax, 100).reshape([-1, 1])
-        ygrid = self.shape_fit_.predict(xgrid)
+        ygrid = self.decision_function(xgrid)
         plt.plot(xgrid, ygrid)
         plt.title("Shape Function", fontsize=12)
         plt.show()

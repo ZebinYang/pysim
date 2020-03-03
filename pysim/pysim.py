@@ -177,7 +177,7 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
         check_is_fitted(self, "beta_")
         check_is_fitted(self, "shape_fit_")
         xb = np.dot(x, self.beta_)
-        pred = self.shape_fit_.predict(xb)
+        pred = self.shape_fit_.decision_function(xb)
         return pred
 
 

@@ -69,7 +69,7 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
         for indice, estimator in enumerate(self.estimators_):
 
             xgrid = np.linspace(estimator.shape_fit_.xmin, estimator.shape_fit_.xmax, 100).reshape([-1, 1])
-            ygrid = estimator.shape_fit_.predict(xgrid)
+            ygrid = estimator.shape_fit_.decision_function(xgrid)
             estimator_importance.append(np.std(ygrid))
         importance_ratio = estimator_importance / np.sum(estimator_importance)
         return importance_ratio
