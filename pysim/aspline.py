@@ -209,7 +209,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
     @staticmethod
     def _get_loss(label, pred):
         with np.errstate(divide='ignore', over='ignore'):
-            pred = np.clip(pred, self.EPS, 1. - self.EPS)
+            pred = np.clip(pred, 10 ** (-8), 1. - 10 ** (-8))
             return - np.mean(label * np.log(pred) + (1 - label) * np.log(1 - pred))
        
     def _validate_input(self, x, y):

@@ -103,7 +103,6 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
 
         check_is_fitted(self, "estimators_")
 
-        idx = 0
         max_ids = len(self.estimators_)
         fig = plt.figure(figsize=(12, 4.2 * max_ids))
         outer = gridspec.GridSpec(max_ids, 1, hspace=0.2)
