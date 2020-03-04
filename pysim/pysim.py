@@ -290,7 +290,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
     def predict_proba(self, x):
 
         pred = self.decision_function(x)
-        pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False)
+        pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False).reshape([-1, 1])
         return pred_proba
 
     def predict(self, x):

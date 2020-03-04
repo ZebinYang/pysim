@@ -353,14 +353,14 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
     def predict_proba(self, x):
 
         pred = self.decision_function(x)
-        pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False)
+        pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False).reshape([-1, 1])
         return pred_prob
 
     def predict(self, x):
 
         pred_proba = self.predict_proba(x)
-        return self._label_binarizer.inverse_transform(pred_proba)
-    
+        return self._label_binarizer.inverse_transform(pred_proba).reshape([-1, 1])
+
 
 class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
 
@@ -480,7 +480,7 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
     def predict_proba(self, x):
 
         pred = self.decision_function(x)
-        pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False)
+        pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False).reshape([-1, 1])
         return pred_prob
 
     def predict(self, x):
