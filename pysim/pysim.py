@@ -4,6 +4,7 @@ from matplotlib import gridspec
 import matplotlib.pyplot as plt
 from pygam import LinearGAM, LogisticGAM, s
 
+from sklearn.utils.extmath import softmax
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils.validation import check_is_fitted
 from sklearn.metrics import mean_squared_error, roc_auc_score
@@ -289,7 +290,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
     def predict_proba(self, x):
 
         pred = self.decision_function(x)
-        pred_proba = 1 / (1 + np.exp(-pred))
+        pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False)[:, 1]
         return pred_proba
 
     def predict(self, x):

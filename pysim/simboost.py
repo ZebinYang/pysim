@@ -4,6 +4,7 @@ from matplotlib import gridspec
 import matplotlib.pyplot as plt
 
 from abc import ABCMeta, abstractmethod
+from sklearn.utils.extmath import softmax
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
 from sklearn.utils.validation import check_is_fitted
@@ -146,8 +147,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         check_is_fitted(self, "estimators_")
         
         pred = 0
-        for sim_clf in self.estimators_:
-            pred += sim_clf.predict(x)
+        for estimator in self.estimators_:
+            pred += estimator.predict(x)
         return pred
 
 
@@ -352,7 +353,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
     def predict_proba(self, x):
 
         pred = self.decision_function(x)
-        pred_prob = 1 / (1 + np.exp(-pred))
+        pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False)[:, 1]
         return pred_prob
 
     def predict(self, x):
@@ -429,17 +430,23 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
             grid.fit(x, y, sample_weight=sample_weight, proj_mat=proj_mat)
             estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_auc"] == 1))[0][0]])
             estimator.fit(x[idx1, :], y[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
-            
+
+            # Instances incorrectly classified
+            y_predict = estimator.predict(x[idx1, :])
+            estimator_error = np.mean(np.average(y_predict != y[idx1], weights=sample_weight[idx1], axis=0))
+            if estimator_error <= 0:
+                break
+
             y_codes = np.array([-1., 1.])
             y_coding = y_codes.take([0, 1] == y)
             with np.errstate(divide="ignore", over="ignore"):
-                sample_weight *= np.exp(-0.5 * np.sum(y_coding * np.log(np.hstack([1 - estimator.predict_proba(x),
-                                                             estimator.predict_proba(x)])), axis=1))
+                pred_proba = estimator.predict_proba(x)
+                pred_proba = np.clip(pred_proba, np.finfo(pred_proba.dtype).eps, 1 - np.finfo(pred_proba.dtype).eps)
+                estimator_weight = -0.5 * np.sum(y_coding * np.log(np.hstack([1 - pred_proba, pred_proba])), axis=1)
+                sample_weight *= np.exp(estimator_weight * ((sample_weight > 0) | (estimator_weight < 0)))
 
-            pred_proba = estimator.predict_proba(x[idx2, :])
-            pred_proba = np.clip(pred_proba, np.finfo(pred_proba.dtype).eps, None)
-            log_proba = np.log(pred_proba)
-            pred_val = self.decision_function(x[idx2, :]) + (log_proba - (1. / 2) * log_proba.sum(axis=1)[:, np.newaxis])
+            log_pred_proba_val = np.log(pred_proba[idx2])
+            pred_val = self.decision_function(x[idx2, :]) + (log_pred_proba_val - (1. / 2) * log_pred_proba_val.sum(axis=1)[:, np.newaxis])
             pred_val_proba = 1 / (1 + np.exp(- pred_val))
             roc_auc_new = roc_auc_score(y[idx2], pred_val_proba)
             # stop criterion
@@ -473,7 +480,7 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
     def predict_proba(self, x):
 
         pred = self.decision_function(x)
-        pred_prob = 1 / (1 + np.exp(- pred))
+        pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False)[:, 1]
         return pred_prob
 
     def predict(self, x):
