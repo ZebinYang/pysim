@@ -68,7 +68,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         if self.reg_gamma <= 0:
             raise ValueError("reg_gamma must be > 0, got %s." % self.reg_gamma)
 
-    def _first_order_thres(self, x, y, sample_weight=None):
+    def _first_order_thres(self, x, y, sample_weight=None, proj_mat=None):
 
         self.mu = np.average(x, axis=0, weights=sample_weight) 
         self.cov = np.cov(x.T, aweights=sample_weight)
@@ -76,13 +76,15 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
         zbar = np.average(y.reshape(-1, 1) * s1, axis=0, weights=sample_weight)
         zbar[np.abs(zbar) < self.reg_lambda * np.sum(np.abs(zbar))] = 0
+        if proj_mat is not None:
+            zbar = np.dot(proj_mat, zbar)
         if np.linalg.norm(zbar) > 0:
             beta = zbar / np.linalg.norm(zbar)
         else:
             beta = zbar
         return beta
 
-    def _first_order(self, x, y, sample_weight=None):
+    def _first_order(self, x, y, sample_weight=None, proj_mat=None):
 
         self.mu = np.average(x, axis=0, weights=sample_weight) 
         self.cov = np.cov(x.T, aweights=sample_weight)
@@ -90,6 +92,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
         zbar = np.average(y.reshape(-1, 1) * s1, axis=0, weights=sample_weight)
         sigmat = np.dot(zbar.reshape([-1, 1]), zbar.reshape([-1, 1]).T)
+        if proj_mat is not None:
+            sigmat = np.dot(np.dot(proj_mat, sigmat), proj_mat)
         u, s, v = np.linalg.svd(sigmat)
         sigmat = np.dot(np.dot(u, np.diag(s)), u.T)
         
@@ -97,7 +101,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * np.sum(np.abs(zbar))))
         return beta
 
-    def _second_order(self, x, y, sample_weight=None):
+    def _second_order(self, x, y, sample_weight=None, proj_mat=None):
 
         n_samples, n_features = x.shape
         self.mu = np.average(x, axis=0, weights=sample_weight) 
@@ -106,6 +110,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
         sigmat = np.tensordot(s1 * y.reshape([-1, 1]) * sample_weight.reshape([-1, 1]), s1, axes=([0], [0]))
         sigmat -= np.average(y, axis=0, weights=sample_weight) * self.inv_cov
+        if proj_mat is not None:
+            sigmat = np.dot(np.dot(proj_mat, sigmat), proj_mat)
         u, s, v = np.linalg.svd(sigmat)
         sigmat = np.dot(np.dot(u, np.diag(s)), u.T)
 
@@ -146,7 +152,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         fig.add_subplot(ax2)
         plt.show()
 
-    def fit(self, x, y, sample_weight=None):
+    def fit(self, x, y, sample_weight=None, proj_mat=None):
 
         np.random.seed(self.random_state)
         
@@ -159,11 +165,11 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             sample_weight = sample_weight / np.sum(sample_weight)
         
         if self.method == "first_order":
-            self.beta_ = self._first_order(x, y, sample_weight)
+            self.beta_ = self._first_order(x, y, sample_weight, proj_mat)
         elif self.method == "first_order_thres":
-            self.beta_ = self._first_order_thres(x, y, sample_weight)
+            self.beta_ = self._first_order_thres(x, y, sample_weight, proj_mat)
         elif self.method == "second_order":
-            self.beta_ = self._second_order(x, y, sample_weight)
+            self.beta_ = self._second_order(x, y, sample_weight, proj_mat)
 
         if len(self.beta_[np.abs(self.beta_) > 0]) > 0:
             if (self.beta_[np.abs(self.beta_) > 0][0] < 0):

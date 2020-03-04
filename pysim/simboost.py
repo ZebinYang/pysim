@@ -22,7 +22,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, random_state=0):
+                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, random_state=0):
 
         self.n_estimators = n_estimators
         self.val_ratio = val_ratio
@@ -32,6 +32,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         self.knot_num = knot_num
         self.reg_lambda = reg_lambda
         self.reg_gamma = reg_gamma
+        self.ortho_shrink = ortho_shrink
         self.random_state = random_state
 
     def _validate_hyperparameters(self):
@@ -99,7 +100,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("Estimator not fitted, "
                              "call `fit` before `feature_importances_`.")
 
-        return np.array([estimator.beta_.flatten() for estimator in self.estimators_])
+        return np.array([estimator.beta_.flatten() for estimator in self.estimators_]).T
 
     def visualize(self):
 
@@ -153,7 +154,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, random_state=0):
+                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, random_state=0):
 
         super(SimBoostRegressor, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
@@ -163,6 +164,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                                       spline=spline,
                                       reg_lambda=reg_lambda,
                                       reg_gamma=reg_gamma,
+                                      ortho_shrink=ortho_shrink,
                                       random_state=random_state)
 
     def _validate_input(self, x, y):
@@ -196,16 +198,23 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         self.estimators_ = []
         for i in range(self.n_estimators):
 
-            # fit SIM estimator
+            # projection matrix
+            if (i == 0) or (self.ortho_shrink == 0):
+                proj_mat = np.eye(d)
+            else:
+                u, _, _ = np.linalg.svd(self.projection_indices_, full_matrices=False)
+                proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
+
+            # fit Sim estimator
             param_grid = {"method": ["second_order", "first_order"]}
-            grid = GridSearchCV(SIMRegressor(degree=self.degree, knot_num=self.knot_num, spline=self.spline,
+            grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, spline=self.spline,
                                   reg_lambda=self.reg_lambda, reg_gamma=self.reg_gamma, random_state=self.random_state), 
                          scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                          cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             # time
-            grid.fit(x, z, sample_weight=sample_weight)
+            grid.fit(x, z, sample_weight=sample_weight, proj_mat=proj_mat)
             estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
-            estimator.fit(x[idx1, :], z[idx1], sample_weight=sample_weight[idx1])
+            estimator.fit(x[idx1, :], z[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
 
             # early stop
             pred_val_temp = pred_val + estimator.predict(x[idx2, :]).reshape([-1, 1])
@@ -239,7 +248,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, random_state=0):
+                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, random_state=0):
 
         super(SimLogitBoostClassifier, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
@@ -249,6 +258,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
                                       spline=spline,
                                       reg_lambda=reg_lambda,
                                       reg_gamma=reg_gamma,
+                                      ortho_shrink=ortho_shrink,
                                       random_state=random_state)
 
     def _validate_input(self, x, y):
@@ -290,6 +300,13 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
         self.estimators_ = []
         for i in range(self.n_estimators):
 
+            # projection matrix
+            if (i == 0) or (self.ortho_shrink == 0):
+                proj_mat = np.eye(d)
+            else:
+                u, _, _ = np.linalg.svd(self.projection_indices_, full_matrices=False)
+                proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
+
             sample_weight = probs * (1 - probs)
             sample_weight /= np.sum(sample_weight)
             sample_weight = np.maximum(sample_weight, 2 * np.finfo(np.float64).eps)
@@ -298,20 +315,20 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
                 z = np.where(y.ravel(), 1. / probs, -1. / (1. - probs)) 
                 z = np.clip(z, a_min=-8, a_max=8)
 
-            # fit SIM estimator
+            # fit Sim estimator
             param_grid = {"method": ["second_order", "first_order"]}
-            grid = GridSearchCV(SIMRegressor(degree=self.degree, knot_num=self.knot_num, spline=self.spline,
+            grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, spline=self.spline,
                                   reg_lambda=self.reg_lambda, reg_gamma=self.reg_gamma, random_state=self.random_state), 
                           scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                           cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             # time
-            grid.fit(x, z, sample_weight=sample_weight)
+            grid.fit(x, z, sample_weight=sample_weight, proj_mat=proj_mat)
             estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
-            estimator.fit(x[idx1, :], z[idx1], sample_weight=sample_weight[idx1])
+            estimator.fit(x[idx1, :], z[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
 
             # stop criterion
-            pred_val_temp = pred_val + 0.5 * estimator.predict(x[idx2, :])
-            roc_auc_new = roc_auc_score(y[idx2], 1 / (1 + np.exp(-2 * pred_val_temp)))
+            pred_val_temp = pred_val + estimator.predict(x[idx2, :])
+            roc_auc_new = roc_auc_score(y[idx2], 1 / (1 + np.exp(-pred_val_temp)))
             if roc_auc_opt < roc_auc_new:           
                 roc_auc_opt = roc_auc_new
                 early_stop_count = 0
@@ -322,9 +339,9 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
                 break
 
             # update
-            pred_train += 0.5 * estimator.predict(x[idx1, :])
-            pred_val += 0.5 * estimator.predict(x[idx2, :])
-            probs = 1 / (1 + np.exp(-2 * np.hstack([pred_train, pred_val])))
+            pred_train += estimator.predict(x[idx1, :])
+            pred_val += estimator.predict(x[idx2, :])
+            probs = 1 / (1 + np.exp(-np.hstack([pred_train, pred_val])))
             self.estimators_.append(estimator)
 
         self.tr_idx = idx1
@@ -334,8 +351,8 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
     
     def predict_proba(self, x):
 
-        pred = 0.5 * self.decision_function(x)
-        pred_prob = 1 / (1 + np.exp(-2 * pred))
+        pred = self.decision_function(x)
+        pred_prob = 1 / (1 + np.exp(-pred))
         return pred_prob
 
     def predict(self, x):
@@ -347,7 +364,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
 class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, random_state=0):
+                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, random_state=0):
 
         super(SimAdaBoostClassifier, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
@@ -357,6 +374,7 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
                                       spline=spline,
                                       reg_lambda=reg_lambda,
                                       reg_gamma=reg_gamma,
+                                      ortho_shrink=1,
                                       random_state=random_state)
         
     def _validate_input(self, x, y):
@@ -393,17 +411,24 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
         self.estimators_ = []
         for i in range(self.n_estimators):
 
-            # fit SIM estimator
+            # projection matrix
+            if (i == 0) or (self.ortho_shrink == 0):
+                proj_mat = np.eye(d)
+            else:
+                u, _, _ = np.linalg.svd(self.projection_indices_, full_matrices=False)
+                proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
+
+            # fit Sim estimator
             param_grid = {"method": ["second_order", "first_order"]}
-            grid = GridSearchCV(SIMClassifier(degree=self.degree, knot_num=self.knot_num, spline=self.spline,
+            grid = GridSearchCV(SimClassifier(degree=self.degree, knot_num=self.knot_num, spline=self.spline,
                                    reg_lambda=self.reg_lambda, reg_gamma=self.reg_gamma,
                                    random_state=self.random_state), 
                           scoring={"auc": make_scorer(roc_auc_score)}, refit=False,
                           cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             # time
-            grid.fit(x, y, sample_weight=sample_weight)
+            grid.fit(x, y, sample_weight=sample_weight, proj_mat=proj_mat)
             estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_auc"] == 1))[0][0]])
-            estimator.fit(x[idx1, :], y[idx1], sample_weight=sample_weight[idx1])
+            estimator.fit(x[idx1, :], y[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
             
             y_codes = np.array([-1., 1.])
             y_coding = y_codes.take([0, 1] == y)
