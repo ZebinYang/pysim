@@ -5,6 +5,7 @@ from scipy.linalg import cholesky
 from matplotlib import pyplot as plt
 from abc import ABCMeta, abstractmethod
 
+from sklearn.utils.extmath import softmax
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils.validation import check_is_fitted
 from sklearn.utils import check_array, check_X_y, column_or_1d
@@ -304,7 +305,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
     def predict_proba(self, x):
 
         pred = self.decision_function(x)
-        pred_proba = 1 / (1 + np.exp(- pred))
+        pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False)
         return pred_proba
 
     def predict(self, x):
