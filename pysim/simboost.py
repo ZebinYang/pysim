@@ -200,7 +200,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
             # projection matrix
             if (i == 0) or (self.ortho_shrink == 0):
-                proj_mat = np.eye(d)
+                proj_mat = np.eye(n_features)
             else:
                 u, _, _ = np.linalg.svd(self.projection_indices_, full_matrices=False)
                 proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
@@ -302,7 +302,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             # projection matrix
             if (i == 0) or (self.ortho_shrink == 0):
-                proj_mat = np.eye(d)
+                proj_mat = np.eye(n_features)
             else:
                 u, _, _ = np.linalg.svd(self.projection_indices_, full_matrices=False)
                 proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
@@ -413,7 +413,7 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             # projection matrix
             if (i == 0) or (self.ortho_shrink == 0):
-                proj_mat = np.eye(d)
+                proj_mat = np.eye(n_features)
             else:
                 u, _, _ = np.linalg.svd(self.projection_indices_, full_matrices=False)
                 proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
