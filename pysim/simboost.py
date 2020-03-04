@@ -87,9 +87,14 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("Estimator not fitted, "
                              "call `fit` before `feature_importances_`.")
             
-        return np.linalg.norm(np.dot(self.projection_indices_,
-                            self.projection_indices_.T) - np.eye(self.projection_indices_.shape[0]))
-    
+        ortho_measure = np.linalg.norm(np.dot(self.projection_indices_.T,
+                                  self.projection_indices_) - np.eye(self.projection_indices_.shape[1]))
+        if self.projection_indices_.shape[1] > 1:
+            ortho_measure /= ((self.projection_indices_.shape[1] ** 2 - self.projection_indices_.shape[1]))
+        else:
+            ortho_measure = np.nan
+        return ortho_measure
+
     @property
     def projection_indices_(self):
         """Return the projection indices.
