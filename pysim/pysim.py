@@ -24,7 +24,7 @@ fps = importr("fps")
 numpy2ri.activate()
 
 
-class BaseSIM(BaseEstimator, metaclass=ABCMeta):
+class BaseSim(BaseEstimator, metaclass=ABCMeta):
     """
         Base class for sim classification and regression.
      """
@@ -181,12 +181,12 @@ class BaseSIM(BaseEstimator, metaclass=ABCMeta):
         return pred
 
 
-class SIMRegressor(BaseSIM, RegressorMixin):
+class SimRegressor(BaseSim, RegressorMixin):
 
     def __init__(self, method="first_order", spline="a_spline", reg_lambda=0.1,
                  reg_gamma=10, knot_num=20, degree=2, random_state=0):
 
-        super(SIMRegressor, self).__init__(method=method,
+        super(SimRegressor, self).__init__(method=method,
                                spline=spline,
                                reg_lambda=reg_lambda,
                                reg_gamma=reg_gamma,
@@ -230,12 +230,12 @@ class SIMRegressor(BaseSIM, RegressorMixin):
         pred = self.decision_function(x)
         return pred
 
-class SIMClassifier(BaseSIM, ClassifierMixin):
+class SimClassifier(BaseSim, ClassifierMixin):
 
     def __init__(self, method="first_order", spline="a_spline", reg_lambda=0.1,
                  reg_gamma=10, knot_num=20, degree=2, random_state=0):
 
-        super(SIMClassifier, self).__init__(method=method,
+        super(SimClassifier, self).__init__(method=method,
                                spline=spline,
                                reg_lambda=reg_lambda,
                                reg_gamma=reg_gamma,

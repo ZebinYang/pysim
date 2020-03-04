@@ -12,10 +12,10 @@ from sklearn.model_selection import GridSearchCV, PredefinedSplit
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 from sklearn.metrics import make_scorer, mean_squared_error, roc_auc_score
 
-from .pysim import SIMRegressor, SIMClassifier
+from .pysim import SimRegressor, SimClassifier
 
 
-class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
+class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
     """
         Base class for sim classification and regression.
      """
@@ -150,12 +150,12 @@ class BaseSIMBooster(BaseEstimator, metaclass=ABCMeta):
         return pred
 
 
-class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
+class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
                  degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, random_state=0):
 
-        super(SIMBoostRegressor, self).__init__(n_estimators=n_estimators,
+        super(SimBoostRegressor, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
                                       early_stop_thres=early_stop_thres,
                                       degree=degree,
@@ -236,12 +236,12 @@ class SIMBoostRegressor(BaseSIMBooster, RegressorMixin):
         return pred
 
 
-class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
+class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
                  degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, random_state=0):
 
-        super(SIMLogitBoostClassifier, self).__init__(n_estimators=n_estimators,
+        super(SimLogitBoostClassifier, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
                                       early_stop_thres=early_stop_thres,
                                       degree=degree,
@@ -344,12 +344,12 @@ class SIMLogitBoostClassifier(BaseSIMBooster, ClassifierMixin):
         return self._label_binarizer.inverse_transform(pred_proba)
     
 
-class SIMAdaBoostClassifier(BaseSIMBooster, ClassifierMixin):
+class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1, spline="a_spline",
                  degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, random_state=0):
 
-        super(SIMAdaBoostClassifier, self).__init__(n_estimators=n_estimators,
+        super(SimAdaBoostClassifier, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
                                       early_stop_thres=early_stop_thres,
                                       degree=degree,
