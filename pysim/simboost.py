@@ -354,7 +354,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
 
         pred = self.decision_function(x)
         pred_proba = softmax(np.hstack([-pred, pred]) / 2, copy=False)[:, [1]]
-        return pred_prob
+        return pred_proba
 
     def predict(self, x):
 
@@ -481,7 +481,7 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
 
         pred = self.decision_function(x)
         pred_proba = softmax(np.hstack([-pred, pred]) / 2, copy=False)[:, [1]]
-        return pred_prob
+        return pred_proba
 
     def predict(self, x):
 
