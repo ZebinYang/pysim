@@ -342,7 +342,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
             # update
             pred_train += estimator.predict(x[idx1, :])
             pred_val += estimator.predict(x[idx2, :])
-            probs = 1 / (1 + np.exp(-np.hstack([pred_train, pred_val])))
+            probs = 1 / (1 + np.exp(-np.vstack([pred_train, pred_val]).ravel()))
             self.estimators_.append(estimator)
 
         self.tr_idx = idx1
