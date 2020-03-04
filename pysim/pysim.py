@@ -237,6 +237,7 @@ class SimRegressor(BaseSim, RegressorMixin):
         pred = self.decision_function(x)
         return pred
 
+
 class SimClassifier(BaseSim, ClassifierMixin):
 
     def __init__(self, method="first_order", spline="a_spline", reg_lambda=0.1,
