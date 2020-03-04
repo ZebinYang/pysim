@@ -305,7 +305,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
     def predict_proba(self, x):
 
         pred = self.decision_function(x)
-        pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False).reshape([-1, 1])
+        pred_proba = softmax(np.hstack([-pred, pred]) / 2, copy=False)[:, [1]]
         return pred_proba
 
     def predict(self, x):
