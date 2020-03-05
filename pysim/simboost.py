@@ -218,10 +218,10 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                          cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             grid.fit(x, z, sample_weight=sample_weight, proj_mat=proj_mat)
             estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
-            estimator.fit(x[idx1, :], z[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
+            estimator.fit(x[idx1], z[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
 
             # early stop
-            pred_val_temp = pred_val + estimator.predict(x[idx2, :]).reshape([-1, 1])
+            pred_val_temp = pred_val + estimator.predict(x[idx2]).reshape([-1, 1])
             mse_new = mean_squared_error(y[idx2], pred_val_temp)
             if mse_opt > mse_new:           
                 mse_opt = mse_new
@@ -234,7 +234,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
             # update    
             z = z - estimator.predict(x)
-            pred_val += estimator.predict(x[idx2, :]).reshape([-1, 1])
+            pred_val += estimator.predict(x[idx2]).reshape([-1, 1])
             self.estimators_.append(estimator)
         
         self.tr_idx = idx1
@@ -327,10 +327,10 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
                           cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             grid.fit(x, z, sample_weight=sample_weight, proj_mat=proj_mat)
             estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
-            estimator.fit(x[idx1, :], z[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
+            estimator.fit(x[idx1], z[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
 
             # stop criterion
-            pred_val_temp = pred_val + estimator.predict(x[idx2, :])
+            pred_val_temp = pred_val + estimator.predict(x[idx2])
             roc_auc_new = roc_auc_score(y[idx2], 1 / (1 + np.exp(-pred_val_temp)))
             if roc_auc_opt < roc_auc_new:           
                 roc_auc_opt = roc_auc_new
@@ -342,8 +342,8 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
                 break
 
             # update
-            pred_train += estimator.predict(x[idx1, :])
-            pred_val += estimator.predict(x[idx2, :])
+            pred_train += estimator.predict(x[idx1])
+            pred_val += estimator.predict(x[idx2])
             probs = 1 / (1 + np.exp(-np.vstack([pred_train, pred_val]).ravel()))
             self.estimators_.append(estimator)
 
@@ -430,10 +430,10 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
                           cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             grid.fit(x, y, sample_weight=sample_weight, proj_mat=proj_mat)
             estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_auc"] == 1))[0][0]])
-            estimator.fit(x[idx1, :], y[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
+            estimator.fit(x[idx1], y[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
 
             # Instances incorrectly classified
-            y_predict = estimator.predict(x[idx1, :])
+            y_predict = estimator.predict(x[idx1])
             estimator_error = np.mean(np.average(y_predict != y[idx1], weights=sample_weight[idx1], axis=0))
             if estimator_error <= 0:
                 break
@@ -448,7 +448,7 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             sample_weight /= sample_weight.sum()
             log_pred_proba_val = np.log(pred_proba[idx2])
-            pred_val = self.decision_function(x[idx2, :]) + (log_pred_proba_val - (1. / 2) * log_pred_proba_val.sum(axis=1)[:, np.newaxis])
+            pred_val = self.decision_function(x[idx2]) + (log_pred_proba_val - (1. / 2) * log_pred_proba_val.sum(axis=1)[:, np.newaxis])
             pred_val_proba = 1 / (1 + np.exp(- pred_val))
             roc_auc_new = roc_auc_score(y[idx2], pred_val_proba)
             # stop criterion
@@ -549,10 +549,10 @@ class SimAdaBoostRegressor(BaseSimBooster, ClassifierMixin):
                          cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             grid.fit(x, y, sample_weight=sample_weight, proj_mat=proj_mat)
             estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
-            estimator.fit(x[idx1, :], y[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
+            estimator.fit(x[idx1], y[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
 
             # Instances incorrectly classified
-            y_predict = estimator.predict(x[idx1, :])
+            y_predict = estimator.predict(x[idx1])
             estimator_error = np.mean(np.average(y_predict != y[idx1], weights=sample_weight[idx1], axis=0))
             estimator_error = np.abs(y_predict - y[idx1])
             if estimator_error.sum() <= 0:
@@ -575,7 +575,7 @@ class SimAdaBoostRegressor(BaseSimBooster, ClassifierMixin):
             sample_weight *= np.power(beta, (1. - estimator_error))
             sample_weight /= sample_weight.sum()
 
-            predictions = np.array([est.predict(x[idx2, :]).ravel() for est in self.estimators_] + [estimator.predict(x[idx2, :]).ravel()]).T
+            predictions = np.array([est.predict(x[idx2]).ravel() for est in self.estimators_] + [estimator.predict(x[idx2]).ravel()]).T
             sorted_idx = np.argsort(predictions, axis=1)
             weight_cdf = stable_cumsum(np.array(self.estimator_weights_ + [estimator_weight])[sorted_idx], axis=1)
             median_or_above = weight_cdf >= 0.5 * weight_cdf[:, -1][:, np.newaxis]

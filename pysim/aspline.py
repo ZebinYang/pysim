@@ -259,9 +259,9 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
                 if np.sum(mask) == 0:
                     break
 
-                BW = init_basis[mask, :] * sample_weight[mask].reshape([-1, 1])
+                BW = init_basis[mask] * sample_weight[mask].reshape([-1, 1])
                 DwD = np.tensordot(D * update_w.reshape([-1, 1]), D, axes=([0], [0]))
-                BWOB = np.tensordot(BW * omega[mask].reshape([-1, 1]), init_basis[mask, :], axes=([0], [0]))
+                BWOB = np.tensordot(BW * omega[mask].reshape([-1, 1]), init_basis[mask], axes=([0], [0]))
                 update_a_temp = np.dot(np.linalg.pinv(BWOB + self.reg_gamma * DwD),
                                 BWOB.dot(update_a) + np.tensordot(BW, y[mask] - mu[mask], axes=([0], [0])))
                 new_loss = self._get_loss(y, self._link(np.dot(init_basis, update_a_temp)))
@@ -292,8 +292,8 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
             mask = mask.ravel()
             if np.sum(mask) == 0:
                 break
-            seBW = selected_basis[mask, :] * sample_weight[mask].reshape([-1, 1])
-            seBWOB = np.tensordot(seBW * omega[mask].reshape([-1, 1]), selected_basis[mask, :], axes=([0], [0]))
+            seBW = selected_basis[mask] * sample_weight[mask].reshape([-1, 1])
+            seBWOB = np.tensordot(seBW * omega[mask].reshape([-1, 1]), selected_basis[mask], axes=([0], [0]))
             self.coef_ = np.dot(np.linalg.pinv(seBWOB),
                           seBWOB.dot(self.coef_) + np.tensordot(seBW, y[mask] - mu[mask], axes=([0], [0])))
         return self
