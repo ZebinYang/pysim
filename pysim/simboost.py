@@ -547,9 +547,9 @@ class SimAdaBoostRegressor(BaseSimBooster, ClassifierMixin):
                                   reg_lambda=self.reg_lambda, reg_gamma=self.reg_gamma, random_state=self.random_state), 
                          scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                          cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
-            grid.fit(x, z, sample_weight=sample_weight, proj_mat=proj_mat)
+            grid.fit(x, y, sample_weight=sample_weight, proj_mat=proj_mat)
             estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
-            estimator.fit(x[idx1, :], z[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
+            estimator.fit(x[idx1, :], y[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
 
             # Instances incorrectly classified
             y_predict = estimator.predict(x[idx1, :])
