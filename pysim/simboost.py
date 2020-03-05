@@ -177,9 +177,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True, y_numeric=True)
-        if y.ndim == 2 and y.shape[1] == 1:
-            y = column_or_1d(y, warn=False)
-        return x, y
+        return x, y.reshape([-1, 1])
 
     def fit(self, x, y, sample_weight=None):
 
@@ -514,16 +512,8 @@ class SimAdaBoostRegressor(BaseSimBooster, ClassifierMixin):
         
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
-                         multi_output=True)
-        if y.ndim == 2 and y.shape[1] == 1:
-            y = column_or_1d(y, warn=False)
-
-        self._label_binarizer = LabelBinarizer()
-        self._label_binarizer.fit(y)
-        self.classes_ = self._label_binarizer.classes_
-
-        y = self._label_binarizer.transform(y) * 1.0
-        return x, y
+                         multi_output=True, y_numeric=True)
+        return x, y.reshape([-1, 1])
 
     def fit(self, x, y, sample_weight=None):
 
