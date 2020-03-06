@@ -162,7 +162,7 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
 
         self._validate_hyperparameters()
         x, y = self._validate_input(x, y)
-        self.estimate_density()
+        self.estimate_density(x)
         
         n_samples = x.shape[0]
         if sample_weight is None:
@@ -256,6 +256,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
 
         self._validate_hyperparameters()
         x, y = self._validate_input(x, y)
+        self.estimate_density(x)
         n_samples = x.shape[0]
         if sample_weight is None:
             sample_weight = np.ones(n_samples)
