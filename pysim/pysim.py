@@ -140,10 +140,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 active_beta.append(beta)
                 active_beta_inx.append(idx)
 
-        rects = ax2.barh(np.arange(len(active_beta)),
-                    [self.beta_.ravel()[idx] for _, idx in zip(np.abs(active_beta), active_beta_inx)])
+        rects = ax2.barh(np.arange(len(active_beta)), [beta for beta, idx in active_beta])
         ax2.set_yticks(np.arange(len(active_beta)))
-        ax2.set_yticklabels(["X" + str(idx + 1) for _, idx in zip(np.abs(active_beta), active_beta_inx)])
+        ax2.set_yticklabels(["X" + str(idx + 1) for idx in active_beta_idx])
         ax2.set_xlim(xlim_min, xlim_max)
         ax2.set_ylim(-1, len(active_beta_inx))
         ax2.set_title("Projection Indice", fontsize=12)
