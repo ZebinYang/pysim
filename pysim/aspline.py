@@ -252,6 +252,10 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
         y = self._label_binarizer.transform(y) * 1.0
         return x, y
 
+    def estimate_density(self, x):
+        
+        self.density_, self.bins_ = np.histogram(x, bins=10, density=True)
+
     def fit(self, x, y, sample_weight=None):
 
         self._validate_hyperparameters()
@@ -263,6 +267,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
         else:
             sample_weight = sample_weight * n_samples
 
+        self.estimate_density(x)
         knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
         xphi = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1",
                        {"x": [self.xmin, self.xmax], "knots": knots, "degree": self.degree})
