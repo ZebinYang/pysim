@@ -51,6 +51,20 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
             D[i,i:(i+order+2)] = diss_operator
         return D
 
+    @property
+    def variable_density_(self):
+        """Return the projection indices.
+        Returns
+        -------
+        projection_indices_ : ndarray of shape (d, n_estimators)
+        """
+        if self.estimators_ is None or len(self.estimators_) == 0:
+            raise ValueError("Estimator not fitted, "
+                             "call `fit` before `feature_importances_`.")
+
+        return np.array([estimator.beta_.flatten() for estimator in self.estimators_]).T
+
+
     def _validate_hyperparameters(self):
         
         if not isinstance(self.degree, int):
@@ -89,10 +103,21 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         check_is_fitted(self, "coef_")
 
         fig = plt.figure(figsize=(6, 4))
+        inner = gridspec.GridSpec(2, 1, hspace=0.1, height_ratios=[6, 1])
+        ax1_main = plt.Subplot(fig, inner[0]) 
         xgrid = np.linspace(self.xmin, self.xmax, 100).reshape([-1, 1])
         ygrid = self.decision_function(xgrid)
-        plt.plot(xgrid, ygrid)
-        plt.title("Shape Function", fontsize=12)
+        ax1_main.plot(xgrid, ygrid)
+        ax1_main.set_xticklabels([])
+        ax1_main.set_title("Shape Function", fontsize=12)
+        fig.add_subplot(ax1_main)
+        
+        ax1_density = plt.Subplot(fig, inner[1]) 
+        xint = ((np.array(self.bins_[1:]) + np.array(self.bins_[:-1])) / 2).reshape([-1, 1]).reshape([-1])
+        ax1_density.bar(xint, self.density_, width=xint[1] - xint[0])
+        ax1_main.get_shared_x_axes().join(ax1_main, ax1_density)
+        ax1_density.set_yticklabels([])
+        fig.add_subplot(ax1_density)
         plt.show()
 
     def decision_function(self, x):
@@ -129,11 +154,16 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
                          multi_output=True, y_numeric=True)
         return x, y.reshape([-1, 1])
 
+    def estimate_density(self, x):
+        
+        self.density_, self.bins_ = np.histogram(x, bins=10, density=True)
+
     def fit(self, x, y, sample_weight=None):
 
         self._validate_hyperparameters()
         x, y = self._validate_input(x, y)
-
+        self.estimate_density()
+        
         n_samples = x.shape[0]
         if sample_weight is None:
             sample_weight = np.ones(n_samples)

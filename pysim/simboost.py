@@ -114,24 +114,31 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         max_ids = len(self.estimators_)
         fig = plt.figure(figsize=(12, 4.2 * max_ids))
-        outer = gridspec.GridSpec(max_ids, 1, hspace=0.2)
+        outer = gridspec.GridSpec(max_ids, 2, hspace=0.2)
         
         xlim_min = - max(np.abs(self.projection_indices_.min() - 0.1), np.abs(self.projection_indices_.max() + 0.1))
         xlim_max = max(np.abs(self.projection_indices_.min() - 0.1), np.abs(self.projection_indices_.max() + 0.1))
         for indice, estimator in enumerate(self.estimators_):
 
-            inner = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=outer[indice], wspace=0.15)
-            ax1 = plt.Subplot(fig, inner[0]) 
+            inner = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer[indice * 2], wspace=0.15, height_ratios=[6, 1])
+            ax1_main = plt.Subplot(fig, inner[0]) 
             xgrid = np.linspace(estimator.shape_fit_.xmin, estimator.shape_fit_.xmax, 100).reshape([-1, 1])
             ygrid = estimator.shape_fit_.decision_function(xgrid)
-            ax1.plot(xgrid, ygrid)
+            ax1_main.plot(xgrid, ygrid)
             if indice == 0:
                 ax1.set_title("Shape Function", fontsize=12)
-            ax1.text(0.25, 0.9, "IR: " + str(np.round(100 * self.importance_ratios_[indice], 2)) + "%",
+            ax1_main.text(0.25, 0.9, "IR: " + str(np.round(100 * self.importance_ratios_[indice], 2)) + "%",
                   fontsize=24, horizontalalignment="center", verticalalignment="center", transform=ax1.transAxes)
-            fig.add_subplot(ax1)
+            fig.add_subplot(ax1_main)
 
-            ax2 = plt.Subplot(fig, inner[1]) 
+            ax1_density = plt.Subplot(fig, inner[1]) 
+            xint = ((np.array(self.shape_fit_.bins_[1:]) + np.array(self.shape_fit_.bins_[:-1])) / 2).reshape([-1, 1]).reshape([-1])
+            ax1_density.bar(xint, self.shape_fit.density_, width=xint[1] - xint[0])
+            ax1_main.get_shared_x_axes().join(ax1_main, ax1_density)
+            ax1_density.set_yticklabels([])
+            fig.add_subplot(ax1_density)
+
+            ax2 = plt.Subplot(fig, outer[indice * 2 + 1]) 
             active_beta = []
             active_beta_idx = []
             for idx, beta in enumerate(estimator.beta_.ravel()):

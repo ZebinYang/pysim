@@ -124,15 +124,24 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         xlim_min = self.beta_.min() - 0.1
         xlim_max = self.beta_.max() + 0.1
         fig = plt.figure(figsize=(12, 4))
-        visu = gridspec.GridSpec(1, 2, wspace=0.15)
-        ax1 = plt.Subplot(fig, visu[0]) 
+        outer = gridspec.GridSpec(1, 2, wspace=0.15)      
+        inner = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer[0], wspace=0.1, hspace=0.1, height_ratios=[6, 1])
+        ax1_main = plt.Subplot(fig, inner[0]) 
         xgrid = np.linspace(self.shape_fit_.xmin, self.shape_fit_.xmax, 100).reshape([-1, 1])
         ygrid = self.shape_fit_.decision_function(xgrid)
-        ax1.plot(xgrid, ygrid)
-        ax1.set_title("Shape Function", fontsize=12)
-        fig.add_subplot(ax1)
+        ax1_main.plot(xgrid, ygrid)
+        ax1_main.set_xticklabels([])
+        ax1_main.set_title("Shape Function", fontsize=12)
+        fig.add_subplot(ax1_main)
+        
+        ax1_density = plt.Subplot(fig, inner[1]) 
+        xint = ((np.array(self.shape_fit_.bins_[1:]) + np.array(self.shape_fit_.bins_[:-1])) / 2).reshape([-1, 1]).reshape([-1])
+        ax1_density.bar(xint, self.shape_fit.density_, width=xint[1] - xint[0])
+        ax1_main.get_shared_x_axes().join(ax1_main, ax1_density)
+        ax1_density.set_yticklabels([])
+        fig.add_subplot(ax1_density)
 
-        ax2 = plt.Subplot(fig, visu[1]) 
+        ax2 = plt.Subplot(fig, outer[1]) 
         active_beta = []
         active_beta_idx = []
         for idx, beta in enumerate(self.beta_.ravel()):
