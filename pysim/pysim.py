@@ -31,11 +31,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
      """
 
     @abstractmethod
-    def __init__(self, method="first_order", spline="a_spline", reg_lambda=0.1,
-                 reg_gamma=10, knot_num=20, degree=2, random_state=0):
+    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=10, knot_num=20, degree=2, random_state=0):
 
         self.method = method
-        self.spline = spline
         self.reg_lambda = reg_lambda
         self.reg_gamma = reg_gamma
         self.knot_num = knot_num
@@ -47,10 +45,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         
         if self.method not in ["first_order", "second_order", "first_order_thres"]:
             raise ValueError("method must be an element of [first_order, second_order, first_order_thres], got %s." % self.method)
-        
-        if self.spline not in ["a_spline", "p_sline", "p_spline_mono"]:
-            raise ValueError("spline must be an element of [a_spline, p_sline, p_spline_mono], got %s." % self.spline)
-        
+                
         if not isinstance(self.degree, int):
             raise ValueError("degree must be an integer, got %s." % self.degree)
 
@@ -126,6 +121,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         check_is_fitted(self, "beta_")
         check_is_fitted(self, "shape_fit_")
 
+        xlim_min = self.beta_.min() - 0.1
+        xlim_max = self.beta_.max() + 0.1
         fig = plt.figure(figsize=(12, 4))
         visu = gridspec.GridSpec(1, 2, wspace=0.15)
         ax1 = plt.Subplot(fig, visu[0]) 
@@ -147,7 +144,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     [self.beta_.ravel()[idx] for _, idx in sorted(zip(np.abs(active_beta), active_beta_inx))])
         ax2.set_yticks(np.arange(len(active_beta)))
         ax2.set_yticklabels(["X" + str(idx + 1) for _, idx in sorted(zip(np.abs(active_beta), active_beta_inx))])
-        ax2.set_xlim(np.min(active_beta) - 0.1, np.max(active_beta) + 0.1)
+        ax2.set_xlim(xlim_min, xlim_max)
         ax2.set_ylim(-1, len(active_beta_inx))
         ax2.set_title("Projection Indice", fontsize=12)
         fig.add_subplot(ax2)
@@ -190,16 +187,14 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
 class SimRegressor(BaseSim, RegressorMixin):
 
-    def __init__(self, method="first_order", spline="a_spline", reg_lambda=0.1,
-                 reg_gamma=10, knot_num=20, degree=2, random_state=0):
+    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=10, knot_num=20, degree=2, random_state=0):
 
         super(SimRegressor, self).__init__(method=method,
-                               spline=spline,
-                               reg_lambda=reg_lambda,
-                               reg_gamma=reg_gamma,
-                               knot_num=knot_num,
-                               degree=degree,
-                               random_state=random_state)
+                                reg_lambda=reg_lambda,
+                                reg_gamma=reg_gamma,
+                                knot_num=knot_num,
+                                degree=degree,
+                                random_state=random_state)
 
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
@@ -208,27 +203,9 @@ class SimRegressor(BaseSim, RegressorMixin):
 
     def _estimate_shape(self, x, y, sample_weight=None, xmin=-1, xmax=1):
 
-        if self.spline == "a_spline":
-            #adaptive spline
-            self.shape_fit_ = ASplineRegressor(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
-                                 xmin=xmin, xmax=xmax, degree=self.degree)
-            self.shape_fit_.fit(x, y, sample_weight)
-
-        elif self.spline == "p_spline":
-            #penalized spline
-            self.shape_fit_ = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma)).fit(x, y)
-
-        elif self.spline == "p_spline_mono":
-            #p-spline with monotonic constraint
-            shape_fit1 = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints="monotonic_inc")).fit(x, y)
-            shape_fit2 = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints="monotonic_dec")).fit(x, y)
-            if mean_squared_error(y.ravel(), shape_fit1.predict(x)) <= mean_squared_error(y.ravel(), shape_fit2.predict(x)):
-                self.shape_fit_ = shape_fit1
-            else:
-                self.shape_fit_ = shape_fit2
+        self.shape_fit_ = ASplineRegressor(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
+                             xmin=xmin, xmax=xmax, degree=self.degree)
+        self.shape_fit_.fit(x, y, sample_weight)
 
     def predict(self, x):
 
@@ -238,16 +215,14 @@ class SimRegressor(BaseSim, RegressorMixin):
 
 class SimClassifier(BaseSim, ClassifierMixin):
 
-    def __init__(self, method="first_order", spline="a_spline", reg_lambda=0.1,
-                 reg_gamma=10, knot_num=20, degree=2, random_state=0):
+    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=10, knot_num=20, degree=2, random_state=0):
 
         super(SimClassifier, self).__init__(method=method,
-                               spline=spline,
-                               reg_lambda=reg_lambda,
-                               reg_gamma=reg_gamma,
-                               knot_num=knot_num,
-                               degree=degree,
-                               random_state=random_state)
+                                reg_lambda=reg_lambda,
+                                reg_gamma=reg_gamma,
+                                knot_num=knot_num,
+                                degree=degree,
+                                random_state=random_state)
 
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
@@ -264,27 +239,10 @@ class SimClassifier(BaseSim, ClassifierMixin):
 
     def _estimate_shape(self, x, y, sample_weight=None, xmin=-1, xmax=1):
 
-        if self.spline == "a_spline":
-            #adaptive spline
-            self.shape_fit_ = ASplineClassifier(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
-                             xmin=xmin, xmax=xmax, degree=self.degree)
-            self.shape_fit_.fit(x, y, sample_weight)
-
-        elif self.spline == "p_spline":
-            #penalized spline
-            self.shape_fit_ = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
-                                lam=self.reg_gamma)).fit(x, y)
-
-        elif self.spline == "p_spline_mono":
-            #p-spline with monotonic constraint
-            shape_fit1 = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints="monotonic_inc")).fit(x, y)
-            shape_fit2 = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints="monotonic_dec")).fit(x, y)
-            if roc_auc_score(y.ravel(), shape_fit1.predict_proba(x)) <= roc_auc_score(y.ravel(), shape_fit2.predict_proba(x)):
-                self.shape_fit_ = shape_fit1
-            else:
-                self.shape_fit_ = shape_fit2
+        #adaptive spline
+        self.shape_fit_ = ASplineClassifier(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
+                         xmin=xmin, xmax=xmax, degree=self.degree)
+        self.shape_fit_.fit(x, y, sample_weight)
 
     def predict_proba(self, x):
 
