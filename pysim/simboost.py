@@ -116,8 +116,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         fig = plt.figure(figsize=(12, 4.2 * max_ids))
         outer = gridspec.GridSpec(max_ids, 1, hspace=0.2)
         
-        xlim_min = self.importance_ratios_.min() - 0.1
-        xlim_max = self.importance_ratios_.max() + 0.1
+        xlim_min = - max(np.abs(self.projection_indices_.min() - 0.1), np.abs(self.projection_indices_.max() + 0.1))
+        xlim_max = max(np.abs(self.projection_indices_.min() - 0.1), np.abs(self.projection_indices_.max() + 0.1))
         for indice, estimator in enumerate(self.estimators_):
 
             inner = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=outer[indice], wspace=0.15)
@@ -140,9 +140,9 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                     active_beta_inx.append(idx)
 
             rects = ax2.barh(np.arange(len(active_beta)),
-                        [estimator.beta_.ravel()[idx] for _, idx in sorted(zip(np.abs(active_beta), active_beta_inx))])
+                        [estimator.beta_.ravel()[idx] for _, idx in zip(np.abs(active_beta), active_beta_inx)])
             ax2.set_yticks(np.arange(len(active_beta)))
-            ax2.set_yticklabels(["X" + str(idx + 1) for _, idx in sorted(zip(np.abs(active_beta), active_beta_inx))])
+            ax2.set_yticklabels(["X" + str(idx + 1) for _, idx in zip(np.abs(active_beta), active_beta_inx)])
             ax2.set_xlim(xlim_min, xlim_max)
             ax2.set_ylim(-1, len(active_beta_inx))
             if indice == 0:
