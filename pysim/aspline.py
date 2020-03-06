@@ -169,7 +169,7 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
                           {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
         seBWB = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), selected_basis, axes=([0], [0]))
         seBWY = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), y, axes=([0], [0]))
-        self.coef_ = np.dot(np.linalg.pinv(seBWB), seBWY)
+        self.coef_ = np.dot(np.linalg.pinv(seBWB, rcond=1e-8), seBWY)
         return self
 
     def predict(self, x):
@@ -246,7 +246,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
         DwD = np.tensordot(D * update_w.reshape([-1, 1]), D, axes=([0], [0]))
         BWB = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), init_basis, axes=([0], [0]))
         BWY = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), self._inv_link(tempy), axes=([0], [0]))
-        update_a = np.dot(np.linalg.pinv(BWB + self.reg_gamma * DwD), BWY)
+        update_a = np.dot(np.linalg.pinv(BWB + self.reg_gamma * DwD, rcond=1e-8), BWY)
         best_loss = self._get_loss(y, self._link(np.dot(init_basis, update_a)))
         for i in range(self.maxiter):
             best_loss_irls = np.inf
@@ -262,7 +262,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
                 BW = init_basis[mask] * sample_weight[mask].reshape([-1, 1])
                 DwD = np.tensordot(D * update_w.reshape([-1, 1]), D, axes=([0], [0]))
                 BWOB = np.tensordot(BW * omega[mask].reshape([-1, 1]), init_basis[mask], axes=([0], [0]))
-                update_a_temp = np.dot(np.linalg.pinv(BWOB + self.reg_gamma * DwD),
+                update_a_temp = np.dot(np.linalg.pinv(BWOB + self.reg_gamma * DwD, rcond=1e-8),
                                 BWOB.dot(update_a) + np.tensordot(BW, y[mask] - mu[mask], axes=([0], [0])))
                 new_loss = self._get_loss(y, self._link(np.dot(init_basis, update_a_temp)))
                 if new_loss - best_loss_irls >= 0:
@@ -283,7 +283,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
 
         seBWB = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), selected_basis, axes=([0], [0]))
         seBWY = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), self._inv_link(tempy), axes=([0], [0]))
-        self.coef_ = np.dot(np.linalg.pinv(seBWB), seBWY)
+        self.coef_ = np.dot(np.linalg.pinv(seBWB, rcond=1e-8), seBWY)
         for j in range(self.maxiter_irls):
             lp = np.dot(selected_basis, self.coef_)
             mu = self._link(lp)
@@ -294,7 +294,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
                 break
             seBW = selected_basis[mask] * sample_weight[mask].reshape([-1, 1])
             seBWOB = np.tensordot(seBW * omega[mask].reshape([-1, 1]), selected_basis[mask], axes=([0], [0]))
-            self.coef_ = np.dot(np.linalg.pinv(seBWOB),
+            self.coef_ = np.dot(np.linalg.pinv(seBWOB, rcond=1e-8),
                           seBWOB.dot(self.coef_) + np.tensordot(seBW, y[mask] - mu[mask], axes=([0], [0])))
         return self
     
