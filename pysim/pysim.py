@@ -136,7 +136,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         
         ax1_density = plt.Subplot(fig, inner[1]) 
         xint = ((np.array(self.shape_fit_.bins_[1:]) + np.array(self.shape_fit_.bins_[:-1])) / 2).reshape([-1, 1]).reshape([-1])
-        ax1_density.bar(xint, self.shape_fit.density_, width=xint[1] - xint[0])
+        ax1_density.bar(xint, self.shape_fit_.density_, width=xint[1] - xint[0])
         ax1_main.get_shared_x_axes().join(ax1_main, ax1_density)
         ax1_density.set_yticklabels([])
         fig.add_subplot(ax1_density)
