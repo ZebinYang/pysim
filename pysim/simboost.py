@@ -126,7 +126,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             ygrid = estimator.shape_fit_.decision_function(xgrid)
             ax1_main.plot(xgrid, ygrid)
             if indice == 0:
-                ax1.set_title("Shape Function", fontsize=12)
+                ax1_main.set_title("Shape Function", fontsize=12)
             ax1_main.text(0.25, 0.9, "IR: " + str(np.round(100 * self.importance_ratios_[indice], 2)) + "%",
                   fontsize=24, horizontalalignment="center", verticalalignment="center", transform=ax1.transAxes)
             fig.add_subplot(ax1_main)
