@@ -445,7 +445,7 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
                 break
 
             y_codes = np.array([-1., 1.])
-            y_coding = y_codes.take([0, 1] == y)
+            y_coding = y_codes.take(np.array([0, 1]) == y.reshape([-1, 1]))
             with np.errstate(divide="ignore", over="ignore"):
                 pred_proba = estimator.predict_proba(x)
                 pred_proba = np.clip(pred_proba, np.finfo(pred_proba.dtype).eps, 1 - np.finfo(pred_proba.dtype).eps)
@@ -454,7 +454,7 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             sample_weight[idx1] /= sample_weight[idx1].sum()
             log_pred_proba_val = np.log(pred_proba[idx2])
-            pred_val = self.decision_function(x[idx2]) + (log_pred_proba_val - (1. / 2) * log_pred_proba_val.sum(axis=1)[:, np.newaxis])
+            pred_val = self.decision_function(x[idx2]) + (log_pred_proba_val[:, 1] - (1. / 2) * log_pred_proba_val.sum(axis=1))
             pred_val_proba = 1 / (1 + np.exp(- pred_val))
             roc_auc_new = roc_auc_score(y[idx2], pred_val_proba)
             # stop criterion
@@ -482,7 +482,7 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
             pred_proba = estimator.predict_proba(x)
             pred_proba = np.clip(pred_proba, np.finfo(pred_proba.dtype).eps, None)
             log_proba = np.log(pred_proba)
-            pred += (log_proba - (1. / 2) * log_proba.sum(axis=1)[:, np.newaxis])
+            pred += (log_proba[:, 1] - (1. / 2) * log_proba.sum(axis=1))
         return pred
 
     def predict_proba(self, x):
