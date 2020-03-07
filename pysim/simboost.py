@@ -499,7 +499,7 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
             pred_val = 0
             for est in self.estimators_ + [estimator]:
                 pred_proba_val = est.predict_proba(x[idx2])
-                pred_proba_val = np.clip(pred_proba_val, np.finfo(pred_proba.dtype).eps, 1 - np.finfo(pred_proba.dtype).eps)
+                pred_proba_val = np.clip(pred_proba_val, np.finfo(pred_proba_val.dtype).eps, 1 - np.finfo(pred_proba_val.dtype).eps)
                 log_pred_proba_val = np.log(np.vstack([1 - pred_proba_val, pred_proba_val])).T
                 pred_val += (log_pred_proba_val[:, 1] - (1. / 2) * log_pred_proba_val.sum(axis=1))
             proba_val = 1 / (1 + np.exp(- pred_val))
