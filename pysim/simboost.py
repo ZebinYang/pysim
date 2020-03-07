@@ -364,7 +364,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
                           cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
 
             grid.fit(x, z, sample_weight=sample_weight, proj_mat=proj_mat)
-            estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
+            estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_auc"] == 1))[0][0]])
             estimator.fit(x[idx1], z[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
 
             # update
