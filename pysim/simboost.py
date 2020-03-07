@@ -119,7 +119,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         
         xlim_min = - max(np.abs(self.projection_indices_.min() - 0.1), np.abs(self.projection_indices_.max() + 0.1))
         xlim_max = max(np.abs(self.projection_indices_.min() - 0.1), np.abs(self.projection_indices_.max() + 0.1))
-        for indice, estimator in enumerate(self.estimators_):
+        for indice, estimator in enumerate(self.best_estimators_):
 
             inner = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer[indice * 2], wspace=0.15, height_ratios=[6, 1])
             ax1_main = plt.Subplot(fig, inner[0]) 
@@ -497,9 +497,13 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             sample_weight[idx1] /= sample_weight[idx1].sum()
             log_pred_proba_val = np.log(np.vstack([1 - pred_proba[idx2], pred_proba[idx2]])).T
-            pred_val = self.decision_function(x[idx2]) + (log_pred_proba_val[:, 1] - (1. / 2) * log_pred_proba_val.sum(axis=1))
+            pred_val = 0
+            for est in self.estimators_ + [estimator]:
+                pred_proba_val = est.predict_proba(x[idx2])
+                pred_proba_val = np.clip(pred_proba, np.finfo(pred_proba.dtype).eps, None)
+                log_pred_proba_val = np.log(np.vstack([1 - pred_proba, pred_proba])).T
+                pred_val += (log_pred_proba_val[:, 1] - (1. / 2) * log_pred_proba_val.sum(axis=1))
             proba_val = 1 / (1 + np.exp(- pred_val))
-            
             val_auc = roc_auc_score(y[idx2], proba_val)
             self.estimators_.append(estimator)
             self.estimator_val_auc.append(val_auc)
