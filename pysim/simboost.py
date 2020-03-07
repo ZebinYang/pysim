@@ -204,7 +204,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         val_fold[idx1] = -1
 
         pred_val = 0
-        z = y.copy()
+        z = y.copy().ravel()
 
         mse_opt = np.inf
         self.estimators_ = []
