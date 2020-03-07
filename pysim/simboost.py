@@ -306,6 +306,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
         roc_auc_opt = -np.inf
         self.estimators_ = []
         proba_train = 0.5 * np.ones(len(idx1))
+        proba_val = 0.5 * np.ones(len(idx2))
         for i in range(self.n_estimators):
 
             # projection matrix
@@ -320,7 +321,8 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
             sample_weight[idx1] = np.maximum(sample_weight[idx1], 2 * np.finfo(np.float64).eps)
 
             with np.errstate(divide="ignore", over="ignore"):
-                z = np.where(y.ravel(), 1. / proba_train, -1. / (1. - proba_train)) 
+                z = np.where(y.ravel(), 1. / np.hstack([proba_train, proba_val]),
+                                -1. / (1. - np.hstack([proba_train, proba_val]))) 
                 z = np.clip(z, a_min=-8, a_max=8)
 
             # fit Sim estimator
@@ -349,6 +351,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
             pred_train += estimator.predict(x[idx1])
             pred_val += estimator.predict(x[idx2])
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
+            proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
             self.estimators_.append(estimator)
 
         self.tr_idx = idx1
