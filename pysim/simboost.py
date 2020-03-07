@@ -445,11 +445,11 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
                 break
 
             y_codes = np.array([-1., 1.])
-            y_coding = y_codes.take([0, 1] == y)
+            y_coding = y_codes.take([0, 1] == y[idx1])
             with np.errstate(divide="ignore", over="ignore"):
                 pred_proba = estimator.predict_proba(x[idx1])
                 pred_proba = np.clip(pred_proba, np.finfo(pred_proba.dtype).eps, 1 - np.finfo(pred_proba.dtype).eps)
-                estimator_weight = -0.5 * np.sum(y_coding * np.log(np.hstack([1 - pred_proba, pred_proba])), axis=1)
+                estimator_weight = -0.5 * np.sum(y_coding * np.log(np.vstack([1 - pred_proba, pred_proba])).T, axis=1)
                 sample_weight[idx1] *= np.exp(estimator_weight * ((sample_weight[idx1] > 0) | (estimator_weight < 0)))
 
             sample_weight[idx1] /= sample_weight[idx1].sum()
