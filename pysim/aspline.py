@@ -182,9 +182,12 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
         BWY = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), y, axes=([0], [0]))
         for i in range(self.maxiter):
             DwD = np.tensordot(D * update_w.reshape([-1, 1]), D, axes=([0], [0]))
-            U = cholesky(BWB + self.reg_gamma * DwD)
-            M = scipy.linalg.lapack.clapack.dtrtri(U)[0]
-            update_a_temp = np.dot(np.dot(M, M.T.conj()), BWY)
+            try:
+                U = cholesky(BWB + 10 * self.reg_gamma * DwD)
+                M = scipy.linalg.lapack.clapack.dtrtri(U)[0]
+                update_a_temp = np.dot(np.dot(M, M.T.conj()), BWY)
+            except:
+                update_a_temp = np.dot(np.linalg.pinv(BWB + 10 * sp.reg_gamma * DwD, rcond=1e-5), BWY)
             new_loss = self._get_loss(y, np.dot(init_basis, update_a_temp))
             if new_loss - best_loss >= 0:
                 break
