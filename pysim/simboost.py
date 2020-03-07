@@ -193,14 +193,14 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         check_is_fitted(self, "best_estimators_")
 
         fig = plt.figure(figsize=(6, 4))
-        plt.plot(np.arange(0, len(self.estimator_val_mse), 1), self.estimator_val_mse)
-        plt.axvline(np.argmin(self.estimator_val_mse), linestyle="dotted", color="red")
+        plt.plot(np.arange(1, len(self.estimator_val_mse) + 1, 1), self.estimator_val_auc)
+        plt.axvline(np.argmin(self.estimator_val_auc), linestyle="dotted", color="red")
         plt.axvline(len(self.best_estimators_), linestyle="dotted", color="red")
-        plt.plot(np.argmin(self.estimator_val_mse), np.min(self.estimator_val_mse), "*", markersize=12, color="red")
-        plt.plot(len(self.best_estimators_), self.estimator_val_mse[len(self.best_estimators_) - 1], "o", markersize=8, color="red")
+        plt.plot(np.argmin(self.estimator_val_auc) + 1, np.min(self.estimator_val_auc), "*", markersize=12, color="red")
+        plt.plot(len(self.best_estimators_), self.estimator_val_auc[len(self.best_estimators_) - 1], "o", markersize=8, color="red")
         plt.xlabel("Number of Estimators", fontsize=12)
-        plt.ylabel("Validation Loss", fontsize=12)
-        plt.xlim(-0.5, len(self.estimator_val_mse) - 0.5)
+        plt.ylabel("Validation AUC", fontsize=12)
+        plt.xlim(0.5, len(self.estimator_val_auc) + 0.5)
         plt.show()
 
     def fit(self, x, y, sample_weight=None):
@@ -302,14 +302,14 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
         check_is_fitted(self, "best_estimators_")
 
         fig = plt.figure(figsize=(6, 4))
-        plt.plot(np.arange(0, len(self.estimator_val_auc), 1), self.estimator_val_auc)
-        plt.axvline(np.argmin(self.estimator_val_auc), linestyle="dotted", color="red")
+        plt.plot(np.arange(1, len(self.estimator_val_auc) + 1, 1), self.estimator_val_auc)
+        plt.axvline(np.argmax(self.estimator_val_auc), linestyle="dotted", color="red")
         plt.axvline(len(self.best_estimators_), linestyle="dotted", color="red")
-        plt.plot(np.argmin(self.estimator_val_auc), np.min(self.estimator_val_auc), "*", markersize=12, color="red")
+        plt.plot(np.argmax(self.estimator_val_auc) + 1, np.max(self.estimator_val_auc), "*", markersize=12, color="red")
         plt.plot(len(self.best_estimators_), self.estimator_val_auc[len(self.best_estimators_) - 1], "o", markersize=8, color="red")
         plt.xlabel("Number of Estimators", fontsize=12)
-        plt.ylabel("Validation Loss", fontsize=12)
-        plt.xlim(-0.5, len(self.estimator_val_auc) - 0.5)
+        plt.ylabel("Validation AUC", fontsize=12)
+        plt.xlim(0.5, len(self.estimator_val_auc) + 0.5)
         plt.show()
 
     def fit(self, x, y, sample_weight=None):
@@ -431,14 +431,14 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
         check_is_fitted(self, "best_estimators_")
 
         fig = plt.figure(figsize=(6, 4))
-        plt.plot(np.arange(0, len(self.estimator_val_auc), 1), self.estimator_val_auc)
-        plt.axvline(np.argmin(self.estimator_val_auc), linestyle="dotted", color="red")
+        plt.plot(np.arange(1, len(self.estimator_val_auc) + 1, 1), self.estimator_val_auc)
+        plt.axvline(np.argmax(self.estimator_val_auc), linestyle="dotted", color="red")
         plt.axvline(len(self.best_estimators_), linestyle="dotted", color="red")
-        plt.plot(np.argmin(self.estimator_val_auc), np.min(self.estimator_val_auc), "*", markersize=12, color="red")
+        plt.plot(np.argmax(self.estimator_val_auc) + 1, np.max(self.estimator_val_auc), "*", markersize=12, color="red")
         plt.plot(len(self.best_estimators_), self.estimator_val_auc[len(self.best_estimators_) - 1], "o", markersize=8, color="red")
         plt.xlabel("Number of Estimators", fontsize=12)
-        plt.ylabel("Validation Loss", fontsize=12)
-        plt.xlim(-0.5, len(self.estimator_val_auc) - 0.5)
+        plt.ylabel("Validation AUC", fontsize=12)
+        plt.xlim(0.5, len(self.estimator_val_auc) + 0.5)
         plt.show()
 
     def fit(self, x, y, sample_weight=None):
