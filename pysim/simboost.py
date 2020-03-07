@@ -24,7 +24,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1,
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, random_state=0):
+                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, loss_threshold=0.01, random_state=0):
 
         self.n_estimators = n_estimators
         self.val_ratio = val_ratio
@@ -34,6 +34,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         self.reg_lambda = reg_lambda
         self.reg_gamma = reg_gamma
         self.ortho_shrink = ortho_shrink
+        self.loss_threshold = loss_threshold
         self.random_state = random_state
 
     def _validate_hyperparameters(self):
@@ -110,7 +111,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     def visualize(self):
 
-        check_is_fitted(self, "estimators_")
+        check_is_fitted(self, "best_estimators_")
 
         max_ids = len(self.estimators_)
         fig = plt.figure(figsize=(12, 4.2 * max_ids))
@@ -158,10 +159,10 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     def decision_function(self, x):
 
-        check_is_fitted(self, "estimators_")
+        check_is_fitted(self, "best_estimators_")
 
         pred = 0
-        for estimator in self.estimators_:
+        for estimator in self.best_estimators_:
             pred += estimator.predict(x)
         return pred
 
@@ -169,7 +170,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1,
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, random_state=0):
+                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, loss_threshold=0.01, random_state=0):
 
         super(SimBoostRegressor, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
@@ -179,12 +180,28 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                                       reg_lambda=reg_lambda,
                                       reg_gamma=reg_gamma,
                                       ortho_shrink=ortho_shrink,
+                                      loss_threshold=loss_threshold,
                                       random_state=random_state)
 
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True, y_numeric=True)
         return x, y.reshape([-1, 1])
+
+    def visualize_val_perf(self):
+
+        check_is_fitted(self, "best_estimators_")
+
+        fig = plt.figure(figsize=(6, 4))
+        plt.plot(np.arange(0, len(self.estimator_val_mse), 1), self.estimator_val_mse)
+        plt.axvline(np.argmin(self.estimator_val_mse), linestyle="dotted", color="red")
+        plt.axvline(len(self.best_estimators_), linestyle="dotted", color="red")
+        plt.plot(np.argmin(self.estimator_val_mse), np.min(self.estimator_val_mse), "*", markersize=12, color="red")
+        plt.plot(len(self.best_estimators_), self.estimator_val_mse[len(self.estimator_val_mse)], "o", markersize=8, color="red")
+        plt.xlabel("Number of Estimators", fontsize=12)
+        plt.ylabel("Validation Loss", fontsize=12)
+        plt.xlim(-0.5, len(self.estimator_val_mse) - 0.5)
+        plt.show()
 
     def fit(self, x, y, sample_weight=None):
 
@@ -205,9 +222,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
         pred_val = 0
         z = y.copy().ravel()
-
-        mse_opt = np.inf
         self.estimators_ = []
+        self.estimator_val_mse = []
         for i in range(self.n_estimators):
 
             # projection matrix
@@ -227,31 +243,27 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
             estimator.fit(x[idx1], z[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
 
-            # early stop
-            pred_val_temp = pred_val + estimator.predict(x[idx2]).reshape([-1, 1])
-            mse_new = mean_squared_error(y[idx2], pred_val_temp)
-            if mse_opt > mse_new:           
-                mse_opt = mse_new
-                early_stop_count = 0
-            else:
-                early_stop_count += 1
-
-            if early_stop_count >= self.early_stop_thres:
-                break
-
             # update    
             z = z - estimator.predict(x)
-            pred_val += estimator.predict(x[idx2]).reshape([-1, 1])
+            pred_val += estimator.predict(x[idx2])
+            val_loss = mean_squared_error(y[idx2], pred_val)
             self.estimators_.append(estimator)
-        
+            self.estimator_val_mse.append(val_loss)
+       
         self.tr_idx = idx1
         self.val_idx = idx2
+        best_loss = np.min(self.estimator_val_mse)
+        if np.sum((self.estimator_val_mse / best_loss - 1) < self.loss_threshold) > 0:
+            best_idx = np.where((self.estimator_val_mse / best_loss - 1) < self.loss_threshold)[0][0]
+        else:
+            best_idx = np.argmin(self.estimator_val_mse)
+        self.best_estimators_ = self.estimators_[:(best_idx + 1)]
         self.time_cost_ = time.time() - start
         return self
 
     def predict(self, x):
 
-        check_is_fitted(self, "estimators_")
+        check_is_fitted(self, "best_estimators_")
         pred = self.decision_function(x)
         return pred
 
@@ -259,7 +271,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1,
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, random_state=0):
+                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, loss_threshold=0.01, random_state=0):
 
         super(SimLogitBoostClassifier, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
@@ -269,6 +281,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
                                       reg_lambda=reg_lambda,
                                       reg_gamma=reg_gamma,
                                       ortho_shrink=ortho_shrink,
+                                      loss_threshold=loss_threshold,
                                       random_state=random_state)
 
     def _validate_input(self, x, y):
@@ -283,6 +296,21 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
 
         y = self._label_binarizer.transform(y) * 1.0
         return x, y
+   
+    def visualize_val_perf(self):
+
+        check_is_fitted(self, "best_estimators_")
+
+        fig = plt.figure(figsize=(6, 4))
+        plt.plot(np.arange(0, len(self.estimator_val_auc), 1), self.estimator_val_auc)
+        plt.axvline(np.argmin(self.estimator_val_auc), linestyle="dotted", color="red")
+        plt.axvline(len(self.best_estimators_), linestyle="dotted", color="red")
+        plt.plot(np.argmin(self.estimator_val_auc), np.min(self.estimator_val_auc), "*", markersize=12, color="red")
+        plt.plot(len(self.best_estimators_), self.estimator_val_mse[len(self.estimator_val_auc)], "o", markersize=8, color="red")
+        plt.xlabel("Number of Estimators", fontsize=12)
+        plt.ylabel("Validation Loss", fontsize=12)
+        plt.xlim(-0.5, len(self.estimator_val_auc) - 0.5)
+        plt.show()
 
     def fit(self, x, y, sample_weight=None):
 
@@ -305,6 +333,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
         pred_train = 0 
         roc_auc_opt = -np.inf
         self.estimators_ = []
+        self.estimator_val_auc = []
         proba_train = 0.5 * np.ones(len(idx1))
         proba_val = 0.5 * np.ones(len(idx2))
         for i in range(self.n_estimators):
@@ -335,27 +364,24 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
             estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
             estimator.fit(x[idx1], z[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
 
-            # stop criterion
-            pred_val_temp = pred_val + estimator.predict(x[idx2])
-            roc_auc_new = roc_auc_score(y[idx2], 1 / (1 + np.exp(-pred_val_temp)))
-            if roc_auc_opt < roc_auc_new:           
-                roc_auc_opt = roc_auc_new
-                early_stop_count = 0
-            else:
-                early_stop_count +=1
-
-            if early_stop_count >= self.early_stop_thres:
-                break
-
             # update
             pred_train += estimator.predict(x[idx1])
             pred_val += estimator.predict(x[idx2])
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
             proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
-            self.estimators_.append(estimator)
 
+            val_auc = roc_auc_score(y[idx2], proba_val)
+            self.estimators_.append(estimator)
+            self.estimator_val_auc.append(val_auc)
+       
         self.tr_idx = idx1
         self.val_idx = idx2
+        best_auc = np.max(self.estimator_val_auc)
+        if np.sum((1 - self.estimator_val_auc / best_auc) < self.loss_threshold) > 0:
+            best_idx = np.where((1 - self.estimator_val_auc / best_auc) < self.loss_threshold)[0][0]
+        else:
+            best_idx = np.argmax(self.estimator_val_loss)
+        self.best_estimators_ = self.estimators_[:(best_idx + 1)]
         self.time_cost_ = time.time() - start
         return self
     
@@ -374,7 +400,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
 class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1,
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, random_state=0):
+                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, loss_threshold=0.01, random_state=0):
 
         super(SimAdaBoostClassifier, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
@@ -383,7 +409,8 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
                                       knot_num=knot_num,
                                       reg_lambda=reg_lambda,
                                       reg_gamma=reg_gamma,
-                                      ortho_shrink=1,
+                                      ortho_shrink=ortho_shrink,
+                                      loss_threshold=loss_threshold,
                                       random_state=random_state)
         
     def _validate_input(self, x, y):
@@ -398,6 +425,21 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
 
         y = self._label_binarizer.transform(y) * 1.0
         return x, y
+
+    def visualize_val_perf(self):
+
+        check_is_fitted(self, "best_estimators_")
+
+        fig = plt.figure(figsize=(6, 4))
+        plt.plot(np.arange(0, len(self.estimator_val_auc), 1), self.estimator_val_auc)
+        plt.axvline(np.argmin(self.estimator_val_auc), linestyle="dotted", color="red")
+        plt.axvline(len(self.best_estimators_), linestyle="dotted", color="red")
+        plt.plot(np.argmin(self.estimator_val_auc), np.min(self.estimator_val_auc), "*", markersize=12, color="red")
+        plt.plot(len(self.best_estimators_), self.estimator_val_mse[len(self.estimator_val_auc)], "o", markersize=8, color="red")
+        plt.xlabel("Number of Estimators", fontsize=12)
+        plt.ylabel("Validation Loss", fontsize=12)
+        plt.xlim(-0.5, len(self.estimator_val_auc) - 0.5)
+        plt.show()
 
     def fit(self, x, y, sample_weight=None):
 
@@ -418,6 +460,7 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
 
         roc_auc_opt = -np.inf
         self.estimators_ = []
+        self.estimator_val_auc = []
         for i in range(self.n_estimators):
 
             # projection matrix
@@ -455,30 +498,27 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
             sample_weight[idx1] /= sample_weight[idx1].sum()
             log_pred_proba_val = np.log(np.vstack([1 - pred_proba[idx2], pred_proba[idx2]])).T
             pred_val = self.decision_function(x[idx2]) + (log_pred_proba_val[:, 1] - (1. / 2) * log_pred_proba_val.sum(axis=1))
-            pred_val_proba = 1 / (1 + np.exp(- pred_val))
-            roc_auc_new = roc_auc_score(y[idx2], pred_val_proba)
-            # stop criterion
-            if roc_auc_opt < roc_auc_new:           
-                roc_auc_opt = roc_auc_new
-                early_stop_count = 0
-            else:
-                early_stop_count +=1
-
-            if early_stop_count >= self.early_stop_thres:
-                break
+            proba_val = 1 / (1 + np.exp(- pred_val))
             
-            # update
+            val_auc = roc_auc_score(y[idx2], proba_val)
             self.estimators_.append(estimator)
-        
+            self.estimator_val_auc.append(val_auc)
+       
         self.tr_idx = idx1
         self.val_idx = idx2
+        best_auc = np.max(self.estimator_val_auc)
+        if np.sum((1 - self.estimator_val_auc / best_auc) < self.loss_threshold) > 0:
+            best_idx = np.where((1 - self.estimator_val_auc / best_auc) < self.loss_threshold)[0][0]
+        else:
+            best_idx = np.argmax(self.estimator_val_loss)
+        self.best_estimators_ = self.estimators_[:(best_idx + 1)]
         self.time_cost_ = time.time() - start
         return self
     
     def decision_function(self, x):
 
         pred = 0
-        for estimator in self.estimators_:
+        for estimator in self.best_estimators_:
             pred_proba = estimator.predict_proba(x)
             pred_proba = np.clip(pred_proba, np.finfo(pred_proba.dtype).eps, None)
             log_proba = np.log(np.vstack([1 - pred_proba, pred_proba])).T
