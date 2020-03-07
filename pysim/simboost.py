@@ -159,7 +159,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
     def decision_function(self, x):
 
         check_is_fitted(self, "estimators_")
-        
+
         pred = 0
         for estimator in self.estimators_:
             pred += estimator.predict(x)
@@ -301,13 +301,11 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
         val_fold = np.ones((len(indices)))
         val_fold[idx1] = -1
 
-        pred_train = 0 
         pred_val = 0
-        probs = 0.5 * np.ones(n_samples)
-        sample_weight = 1 / n_samples * np.ones(n_samples)
-
+        pred_train = 0 
         roc_auc_opt = -np.inf
         self.estimators_ = []
+        proba_train = 0.5 * np.ones(len(idx1))
         for i in range(self.n_estimators):
 
             # projection matrix
@@ -317,12 +315,12 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
                 u, _, _ = np.linalg.svd(self.projection_indices_, full_matrices=False)
                 proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
 
-            sample_weight = probs * (1 - probs)
-            sample_weight /= np.sum(sample_weight)
-            sample_weight = np.maximum(sample_weight, 2 * np.finfo(np.float64).eps)
+            sample_weight[idx1] = proba_train * (1 - proba_train)
+            sample_weight[idx1] /= np.sum(sample_weight[idx1])
+            sample_weight[idx1] = np.maximum(sample_weight[idx1], 2 * np.finfo(np.float64).eps)
 
             with np.errstate(divide="ignore", over="ignore"):
-                z = np.where(y.ravel(), 1. / probs, -1. / (1. - probs)) 
+                z = np.where(y.ravel(), 1. / proba_train, -1. / (1. - proba_train)) 
                 z = np.clip(z, a_min=-8, a_max=8)
 
             # fit Sim estimator
@@ -350,7 +348,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
             # update
             pred_train += estimator.predict(x[idx1])
             pred_val += estimator.predict(x[idx2])
-            probs = 1 / (1 + np.exp(-np.vstack([pred_train, pred_val]).ravel()))
+            proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
             self.estimators_.append(estimator)
 
         self.tr_idx = idx1
@@ -361,7 +359,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
     def predict_proba(self, x):
 
         pred = self.decision_function(x)
-        pred_proba = softmax(np.hstack([-pred, pred]) / 2, copy=False)[:, [1]]
+        pred_proba = softmax(np.hstack([-pred, pred]) / 2, copy=False)[:, 1]
         return pred_proba
 
     def predict(self, x):
@@ -446,12 +444,12 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
             y_codes = np.array([-1., 1.])
             y_coding = y_codes.take([0, 1] == y)
             with np.errstate(divide="ignore", over="ignore"):
-                pred_proba = estimator.predict_proba(x)
+                pred_proba = estimator.predict_proba(x[idx1])
                 pred_proba = np.clip(pred_proba, np.finfo(pred_proba.dtype).eps, 1 - np.finfo(pred_proba.dtype).eps)
                 estimator_weight = -0.5 * np.sum(y_coding * np.log(np.hstack([1 - pred_proba, pred_proba])), axis=1)
-                sample_weight *= np.exp(estimator_weight * ((sample_weight > 0) | (estimator_weight < 0)))
+                sample_weight[idx1] *= np.exp(estimator_weight * ((sample_weight[idx1] > 0) | (estimator_weight < 0)))
 
-            sample_weight /= sample_weight.sum()
+            sample_weight[idx1] /= sample_weight[idx1].sum()
             log_pred_proba_val = np.log(pred_proba[idx2])
             pred_val = self.decision_function(x[idx2]) + (log_pred_proba_val - (1. / 2) * log_pred_proba_val.sum(axis=1)[:, np.newaxis])
             pred_val_proba = 1 / (1 + np.exp(- pred_val))
@@ -487,138 +485,10 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
     def predict_proba(self, x):
 
         pred = self.decision_function(x)
-        pred_proba = softmax(np.hstack([-pred, pred]) / 2, copy=False)[:, [1]]
+        pred_proba = softmax(np.hstack([-pred, pred]) / 2, copy=False)[:, 1]
         return pred_proba
 
     def predict(self, x):
 
         pred_proba = self.predict_proba(x)
-        return self._label_binarizer.inverse_transform(pred_proba).reshape([-1, 1])
-    
-    
-class SimAdaBoostRegressor(BaseSimBooster, ClassifierMixin):
-
-    def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1,
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, random_state=0):
-
-        super(SimAdaBoostRegressor, self).__init__(n_estimators=n_estimators,
-                                      val_ratio=val_ratio,
-                                      early_stop_thres=early_stop_thres,
-                                      degree=degree,
-                                      knot_num=knot_num,
-                                      reg_lambda=reg_lambda,
-                                      reg_gamma=reg_gamma,
-                                      ortho_shrink=1,
-                                      random_state=random_state)
-        
-    def _validate_input(self, x, y):
-        x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
-                         multi_output=True, y_numeric=True)
-        return x, y.reshape([-1, 1])
-
-    def fit(self, x, y, sample_weight=None):
-
-        start = time.time()
-        self._validate_hyperparameters()
-        x, y = self._validate_input(x, y)
-        n_samples, n_features = x.shape
-        
-        if sample_weight is None:
-            sample_weight = np.ones(n_samples) / n_samples
-        else:
-            sample_weight = sample_weight / np.sum(sample_weight)
-
-        indices = np.arange(n_samples)
-        idx1, idx2 = train_test_split(indices, test_size=self.val_ratio, random_state=self.random_state)
-        val_fold = np.ones((len(indices)))
-        val_fold[idx1] = -1
-
-        mse_opt = np.inf
-        self.estimators_ = []
-        self.estimator_weights_ = []
-        for i in range(self.n_estimators):
-
-            # projection matrix
-            if (i == 0) or (i >= n_features) or (self.ortho_shrink == 0):
-                proj_mat = np.eye(n_features)
-            else:
-                u, _, _ = np.linalg.svd(self.projection_indices_, full_matrices=False)
-                proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
-
-            # fit Sim estimator
-            param_grid = {"method": ["second_order", "first_order"]}
-            grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num,
-                                  reg_lambda=self.reg_lambda, reg_gamma=self.reg_gamma, random_state=self.random_state), 
-                         scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
-                         cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
-            grid.fit(x, y, sample_weight=sample_weight, proj_mat=proj_mat)
-            estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
-            estimator.fit(x[idx1], y[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
-
-            # Instances incorrectly classified
-            y_predict = estimator.predict(x[idx1])
-            estimator_error = np.mean(np.average(y_predict != y[idx1], weights=sample_weight[idx1], axis=0))
-            estimator_error = np.abs(y_predict - y[idx1])
-            if estimator_error.sum() <= 0:
-                print("estimator_error.sum() <= 0")
-                break
-
-            error_max = estimator_error.max()
-            estimator_error /= error_max
-            estimator_error = (sample_weight[idx1] * estimator_error.ravel()).sum()
-
-            if estimator_error >= 0.5:
-                # Discard current estimator only if it isn't the only one
-                if len(estimators_) > 1:
-                    estimators_.pop(-1)
-                print("estimator_error >= 0.5")
-                break
-
-            beta = estimator_error / (1. - estimator_error)
-            estimator_weight = np.log(1. / beta) # * self.learning_rate
-            sample_weight *= np.power(beta, (1. - estimator_error))
-            sample_weight /= sample_weight.sum()
-
-            predictions = np.array([est.predict(x[idx2]).ravel() for est in self.estimators_] + [estimator.predict(x[idx2]).ravel()]).T
-            sorted_idx = np.argsort(predictions, axis=1)
-            weight_cdf = stable_cumsum(np.array(self.estimator_weights_ + [estimator_weight])[sorted_idx], axis=1)
-            median_or_above = weight_cdf >= 0.5 * weight_cdf[:, -1][:, np.newaxis]
-            median_idx = median_or_above.argmax(axis=1)
-            median_estimators = sorted_idx[np.arange(x[idx2].shape[0]), median_idx]
-            pred_val_temp = predictions[np.arange(x[idx2].shape[0]), median_estimators]
-            mse_new = mean_squared_error(y[idx2], pred_val_temp)
-            if mse_opt > mse_new:           
-                mse_opt = mse_new
-                early_stop_count = 0
-            else:
-                early_stop_count += 1
-
-            if early_stop_count >= self.early_stop_thres:
-                break
-            
-            # update
-            self.estimators_.append(estimator)
-            self.estimator_weights_.append(estimator_weight)
-            
-        self.tr_idx = idx1
-        self.val_idx = idx2
-        self.time_cost_ = time.time() - start
-        return self
-    
-    def decision_function(self, x):
-
-        predictions = np.array([est.predict(x).ravel() for est in self.estimators_]).T
-        sorted_idx = np.argsort(predictions, axis=1)
-        weight_cdf = stable_cumsum(np.array(self.estimator_weights_)[sorted_idx], axis=1)
-        median_or_above = weight_cdf >= 0.5 * weight_cdf[:, -1][:, np.newaxis]
-        median_idx = median_or_above.argmax(axis=1)
-        median_estimators = sorted_idx[np.arange(x.shape[0]), median_idx]
-        pred = predictions[np.arange(x.shape[0]), median_estimators]
-        # Return median predictions
-        return pred
-
-    def predict(self, x):
-
-        check_is_fitted(self, "estimators_")
-        pred = self.decision_function(x)
-        return pred
+        return self._label_binarizer.inverse_transform(pred_proba)

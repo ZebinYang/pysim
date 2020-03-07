@@ -128,7 +128,7 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         x[x > self.xmax] = self.xmax
         design_matrix = np.asarray(build_design_matrices([self.selected_xphi_.design_info],
                                          {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
-        pred = np.dot(design_matrix, self.coef_)
+        pred = np.dot(design_matrix, self.coef_).ravel()
         return pred
 
 
@@ -337,10 +337,10 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
     def predict_proba(self, x):
 
         pred = self.decision_function(x)
-        pred_proba = softmax(np.hstack([-pred, pred]) / 2, copy=False)[:, [1]]
+        pred_proba = softmax(np.hstack([-pred, pred]) / 2, copy=False)[:, 1]
         return pred_proba
 
     def predict(self, x):
 
         pred_proba = self.predict_proba(x)
-        return self._label_binarizer.inverse_transform(pred_proba).reshape([-1, 1])
+        return self._label_binarizer.inverse_transform(pred_proba)
