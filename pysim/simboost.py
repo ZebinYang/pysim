@@ -199,7 +199,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         plt.plot(np.argmin(self.estimator_val_mse) + 1, np.min(self.estimator_val_mse), "*", markersize=12, color="red")
         plt.plot(len(self.best_estimators_), self.estimator_val_mse[len(self.best_estimators_) - 1], "o", markersize=8, color="red")
         plt.xlabel("Number of Estimators", fontsize=12)
-        plt.ylabel("Validation AUC", fontsize=12)
+        plt.ylabel("Validation MSE", fontsize=12)
         plt.xlim(0.5, len(self.estimator_val_mse) + 0.5)
         plt.show()
 
@@ -234,9 +234,10 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                 proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
 
             # fit Sim estimator
-            param_grid = {"method": ["second_order", "first_order"]}
-            grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num,
-                                  reg_lambda=self.reg_lambda, reg_gamma=self.reg_gamma, random_state=self.random_state), 
+            param_grid = {"method": ["second_order", "first_order"], 
+                          "reg_lambda": [0.01, 0.05, 0.1], 
+                          "reg_gamma": np.logspace(-1, 1, 3)}
+            grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
                          scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                          cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             grid.fit(x, z, sample_weight=sample_weight, proj_mat=proj_mat)
@@ -355,11 +356,13 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
                 z = np.clip(z, a_min=-8, a_max=8)
 
             # fit Sim estimator
-            param_grid = {"method": ["second_order", "first_order"]}
-            grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num,
-                                  reg_lambda=self.reg_lambda, reg_gamma=self.reg_gamma, random_state=self.random_state), 
-                          scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
+            param_grid = {"method": ["second_order", "first_order"], 
+                          "reg_lambda": [0.01, 0.05, 0.1], 
+                          "reg_gamma": np.logspace(-1, 1, 3)}
+            grid = GridSearchCV(SimClassifier(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
+                          scoring={"auc": make_scorer(roc_auc_score)}, refit=False,
                           cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
+
             grid.fit(x, z, sample_weight=sample_weight, proj_mat=proj_mat)
             estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
             estimator.fit(x[idx1], z[idx1], sample_weight=sample_weight[idx1], proj_mat=proj_mat)
@@ -471,10 +474,10 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
                 proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
 
             # fit Sim estimator
-            param_grid = {"method": ["second_order", "first_order"]}
-            grid = GridSearchCV(SimClassifier(degree=self.degree, knot_num=self.knot_num, 
-                                   reg_lambda=self.reg_lambda, reg_gamma=self.reg_gamma,
-                                   random_state=self.random_state), 
+            param_grid = {"method": ["second_order", "first_order"], 
+                          "reg_lambda": [0.01, 0.05, 0.1], 
+                          "reg_gamma": np.logspace(-1, 1, 3)}
+            grid = GridSearchCV(SimClassifier(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
                           scoring={"auc": make_scorer(roc_auc_score)}, refit=False,
                           cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             grid.fit(x, y, sample_weight=sample_weight, proj_mat=proj_mat)
