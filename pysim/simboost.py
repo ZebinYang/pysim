@@ -236,7 +236,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             if (i == 0) or (i >= n_features) or (self.ortho_shrink == 0):
                 proj_mat = np.eye(n_features)
             else:
-                u, _, _ = np.linalg.svd(self.projection_indices_, full_matrices=False)
+                projection_indices_ = np.array([estimator.beta_.flatten() for estimator in self.best_estimators_]).T
+                u, _, _ = np.linalg.svd(projection_indices_, full_matrices=False)
                 proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
 
             # fit Sim estimator
@@ -350,7 +351,8 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
             if (i == 0) or (i >= n_features) or (self.ortho_shrink == 0):
                 proj_mat = np.eye(n_features)
             else:
-                u, _, _ = np.linalg.svd(self.projection_indices_, full_matrices=False)
+                projection_indices_ = np.array([estimator.beta_.flatten() for estimator in self.best_estimators_]).T
+                u, _, _ = np.linalg.svd(projection_indices_, full_matrices=False)
                 proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
 
             sample_weight[idx1] = proba_train * (1 - proba_train)
@@ -478,7 +480,8 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
             if (i == 0) or (i >= n_features) or (self.ortho_shrink == 0):
                 proj_mat = np.eye(n_features)
             else:
-                u, _, _ = np.linalg.svd(self.projection_indices_, full_matrices=False)
+                projection_indices_ = np.array([estimator.beta_.flatten() for estimator in self.best_estimators_]).T
+                u, _, _ = np.linalg.svd(projection_indices_, full_matrices=False)
                 proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
 
             # fit Sim estimator
