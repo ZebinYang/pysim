@@ -110,54 +110,57 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         return np.array([estimator.beta_.flatten() for estimator in self.estimators_]).T
 
-    def visualize(self):
+    def visualize(self, cols_per_row=3):
 
         check_is_fitted(self, "best_estimators_")
 
-        max_ids = len(self.estimators_)
-        fig = plt.figure(figsize=(12, 4.2 * max_ids))
-        outer = gridspec.GridSpec(max_ids, 2, hspace=0.2)
-        
+        max_ids = len(self.best_estimators_)
+        fig = plt.figure(figsize=(8 * cols_per_row, 4.6 * int(np.ceil(max_ids / cols_per_row))))
+        outer = gridspec.GridSpec(int(np.ceil(max_ids / cols_per_row)), cols_per_row, wspace=0.15, hspace=0.25)
+
         xlim_min = - max(np.abs(self.projection_indices_.min() - 0.1), np.abs(self.projection_indices_.max() + 0.1))
         xlim_max = max(np.abs(self.projection_indices_.min() - 0.1), np.abs(self.projection_indices_.max() + 0.1))
         for indice, estimator in enumerate(self.best_estimators_):
 
-            inner = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer[indice * 2], wspace=0.15, height_ratios=[6, 1])
-            ax1_main = plt.Subplot(fig, inner[0]) 
+            inner = outer[indice].subgridspec(2, 2, wspace=0.15, height_ratios=[6, 1], width_ratios=[3, 1])
+            ax1_main = fig.add_subplot(inner[0, 0])
             xgrid = np.linspace(estimator.shape_fit_.xmin, estimator.shape_fit_.xmax, 100).reshape([-1, 1])
             ygrid = estimator.shape_fit_.decision_function(xgrid)
             ax1_main.plot(xgrid, ygrid)
-            if indice == 0:
-                ax1_main.set_title("Shape Function", fontsize=12)
-            ax1_main.text(0.25, 0.9, "IR: " + str(np.round(100 * self.importance_ratios_[indice], 2)) + "%",
-                  fontsize=24, horizontalalignment="center", verticalalignment="center", transform=ax1_main.transAxes)
+            ax1_main.set_title("                 Component " + str(indice + 1) +
+                               " (IR: " + str(np.round(100 * self.importance_ratios_[indice], 2)) + "%)", fontsize=16)
             fig.add_subplot(ax1_main)
 
-            ax1_density = plt.Subplot(fig, inner[1]) 
+            ax1_density = fig.add_subplot(inner[1, 0])  
             xint = ((np.array(estimator.shape_fit_.bins_[1:]) + np.array(estimator.shape_fit_.bins_[:-1])) / 2).reshape([-1, 1]).reshape([-1])
             ax1_density.bar(xint, estimator.shape_fit_.density_, width=xint[1] - xint[0])
             ax1_main.get_shared_x_axes().join(ax1_main, ax1_density)
             ax1_density.set_yticklabels([])
             fig.add_subplot(ax1_density)
 
-            ax2 = plt.Subplot(fig, outer[indice * 2 + 1]) 
+            ax2 = fig.add_subplot(inner[:, 1])
             active_beta = []
             active_beta_idx = []
-            for idx, beta in enumerate(estimator.beta_.ravel()):
-                if np.abs(beta) > 0:
-                    active_beta.append(beta)
-                    active_beta_idx.append(idx)
+            if len(estimator.beta_) <= 10:
+                rects = ax2.barh(np.arange(len(estimator.beta_)), [beta for beta in estimator.beta_.ravel()][::-1])
+                ax2.set_yticks(np.arange(len(estimator.beta_)))
+                ax2.set_yticklabels(["X" + str(idx + 1) for idx in range(len(estimator.beta_.ravel()))][::-1])
+                ax2.set_xlim(xlim_min, xlim_max)
+                ax2.set_ylim(-1, len(estimator.beta_))
 
-            rects = ax2.barh(np.arange(len(active_beta)), [beta for beta in active_beta][::-1])
-            ax2.set_yticks(np.arange(len(active_beta)))
-            ax2.set_yticklabels(["X" + str(idx + 1) for idx in active_beta_idx][::-1])
-            ax2.set_xlim(xlim_min, xlim_max)
-            ax2.set_ylim(-1, len(active_beta_idx))
-            if indice == 0:
-                ax2.set_title("Projection Indice", fontsize=12)
+            else:
+                for idx, beta in enumerate(estimator.beta_.ravel()):
+                    if np.abs(beta) > 0:
+                        active_beta.append(beta)
+                        active_beta_idx.append(idx)
+                rects = ax2.barh(np.arange(len(active_beta)), [beta for beta in active_beta][::-1])
+                ax2.set_yticks(np.arange(len(active_beta)))
+                ax2.set_yticklabels(["X" + str(idx + 1) for idx in active_beta_idx][::-1])
+                ax2.set_xlim(xlim_min, xlim_max)
+                ax2.set_ylim(-1, len(active_beta_idx))
             fig.add_subplot(ax2)
-        plt.show()
-
+            plt.show()
+    
     def decision_function(self, x):
 
         check_is_fitted(self, "best_estimators_")
