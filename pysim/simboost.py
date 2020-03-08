@@ -392,7 +392,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
         if np.sum((1 - self.estimator_val_auc / best_auc) < self.loss_threshold) > 0:
             best_idx = np.where((1 - self.estimator_val_auc / best_auc) < self.loss_threshold)[0][0]
         else:
-            best_idx = np.argmax(self.estimator_val_loss)
+            best_idx = np.argmax(self.estimator_val_auc)
         self.best_estimators_ = self.estimators_[:(best_idx + 1)]
         self.time_cost_ = time.time() - start
         return self
@@ -527,7 +527,7 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
         if np.sum((1 - self.estimator_val_auc / best_auc) < self.loss_threshold) > 0:
             best_idx = np.where((1 - self.estimator_val_auc / best_auc) < self.loss_threshold)[0][0]
         else:
-            best_idx = np.argmax(self.estimator_val_loss)
+            best_idx = np.argmax(self.estimator_val_auc)
         self.best_estimators_ = self.estimators_[:(best_idx + 1)]
         self.time_cost_ = time.time() - start
         return self
