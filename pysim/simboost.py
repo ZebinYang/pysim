@@ -2,6 +2,7 @@ import time
 import numpy as np
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 
 from abc import ABCMeta, abstractmethod
 from sklearn.utils.extmath import softmax
@@ -201,6 +202,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         plt.xlabel("Number of Estimators", fontsize=12)
         plt.ylabel("Validation MSE", fontsize=12)
         plt.xlim(0.5, len(self.estimator_val_mse) + 0.5)
+        plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True))
         plt.show()
 
     def fit(self, x, y, sample_weight=None):
@@ -311,6 +313,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
         plt.xlabel("Number of Estimators", fontsize=12)
         plt.ylabel("Validation AUC", fontsize=12)
         plt.xlim(0.5, len(self.estimator_val_auc) + 0.5)
+        plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True))
         plt.show()
 
     def fit(self, x, y, sample_weight=None):
@@ -442,6 +445,7 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
         plt.xlabel("Number of Estimators", fontsize=12)
         plt.ylabel("Validation AUC", fontsize=12)
         plt.xlim(0.5, len(self.estimator_val_auc) + 0.5)
+        plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True))
         plt.show()
 
     def fit(self, x, y, sample_weight=None):
