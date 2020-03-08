@@ -187,7 +187,7 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
                 M = scipy.linalg.lapack.clapack.dtrtri(U)[0]
                 update_a_temp = np.dot(np.dot(M, M.T.conj()), BWY)
             except:
-                update_a_temp = np.dot(np.linalg.pinv(BWB + 10 * sp.reg_gamma * DwD, rcond=1e-5), BWY)
+                update_a_temp = np.dot(np.linalg.pinv(BWB + 10 * self.reg_gamma * DwD, rcond=1e-5), BWY)
             new_loss = self._get_loss(y, np.dot(init_basis, update_a_temp))
             if new_loss - best_loss >= 0:
                 break
