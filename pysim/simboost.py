@@ -127,7 +127,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             xgrid = np.linspace(estimator.shape_fit_.xmin, estimator.shape_fit_.xmax, 100).reshape([-1, 1])
             ygrid = estimator.shape_fit_.decision_function(xgrid)
             ax1_main.plot(xgrid, ygrid)
-            ax1_main.set_title("                 Component " + str(indice + 1) +
+            ax1_main.set_title("          Component " + str(indice + 1) +
                                " (IR: " + str(np.round(100 * self.importance_ratios_[indice], 2)) + "%)", fontsize=16)
             fig.add_subplot(ax1_main)
 
@@ -147,7 +147,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 ax2.set_yticklabels(["X" + str(idx + 1) for idx in range(len(estimator.beta_.ravel()))][::-1])
                 ax2.set_xlim(xlim_min, xlim_max)
                 ax2.set_ylim(-1, len(estimator.beta_))
-
+                ax2.axvline(0, linestyle="dotted", color="black")
             else:
                 for idx, beta in enumerate(estimator.beta_.ravel()):
                     if np.abs(beta) > 0:
@@ -158,8 +158,9 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 ax2.set_yticklabels(["X" + str(idx + 1) for idx in active_beta_idx][::-1])
                 ax2.set_xlim(xlim_min, xlim_max)
                 ax2.set_ylim(-1, len(active_beta_idx))
+                ax2.axvline(0, linestyle="dotted", color="black")
             fig.add_subplot(ax2)
-            plt.show()
+        plt.show()
     
     def decision_function(self, x):
 
