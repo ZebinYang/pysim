@@ -70,7 +70,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("Estimator not fitted, "
                              "call `fit` before `feature_importances_`.")
         estimator_importance = []
-        for indice, estimator in enumerate(self.estimators_):
+        for indice, estimator in enumerate(self.best_estimators_):
 
             xgrid = np.linspace(estimator.shape_fit_.xmin, estimator.shape_fit_.xmax, 100).reshape([-1, 1])
             ygrid = estimator.shape_fit_.decision_function(xgrid)
@@ -85,7 +85,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         -------
         orthogonality_measure_ : float scalar
         """
-        if self.estimators_ is None or len(self.estimators_) == 0:
+        if self.best_estimators_ is None or len(self.best_estimators_) == 0:
             raise ValueError("Estimator not fitted, "
                              "call `fit` before `feature_importances_`.")
             
@@ -104,11 +104,11 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         -------
         projection_indices_ : ndarray of shape (d, n_estimators)
         """
-        if self.estimators_ is None or len(self.estimators_) == 0:
+        if self.best_estimators_ is None or len(self.best_estimators_) == 0:
             raise ValueError("Estimator not fitted, "
                              "call `fit` before `feature_importances_`.")
 
-        return np.array([estimator.beta_.flatten() for estimator in self.estimators_]).T
+        return np.array([estimator.beta_.flatten() for estimator in self.best_estimators_]).T
 
     def visualize(self, cols_per_row=3):
 
