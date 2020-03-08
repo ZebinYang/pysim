@@ -360,7 +360,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
                           "reg_lambda": [0.01, 0.05, 0.1], 
                           "reg_gamma": np.logspace(-1, 1, 3)}
             grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
-                          scoring={"auc": make_scorer(roc_auc_score)}, refit=False,
+                          scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                           cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
 
             grid.fit(x, z, sample_weight=sample_weight, proj_mat=proj_mat)
