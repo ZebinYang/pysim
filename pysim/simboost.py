@@ -242,7 +242,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
             # fit Sim estimator
             param_grid = {"method": ["second_order", "first_order"], 
-                          "reg_lambda": [0.01, 0.05, 0.1], 
+                          "reg_lambda": [0.01, 0.05, 0.1, 0.2, 0.3], 
                           "reg_gamma": np.logspace(-1, 1, 3)}
             grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
                          scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
@@ -366,7 +366,7 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             # fit Sim estimator
             param_grid = {"method": ["second_order", "first_order"], 
-                          "reg_lambda": [0.01, 0.05, 0.1], 
+                          "reg_lambda": [0.01, 0.05, 0.1, 0.2, 0.3], 
                           "reg_gamma": np.logspace(-1, 1, 3)}
             grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
                           scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
@@ -486,7 +486,7 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             # fit Sim estimator
             param_grid = {"method": ["second_order", "first_order"], 
-                          "reg_lambda": [0.01, 0.05, 0.1], 
+                          "reg_lambda": [0.01, 0.05, 0.1, 0.2, 0.3], 
                           "reg_gamma": np.logspace(-1, 1, 3)}
             grid = GridSearchCV(SimClassifier(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
                           scoring={"auc": make_scorer(roc_auc_score)}, refit=False,
