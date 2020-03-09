@@ -74,7 +74,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             if self.reg_lambda < 0:
                 raise ValueError("all the elements in reg_lambda must be >= 0, got %s." % self.reg_lambda)
             self.reg_lambda_list = [self.reg_lambda]
-            
+
         if isinstance(self.reg_gamma, list):
             for val in self.reg_gamma:
                 if val < 0:
