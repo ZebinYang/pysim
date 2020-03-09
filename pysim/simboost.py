@@ -24,18 +24,19 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
      """
 
     @abstractmethod
-    def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1,
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, loss_threshold=0.01, random_state=0):
+    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, ortho_shrink=1, loss_threshold=0.01, 
+                 reg_lambda=0.1, reg_gamma=10, random_state=0):
 
         self.n_estimators = n_estimators
         self.val_ratio = val_ratio
-        self.early_stop_thres = early_stop_thres
+        self.ortho_shrink = ortho_shrink
+        self.loss_threshold = loss_threshold
+    
         self.degree = degree
         self.knot_num = knot_num
         self.reg_lambda = reg_lambda
         self.reg_gamma = reg_gamma
-        self.ortho_shrink = ortho_shrink
-        self.loss_threshold = loss_threshold
+
         self.random_state = random_state
 
     def _validate_hyperparameters(self):
@@ -52,11 +53,37 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         if self.val_ratio >= 1:
             raise ValueError("val_ratio must be < 1, got %s." % self.val_ratio)
 
-        if not isinstance(self.early_stop_thres, int):
-            raise ValueError("early_stop_thres must be an integer, got %s." % self.early_stop_thres)
+        if not isinstance(self.degree, int):
+            raise ValueError("degree must be an integer, got %s." % self.degree)
+
+        if self.degree < 0:
+            raise ValueError("degree must be >= 0, got" % self.degree)
+        
+        if not isinstance(self.knot_num, int):
+            raise ValueError("knot_num must be an integer, got %s." % self.knot_num)
+
+        if self.knot_num <= 0:
+            raise ValueError("knot_num must be > 0, got" % self.knot_num)
+
+        if isinstance(self.reg_lambda, list):
+            for val in self.reg_lambda:
+                if val < 0:
+                    raise ValueError("all the elements in reg_lambda must be >= 0, got %s." % self.reg_lambda)
+            self.reg_lambda_list = self.reg_lambda  
+        elif isinstance(self.reg_lambda, float):
+            if self.reg_lambda < 0:
+                raise ValueError("all the elements in reg_lambda must be >= 0, got %s." % self.reg_lambda)
+            self.reg_lambda_list = [self.reg_lambda]
             
-        if self.early_stop_thres <= 0:
-            raise ValueError("early_stop_thres must be > 0, got %s." % self.early_stop_thres)
+        if isinstance(self.reg_gamma, list):
+            for val in self.reg_gamma:
+                if val < 0:
+                    raise ValueError("all the elements in reg_lambda must be >= 0, got %s." % self.reg_gamma)
+            self.reg_gamma_list = self.reg_gamma  
+        elif isinstance(self.reg_gamma, float):
+            if self.reg_gamma < 0:
+                raise ValueError("all the elements in reg_lambda must be >= 0, got %s." % self.reg_gamma)
+            self.reg_gamma_list = [self.reg_gamma]
 
     @property
     def importance_ratios_(self):
@@ -127,6 +154,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             xgrid = np.linspace(estimator.shape_fit_.xmin, estimator.shape_fit_.xmax, 100).reshape([-1, 1])
             ygrid = estimator.shape_fit_.decision_function(xgrid)
             ax1_main.plot(xgrid, ygrid)
+            ax1_main.set_xticklabels([])
             ax1_main.set_title("          Component " + str(indice + 1) +
                                " (IR: " + str(np.round(100 * self.importance_ratios_[indice], 2)) + "%)", fontsize=16)
             fig.add_subplot(ax1_main)
@@ -242,8 +270,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
             # fit Sim estimator
             param_grid = {"method": ["second_order", "first_order"], 
-                          "reg_lambda": [0.01, 0.05, 0.1, 0.2, 0.3], 
-                          "reg_gamma": np.logspace(-1, 1, 3)}
+                      "reg_lambda": self.reg_lambda_list,
+                      "reg_gamma": self.reg_lambda_list}
             grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
                          scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                          cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
@@ -366,8 +394,8 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             # fit Sim estimator
             param_grid = {"method": ["second_order", "first_order"], 
-                          "reg_lambda": [0.01, 0.05, 0.1, 0.2, 0.3], 
-                          "reg_gamma": np.logspace(-1, 1, 3)}
+                      "reg_lambda": self.reg_lambda_list,
+                      "reg_gamma": self.reg_lambda_list}
             grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
                           scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                           cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
@@ -486,8 +514,8 @@ class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             # fit Sim estimator
             param_grid = {"method": ["second_order", "first_order"], 
-                          "reg_lambda": [0.01, 0.05, 0.1, 0.2, 0.3], 
-                          "reg_gamma": np.logspace(-1, 1, 3)}
+                      "reg_lambda": self.reg_lambda_list,
+                      "reg_gamma": self.reg_lambda_list}
             grid = GridSearchCV(SimClassifier(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
                           scoring={"auc": make_scorer(roc_auc_score)}, refit=False,
                           cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
