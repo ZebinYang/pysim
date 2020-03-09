@@ -202,12 +202,11 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
 class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
-    def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1,
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, loss_threshold=0.01, random_state=0):
+    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20,
+                 reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, loss_threshold=0.01, random_state=0):
 
         super(SimBoostRegressor, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
-                                      early_stop_thres=early_stop_thres,
                                       degree=degree,
                                       knot_num=knot_num,
                                       reg_lambda=reg_lambda,
@@ -306,12 +305,11 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
 class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
 
-    def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1,
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, loss_threshold=0.01, random_state=0):
+    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20,
+                 reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, loss_threshold=0.01, random_state=0):
 
         super(SimLogitBoostClassifier, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
-                                      early_stop_thres=early_stop_thres,
                                       degree=degree,
                                       knot_num=knot_num,
                                       reg_lambda=reg_lambda,
@@ -439,12 +437,11 @@ class SimLogitBoostClassifier(BaseSimBooster, ClassifierMixin):
 
 class SimAdaBoostClassifier(BaseSimBooster, ClassifierMixin):
 
-    def __init__(self, n_estimators, val_ratio=0.2, early_stop_thres=1,
-                 degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, loss_threshold=0.01, random_state=0):
+    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20,
+                 reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, loss_threshold=0.01, random_state=0):
 
         super(SimAdaBoostClassifier, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
-                                      early_stop_thres=early_stop_thres,
                                       degree=degree,
                                       knot_num=knot_num,
                                       reg_lambda=reg_lambda,
