@@ -121,8 +121,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         check_is_fitted(self, "beta_")
         check_is_fitted(self, "shape_fit_")
 
-        xlim_min = self.beta_.min() - 0.1
-        xlim_max = self.beta_.max() + 0.1
+        xlim_min = - max(np.abs(self.beta_.min() - 0.1), np.abs(self.beta_.max() + 0.1))
+        xlim_max = max(np.abs(self.beta_.min() - 0.1), np.abs(self.beta_.max() + 0.1))
+
         fig = plt.figure(figsize=(12, 4))
         outer = gridspec.GridSpec(1, 2, wspace=0.15)      
         inner = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer[0], wspace=0.1, hspace=0.1, height_ratios=[6, 1])
