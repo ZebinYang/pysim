@@ -58,11 +58,11 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         if self.knot_num <= 0:
             raise ValueError("knot_num must be > 0, got" % self.knot_num)
 
-        if self.reg_lambda <= 0:
-            raise ValueError("reg_lambda must be > 0, got %s." % self.reg_lambda)
+        if self.reg_lambda < 0:
+            raise ValueError("reg_lambda must be >= 0, got %s." % self.reg_lambda)
 
-        if self.reg_gamma <= 0:
-            raise ValueError("reg_gamma must be > 0, got %s." % self.reg_gamma)
+        if self.reg_gamma < 0:
+            raise ValueError("reg_gamma must be >= 0, got %s." % self.reg_gamma)
 
     def _first_order_thres(self, x, y, sample_weight=None, proj_mat=None):
 
@@ -142,18 +142,26 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         fig.add_subplot(ax1_density)
 
         ax2 = plt.Subplot(fig, outer[1]) 
-        active_beta = []
-        active_beta_idx = []
-        for idx, beta in enumerate(self.beta_.ravel()):
-            if np.abs(beta) > 0:
-                active_beta.append(beta)
-                active_beta_idx.append(idx)
-
-        rects = ax2.barh(np.arange(len(active_beta)), [beta for beta in active_beta][::-1])
-        ax2.set_yticks(np.arange(len(active_beta)))
-        ax2.set_yticklabels(["X" + str(idx + 1) for idx in active_beta_idx][::-1])
-        ax2.set_xlim(xlim_min, xlim_max)
-        ax2.set_ylim(-1, len(active_beta_idx))
+        if len(self.beta_) <= 10:
+            rects = ax2.barh(np.arange(len(self.beta_)), [beta for beta in self.beta_.ravel()][::-1])
+            ax2.set_yticks(np.arange(len(self.beta_)))
+            ax2.set_yticklabels(["X" + str(idx + 1) for idx in range(len(self.beta_.ravel()))][::-1])
+            ax2.set_xlim(xlim_min, xlim_max)
+            ax2.set_ylim(-1, len(self.beta_))
+            ax2.axvline(0, linestyle="dotted", color="black")
+        else:
+            active_beta = []
+            active_beta_idx = []
+            for idx, beta in enumerate(self.beta_.ravel()):
+                if np.abs(beta) > 0:
+                    active_beta.append(beta)
+                    active_beta_idx.append(idx)
+            rects = ax2.barh(np.arange(len(active_beta)), [beta for beta in active_beta][::-1])
+            ax2.set_yticks(np.arange(len(active_beta)))
+            ax2.set_yticklabels(["X" + str(idx + 1) for idx in active_beta_idx][::-1])
+            ax2.set_xlim(xlim_min, xlim_max)
+            ax2.set_ylim(-1, len(active_beta_idx))
+            ax2.axvline(0, linestyle="dotted", color="black")
         ax2.set_title("Projection Indice", fontsize=12)
         fig.add_subplot(ax2)
         plt.show()

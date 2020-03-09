@@ -139,8 +139,6 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             fig.add_subplot(ax1_density)
 
             ax2 = fig.add_subplot(inner[:, 1])
-            active_beta = []
-            active_beta_idx = []
             if len(estimator.beta_) <= 10:
                 rects = ax2.barh(np.arange(len(estimator.beta_)), [beta for beta in estimator.beta_.ravel()][::-1])
                 ax2.set_yticks(np.arange(len(estimator.beta_)))
@@ -149,6 +147,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 ax2.set_ylim(-1, len(estimator.beta_))
                 ax2.axvline(0, linestyle="dotted", color="black")
             else:
+                active_beta = []
+                active_beta_idx = []
                 for idx, beta in enumerate(estimator.beta_.ravel()):
                     if np.abs(beta) > 0:
                         active_beta.append(beta)
