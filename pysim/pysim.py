@@ -77,7 +77,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             beta = zbar / np.linalg.norm(zbar)
         else:
             beta = zbar
-        return beta
+        return beta.reshape([-1, 1])
 
     def _first_order(self, x, y, sample_weight=None, proj_mat=None):
 
