@@ -137,7 +137,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("Estimator not fitted, "
                              "call `fit` before `projection_indices_`.")
 
-        return np.array([pipe["sim"].beta_.flatten() for pipe in self.best_estimators_]).T
+        return np.array([pipe["sim_estimator"].beta_.flatten() for pipe in self.best_estimators_]).T
     
     def _validate_sample_weight(self, n_samples, sample_weight):
         
