@@ -70,7 +70,10 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         self.inv_cov = np.linalg.pinv(self.cov)
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
         zbar = np.average(y.reshape(-1, 1) * s1, axis=0, weights=sample_weight)
-        zbar[np.abs(zbar) < self.reg_lambda * np.sum(np.abs(zbar))] = 0
+        if np.all(np.abs(zbar) < self.reg_lambda * np.sum(np.abs(zbar))):
+            zbar[np.abs(zbar) < np.max(np.abs(zbar))] = 0
+        else:
+            zbar[np.abs(zbar) < self.reg_lambda * np.sum(np.abs(zbar))] = 0
         if proj_mat is not None:
             zbar = np.dot(proj_mat, zbar)
         if np.linalg.norm(zbar) > 0:
