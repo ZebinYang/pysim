@@ -399,7 +399,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                 sim_estimator = Pipeline(steps=[('select', FunctionTransformer(lambda data: data[:, self.nfeature_index_list_], validate=False)),
                                       ('sim_estimator', estimator)])
                 sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
-                              sim_estimator__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
+                            sim_estimator__sample_weight=sample_weight[self.tr_idx], sim_estimator__proj_mat=proj_mat)
 
                 # update    
                 z = z - estimator.predict(x[:, self.nfeature_index_list_])
@@ -514,7 +514,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                                               validate=False)),
                                        ('sim_estimator', estimator)])
                 sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
-                              sim_estimator__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
+                            sim_estimator__sample_weight=sample_weight[self.tr_idx], sim_estimator__proj_mat=proj_mat)
                 # update
                 pred_train += sim_estimator.predict(x[self.tr_idx])
                 pred_val += sim_estimator.predict(x[self.val_idx])
