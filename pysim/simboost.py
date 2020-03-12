@@ -100,7 +100,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                              "call `fit` before `importance_ratios_`.")
         estimator_importance = []
         for indice, pipe in enumerate(self.best_estimators_):
-            estimator = pipe["sim"]
+            estimator = pipe["sim_estimator"]
             xgrid = np.linspace(estimator.shape_fit_.xmin, estimator.shape_fit_.xmax, 100).reshape([-1, 1])
             ygrid = estimator.shape_fit_.decision_function(xgrid)
             estimator_importance.append(np.std(ygrid))
