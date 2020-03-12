@@ -221,7 +221,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         xlim_max = max(np.abs(self.projection_indices_.min() - 0.1), np.abs(self.projection_indices_.max() + 0.1))
         for indice, pipe in enumerate(self.best_estimators_):
 
-            estimator = pipe["sim"]
+            estimator = pipe["sim_estimator"]
             inner = outer[indice].subgridspec(2, 2, wspace=0.15, height_ratios=[6, 1], width_ratios=[3, 1])
             ax1_main = fig.add_subplot(inner[0, 0])
             xgrid = np.linspace(estimator.shape_fit_.xmin, estimator.shape_fit_.xmax, 100).reshape([-1, 1])
@@ -380,10 +380,10 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                 self.cestimators_.append(cestimator)
             else:
                 # projection matrix
-                if (i == 0) or (i >= self.nfeature_num_) or (self.ortho_shrink == 0):
+                if (i == len(self.cfeature_list_)) or (i >= (len(self.cfeature_list_) + self.nfeature_num_)) or (self.ortho_shrink == 0):
                     proj_mat = np.eye(self.nfeature_num_)
                 else:
-                    projection_indices_ = np.array([estimator["sim"].beta_.flatten() for estimator in self.estimators_]).T
+                    projection_indices_ = np.array([estimator["sim_estimator"].beta_.flatten() for estimator in self.estimators_]).T
                     u, _, _ = np.linalg.svd(projection_indices_, full_matrices=False)
                     proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
 
@@ -493,10 +493,10 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                 self.cestimators_.append(cestimator)
             else:
                 # projection matrix
-                if (i == 0) or (i >= self.nfeature_num_) or (self.ortho_shrink == 0):
+                if (i == len(self.cfeature_list_)) or (i >= (len(self.cfeature_list_) + self.nfeature_num_)) or (self.ortho_shrink == 0):
                     proj_mat = np.eye(self.nfeature_num_)
                 else:
-                    projection_indices_ = np.array([estimator["sim"].beta_.flatten() for estimator in self.estimators_]).T
+                    projection_indices_ = np.array([estimator["sim_estimator"].beta_.flatten() for estimator in self.estimators_]).T
                     u, _, _ = np.linalg.svd(projection_indices_, full_matrices=False)
                     proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
 
@@ -512,7 +512,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                 estimator = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
                 sim_estimator = Pipeline(steps = [('select', FunctionTransformer(lambda data: data[:, self.nfeature_index_list_],
                                               validate=False)),
-                                       ('sim', estimator)])
+                                       ('sim_estimator', estimator)])
                 sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
                               sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
                 # update
