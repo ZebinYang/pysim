@@ -300,11 +300,10 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                                         "scores":density}}})
 
         cestimator = Pipeline(steps = [('select', FunctionTransformer(lambda data, indice: data[:, [feature_indice]],
-                                                                   kw_args={"indice": feature_indice},
-                                                                   validate=False)),
-                         ('ohe', OneHotEncoder(sparse=False, drop="first",
-                                                 categories=[np.arange(len(self.cvalues_[feature_name]), dtype=np.float)])),
-                         ('lr', LinearRegression())])        
+                                                  kw_args={"indice": feature_indice}, validate=False)),
+                             ('ohe', OneHotEncoder(sparse=False, drop="first",
+                                            categories=[np.arange(len(self.cvalues_[feature_name]), dtype=np.float)])),
+                             ('lr', LinearRegression())])        
         cestimator.fit(x, y, lr__sample_weight=sample_weight)
         return cestimator
     
@@ -369,7 +368,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         
         for i in range(self.n_estimators):
 
-            if i < len(self.cfeature_list_):
+            if i < self.cfeature_num_:
                 feature_name = self.cfeature_list_[i]
                 feature_indice = self.cfeature_index_list_[i]
                 cestimator = self._fit_dummy(x[self.tr_idx], z[self.tr_idx], sample_weight[self.tr_idx], feature_indice, feature_name)
@@ -378,7 +377,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                 val_loss = mean_squared_error(y[self.val_idx], pred_val)
                 self.cval_mse_.append(val_loss)
                 self.cestimators_.append(cestimator)
-            else:
+            elif self.nfeature_num_ > 0:
                 # projection matrix
                 if (i == len(self.cfeature_list_)) or (i >= (len(self.cfeature_list_) + self.nfeature_num_)) or (self.ortho_shrink == 0):
                     proj_mat = np.eye(self.nfeature_num_)
@@ -407,13 +406,15 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                 val_loss = mean_squared_error(y[self.val_idx], pred_val)
                 self.val_mse_.append(val_loss)
                 self.estimators_.append(sim_estimator)
-
-        best_loss = np.min(self.val_mse_)
-        if np.sum((self.val_mse_ / best_loss - 1) < self.loss_threshold) > 0:
-            best_idx = np.where((self.val_mse_ / best_loss - 1) < self.loss_threshold)[0][0]
-        else:
-            best_idx = np.argmin(self.val_mse_)
-        self.best_estimators_ = self.estimators_[:(best_idx + 1)]
+            else:
+                break
+        if self.nfeature_num_ > 0:
+            best_loss = np.min(self.val_mse_)
+            if np.sum((self.val_mse_ / best_loss - 1) < self.loss_threshold) > 0:
+                best_idx = np.where((self.val_mse_ / best_loss - 1) < self.loss_threshold)[0][0]
+            else:
+                best_idx = np.argmin(self.val_mse_)
+            self.best_estimators_ = self.estimators_[:(best_idx + 1)]
 
     def predict(self, x):
 
@@ -479,7 +480,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                                 -1. / (1. - np.hstack([proba_train, proba_val]))) 
                 z = np.clip(z, a_min=-8, a_max=8)
 
-            if i < len(self.cfeature_list_):
+            if i < self.cfeature_num_:
                 feature_name = self.cfeature_list_[i]
                 feature_indice = self.cfeature_index_list_[i]
                 cestimator = self._fit_dummy(x[self.tr_idx], z[self.tr_idx], sample_weight[self.tr_idx], feature_indice, feature_name)
@@ -491,7 +492,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                 val_auc = roc_auc_score(y[self.val_idx], proba_val)
                 self.cval_auc_.append(val_auc)
                 self.cestimators_.append(cestimator)
-            else:
+            elif self.nfeature_num_ > 0:
                 # projection matrix
                 if (i == len(self.cfeature_list_)) or (i >= (len(self.cfeature_list_) + self.nfeature_num_)) or (self.ortho_shrink == 0):
                     proj_mat = np.eye(self.nfeature_num_)
@@ -524,14 +525,16 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                 val_auc = roc_auc_score(y[self.val_idx], proba_val)
                 self.val_auc_.append(val_auc)
                 self.estimators_.append(sim_estimator)
+            else:
+                break
+        if self.nfeature_num_ > 0:
+            best_auc = np.max(self.val_auc_)
+            if np.sum((1 - self.val_auc_ / best_auc) < self.loss_threshold) > 0:
+                best_idx = np.where((1 - self.val_auc_ / best_auc) < self.loss_threshold)[0][0]
+            else:
+                best_idx = np.argmax(self.val_auc_)
+            self.best_estimators_ = self.estimators_[:(best_idx + 1)]
 
-        best_auc = np.max(self.val_auc_)
-        if np.sum((1 - self.val_auc_ / best_auc) < self.loss_threshold) > 0:
-            best_idx = np.where((1 - self.val_auc_ / best_auc) < self.loss_threshold)[0][0]
-        else:
-            best_idx = np.argmax(self.val_auc_)
-        self.best_estimators_ = self.estimators_[:(best_idx + 1)]
-    
     def predict_proba(self, x):
 
         pred = self.decision_function(x)
