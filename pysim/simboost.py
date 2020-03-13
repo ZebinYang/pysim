@@ -323,13 +323,14 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     def decision_function(self, x):
 
+        pred_dummy = 0
+        pred_simboost = 0
         if self.cfeature_num_ > 0:
             check_is_fitted(self, "cestimators_")
+            pred_dummy = np.sum([est.predict(x) for est in self.cestimators_], axis=0)
         if self.nfeature_num_ > 0:
             check_is_fitted(self, "best_estimators_")
-
-        pred_dummy = np.sum([est.predict(x) for est in self.cestimators_], axis=0)
-        pred_simboost = np.sum([est.predict(x) for est in self.best_estimators_], axis=0)
+            pred_simboost = np.sum([est.predict(x) for est in self.best_estimators_], axis=0)
         pred = pred_dummy + pred_simboost
         return pred
 
