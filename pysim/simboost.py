@@ -323,7 +323,10 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     def decision_function(self, x):
 
-        check_is_fitted(self, "best_estimators_")
+        if self.cfeature_num_ > 0:
+            check_is_fitted(self, "cestimators_")
+        if self.nfeature_num_ > 0:
+            check_is_fitted(self, "best_estimators_")
 
         pred_dummy = np.sum([est.predict(x) for est in self.cestimators_], axis=0)
         pred_simboost = np.sum([est.predict(x) for est in self.best_estimators_], axis=0)
@@ -418,7 +421,6 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
     def predict(self, x):
 
-        check_is_fitted(self, "best_estimators_")
         pred = self.decision_function(x)
         return pred
     
