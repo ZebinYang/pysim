@@ -369,7 +369,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         
         self.val_mse_ = []
         self.estimators_ = []
-        
+        self.best_estimators_ = []
         for i in range(self.n_estimators):
 
             if i < self.cfeature_num_:
@@ -470,6 +470,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         roc_auc_opt = -np.inf
         self.val_auc_ = []
         self.estimators_ = []
+        self.best_estimators_ = []
         proba_train = 0.5 * np.ones(len(self.tr_idx))
         proba_val = 0.5 * np.ones(len(self.val_idx))
         for i in range(self.n_estimators):
