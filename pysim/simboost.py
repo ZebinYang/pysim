@@ -95,17 +95,20 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         importance_ratios_ : ndarray of shape (n_estimators,)
             The estimator importances.
         """
-        if self.estimators_ is None or len(self.estimators_) == 0:
-            raise ValueError("Estimator not fitted, "
-                             "call `fit` before `importance_ratios_`.")
-        estimator_importance = []
-        for indice, pipe in enumerate(self.best_estimators_):
-            estimator = pipe["sim_estimator"]
-            xgrid = np.linspace(estimator.shape_fit_.xmin, estimator.shape_fit_.xmax, 100).reshape([-1, 1])
-            ygrid = estimator.shape_fit_.decision_function(xgrid)
-            estimator_importance.append(np.std(ygrid))
-        importance_ratio = estimator_importance / np.sum(estimator_importance)
-        return importance_ratio
+        if self.nfeature_num_ > 0:
+            if self.best_estimators_ is None or len(self.best_estimators_) == 0:
+                raise ValueError("Estimator not fitted, "
+                                 "call `fit` before `importance_ratios_`.")
+            estimator_importance = []
+            for indice, pipe in enumerate(self.best_estimators_):
+                estimator = pipe["sim_estimator"]
+                xgrid = np.linspace(estimator.shape_fit_.xmin, estimator.shape_fit_.xmax, 100).reshape([-1, 1])
+                ygrid = estimator.shape_fit_.decision_function(xgrid)
+                estimator_importance.append(np.std(ygrid))
+            importance_ratio = estimator_importance / np.sum(estimator_importance)
+            return importance_ratio
+        else:
+            return np.array([])
 
     @property
     def orthogonality_measure_(self):
@@ -114,16 +117,16 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         -------
         orthogonality_measure_ : float scalar
         """
-        if self.best_estimators_ is None or len(self.best_estimators_) == 0:
-            raise ValueError("Estimator not fitted, "
-                             "call `fit` before `orthogonality_measure_`.")
-            
-        ortho_measure = np.linalg.norm(np.dot(self.projection_indices_.T,
-                                  self.projection_indices_) - np.eye(self.projection_indices_.shape[1]))
-        if self.projection_indices_.shape[1] > 1:
-            ortho_measure /= ((self.projection_indices_.shape[1] ** 2 - self.projection_indices_.shape[1]))
-        else:
-            ortho_measure = np.nan
+        ortho_measure = np.nan
+        if self.nfeature_num_ > 0:
+            if self.best_estimators_ is None or len(self.best_estimators_) == 0:
+                raise ValueError("Estimator not fitted, "
+                                 "call `fit` before `orthogonality_measure_`.")
+
+            ortho_measure = np.linalg.norm(np.dot(self.projection_indices_.T,
+                                      self.projection_indices_) - np.eye(self.projection_indices_.shape[1]))
+            if self.projection_indices_.shape[1] > 1:
+                ortho_measure /= ((self.projection_indices_.shape[1] ** 2 - self.projection_indices_.shape[1]))
         return ortho_measure
 
     @property
@@ -133,12 +136,14 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         -------
         projection_indices_ : ndarray of shape (d, n_estimators)
         """
-        if self.best_estimators_ is None or len(self.best_estimators_) == 0:
-            raise ValueError("Estimator not fitted, "
-                             "call `fit` before `projection_indices_`.")
+        if self.nfeature_num_ > 0:
+            if self.best_estimators_ is None or len(self.best_estimators_) == 0:
+                raise ValueError("Estimator not fitted, "
+                                 "call `fit` before `projection_indices_`.")
+            return np.array([pipe["sim_estimator"].beta_.flatten() for pipe in self.best_estimators_]).T
+        else:
+            return np.array([])
 
-        return np.array([pipe["sim_estimator"].beta_.flatten() for pipe in self.best_estimators_]).T
-    
     def _validate_sample_weight(self, n_samples, sample_weight):
         
         if sample_weight is None:
