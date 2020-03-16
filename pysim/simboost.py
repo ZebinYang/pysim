@@ -398,7 +398,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                 # fit Sim estimator
                 param_grid = {"method": ["second_order", "first_order"], 
                               "reg_lambda": self.reg_lambda_list,
-                              "reg_gamma": self.reg_lambda_list}
+                              "reg_gamma": self.reg_gamma_list}
                 grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
                              scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                              cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
@@ -513,7 +513,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                 # fit Sim estimator
                 param_grid = {"method": ["second_order", "first_order"], 
                               "reg_lambda": self.reg_lambda_list,
-                              "reg_gamma": self.reg_lambda_list}
+                              "reg_gamma": self.reg_gamma_list}
                 grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
                               scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                               cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
