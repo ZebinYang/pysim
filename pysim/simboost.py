@@ -72,7 +72,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 if val < 0:
                     raise ValueError("all the elements in reg_lambda must be >= 0, got %s." % self.reg_lambda)
             self.reg_lambda_list = self.reg_lambda  
-        elif isinstance(self.reg_lambda, float):
+        elif (isinstance(self.reg_lambda, float)) or (isinstance(self.reg_lambda, int)):
             if self.reg_lambda < 0:
                 raise ValueError("all the elements in reg_lambda must be >= 0, got %s." % self.reg_lambda)
             self.reg_lambda_list = [self.reg_lambda]
@@ -82,7 +82,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 if val < 0:
                     raise ValueError("all the elements in reg_lambda must be >= 0, got %s." % self.reg_gamma)
             self.reg_gamma_list = self.reg_gamma  
-        elif isinstance(self.reg_gamma, float):
+        elif (isinstance(self.reg_gamma, float)) or (isinstance(self.reg_gamma, int)):
             if self.reg_gamma < 0:
                 raise ValueError("all the elements in reg_lambda must be >= 0, got %s." % self.reg_gamma)
             self.reg_gamma_list = [self.reg_gamma]
