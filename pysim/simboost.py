@@ -341,9 +341,10 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     def decision_function(self, x):
 
+        pred = 0
         if self.cfeature_num_ > 0:
             check_is_fitted(self, "cestimator_")
-            pred = self.cestimator_.predict(x)
+            pred += self.cestimator_.predict(x)
         if self.nfeature_num_ > 0:
             check_is_fitted(self, "best_estimators_")
             pred += np.sum([est.predict(x) for est in self.best_estimators_], axis=0)
