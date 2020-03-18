@@ -312,7 +312,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
             transformer_list.append((feature_name,
                              OneHotEncoder(sparse=False, drop="first",
-                                      categories=[np.arange(len(cvalues_[feature_name]), dtype=np.float)]), [feature_indice]))
+                                      categories=[np.arange(len(self.cvalues_[feature_name]), dtype=np.float)]), [feature_indice]))
         self.cestimator_ = Pipeline(steps = [('ohe', ColumnTransformer(transformer_list)),
                              ('lr', LinearRegression())])        
         self.cestimator_.fit(x, y, lr__sample_weight=sample_weight)
