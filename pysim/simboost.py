@@ -297,16 +297,18 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
     def _fit_dummy(self, x, y, sample_weight):
 
         self.cdensity_ = {}
-        unique, counts = np.unique(x[:, feature_indice], return_counts=True)
-        density = np.zeros((len(self.cvalues_[feature_name])))
-        density[unique.astype(int)] = counts / x.shape[0]
-        self.cdensity_.update({feature_name:{"density":{"values":self.cvalues_[feature_name],
-                                        "scores":density}}})
-
         transformer_list = []
-        for idx in range(self.cfeature_num_):http://localhost:8000/edit/zebin/Stein/pysim/pysim/simboost.py#
+        for idx in range(self.cfeature_num_):
+            
             feature_name = self.cfeature_list_[idx]
             feature_indice = self.cfeature_index_list_[idx]
+            
+            unique, counts = np.unique(x[:, feature_indice], return_counts=True)
+            density = np.zeros((len(self.cvalues_[feature_name])))
+            density[unique.astype(int)] = counts / x.shape[0]
+            self.cdensity_.update({feature_name:{"density":{"values":self.cvalues_[feature_name],
+                                            "scores":density}}})
+
             transformer_list.append((feature_name,
                              OneHotEncoder(sparse=False, drop="first",
                                       categories=[np.arange(len(cvalues_[feature_name]), dtype=np.float)]), [feature_indice]))
