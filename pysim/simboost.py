@@ -375,7 +375,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         self.val_mse_ = []
         self.estimators_ = []
         self.best_estimators_ = []
-        for i in range(self.n_estimators):
+        for i in range(self.n_estimators + self.cfeature_num_):
 
             if i < self.cfeature_num_:
                 feature_name = self.cfeature_list_[i]
@@ -417,7 +417,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                 self.estimators_.append(sim_estimator)
             else:
                 break
-        if self.nfeature_num_ > 0:
+        if (self.nfeature_num_ > 0) and (len(self.val_mse_) > 0):
             best_loss = np.min(self.val_mse_)
             if np.sum((self.val_mse_ / best_loss - 1) < self.loss_threshold) > 0:
                 best_idx = np.where((self.val_mse_ / best_loss - 1) < self.loss_threshold)[0][0]
@@ -478,7 +478,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         self.best_estimators_ = []
         proba_train = 0.5 * np.ones(len(self.tr_idx))
         proba_val = 0.5 * np.ones(len(self.val_idx))
-        for i in range(self.n_estimators):
+        for i in range(self.n_estimators + self.cfeature_num_):
 
             sample_weight[self.tr_idx] = proba_train * (1 - proba_train)
             sample_weight[self.tr_idx] /= np.sum(sample_weight[self.tr_idx])
@@ -536,7 +536,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                 self.estimators_.append(sim_estimator)
             else:
                 break
-        if self.nfeature_num_ > 0:
+        if (self.nfeature_num_ > 0) and (len(self.val_auc_) > 0):
             best_auc = np.max(self.val_auc_)
             if np.sum((1 - self.val_auc_ / best_auc) < self.loss_threshold) > 0:
                 best_idx = np.where((1 - self.val_auc_ / best_auc) < self.loss_threshold)[0][0]
