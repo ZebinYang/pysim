@@ -13,7 +13,7 @@ from sklearn.utils.extmath import softmax, stable_cumsum
 from sklearn.utils import check_array, check_X_y, column_or_1d
 from sklearn.metrics import make_scorer, mean_squared_error, roc_auc_score
 from sklearn.model_selection import GridSearchCV, PredefinedSplit, train_test_split
-from sklearn.preprocessing import LabelBinarizer, FunctionTransformer, OneHotEncoder
+from sklearn.preprocessing import LabelBinarizer, ColumnTransformer, OneHotEncoder
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin, is_classifier, is_regressor
 
 from pysim import SimRegressor, SimClassifier
