@@ -298,7 +298,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             ax1_density.set_xticklabels(input_labels)
             ax1_density.autoscale()
             fig.add_subplot(ax1_density)        
-            idx += len(cvalues)
+            idx += len(cvalues) - 1
         plt.show()
     
     def _fit_dummy(self, x, y, sample_weight):
