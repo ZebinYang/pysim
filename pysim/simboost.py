@@ -391,7 +391,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             for i in range(self.n_estimators):
 
                 # projection matrix
-                if (i == 0) or (i >= self.nfeature_num_)) or (self.ortho_shrink == 0):
+                if (i == 0) or (i >= self.nfeature_num_) or (self.ortho_shrink == 0):
                     proj_mat = np.eye(self.nfeature_num_)
                 else:
                     projection_indices_ = np.array([estimator["sim_estimator"].beta_.flatten() for estimator in self.estimators_]).T
@@ -502,7 +502,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                     z = np.clip(z, a_min=-8, a_max=8)
 
                 # projection matrix
-                if (i == 0) or (i >= self.nfeature_num_)) or (self.ortho_shrink == 0):
+                if (i == 0) or (i >= self.nfeature_num_) or (self.ortho_shrink == 0):
                     proj_mat = np.eye(self.nfeature_num_)
                 else:
                     projection_indices_ = np.array([estimator["sim_estimator"].beta_.flatten() for estimator in self.estimators_]).T
