@@ -199,7 +199,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             plt.plot(len(self.best_estimators_), self.val_mse_[len(self.best_estimators_) - 1], "o", markersize=8, color="red")
             plt.xlabel("Number of Estimators", fontsize=12)
             plt.ylabel("Validation MSE", fontsize=12)
-            plt.xlim(0.5, len(self.val_mse_) + 0.5)
+            plt.xlim(-0.5, len(self.val_mse_) - 0.5)
             plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True))
             plt.show()
         if is_classifier(self):
@@ -211,7 +211,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             plt.plot(len(self.best_estimators_), self.val_auc_[len(self.best_estimators_) - 1], "o", markersize=8, color="red")
             plt.xlabel("Number of Estimators", fontsize=12)
             plt.ylabel("Validation AUC", fontsize=12)
-            plt.xlim(0.5, len(self.val_auc_) + 0.5)
+            plt.xlim(-0.5, len(self.val_auc_) - 0.5)
             plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True))
             plt.show()
         
@@ -278,7 +278,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             cscores = self.cdensity_[feature_name]["density"]["scores"]
             beta = np.hstack([0.0, self.cestimator_['lr'].coef_[idx:(idx + len(cvalues) - 1)]])
 
-            inner = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer[indice], wspace=0.1, hspace=0.1, height_ratios=[6, 1])
+            inner = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer[len(self.best_estimators_) + indice],
+                                       wspace=0.1, hspace=0.1, height_ratios=[6, 1])
             ax1_main = plt.Subplot(fig, inner[0]) 
             ax1_main.plot(np.arange(len(cvalues)), beta)
             ax1_main.set_xticklabels([])
