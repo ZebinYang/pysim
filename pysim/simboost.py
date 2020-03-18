@@ -433,7 +433,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                     best_idx = np.where((self.val_mse_ / best_loss - 1) < self.loss_threshold)[0][0]
                 else:
                     best_idx = np.argmin(self.val_mse_)
-                self.best_estimators_ = self.estimators_[:(best_idx + 1)]
+                self.best_estimators_ = self.estimators_[:best_idx]
 
     def predict(self, x):
 
@@ -548,7 +548,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                     best_idx = np.where((1 - self.val_auc_ / best_auc) < self.loss_threshold)[0][0]
                 else:
                     best_idx = np.argmax(self.val_auc_)
-                self.best_estimators_ = self.estimators_[:(best_idx + 1)]
+                self.best_estimators_ = self.estimators_[:best_idx]
 
     def predict_proba(self, x):
 
