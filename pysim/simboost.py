@@ -271,12 +271,14 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         idx = 0
         for indice, feature_name in enumerate(self.cestimator_['ohe'].named_transformers_):
                 
+            if feature_name == 'remainder':
+                break 
+
             ax1 = plt.Subplot(fig, outer[len(self.best_estimators_) + indice])
             ax2 = ax1.twinx()
             
             cvalues = self.cdensity_[feature_name]["density"]["values"]
             cscores = self.cdensity_[feature_name]["density"]["scores"]
-            
             beta = self.cestimator_['lr'].coef_[idx:len(cvalues)]
             
             ax1.plot(np.arange(len(beta)), beta)
