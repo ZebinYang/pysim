@@ -269,7 +269,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             fig.add_subplot(ax2)
         
         idx = 0
-        for indice, feature_name in enumerate(self.cestimator['ohe'].named_transformers_):
+        for indice, feature_name in enumerate(self.cestimator_['ohe'].named_transformers_):
                 
             ax1 = plt.Subplot(fig, outer[len(self.best_estimators_) + indice])
             ax2 = ax1.twinx()
@@ -277,7 +277,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             cvalues = self.cdensity_[feature_name]["density"]["values"]
             cscores = self.cdensity_[feature_name]["density"]["scores"]
             
-            beta = self.cestimator['lr'].coef_[idx:len(cvalues)]
+            beta = self.cestimator_['lr'].coef_[idx:len(cvalues)]
             
             ax1.plot(np.arange(len(beta)), beta)
             ax2.bar(np.arange(len(cvalues)), cscores)
