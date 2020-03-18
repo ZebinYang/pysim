@@ -267,15 +267,17 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 ax2.axvline(0, linestyle="dotted", color="black")
             fig.add_subplot(ax2)
         
-        for indice, estimator in enumerate(self.cestimators_):
+        idx = 0
+        for indice, feature_name in enumerate(self.cestimator['ohe'].named_transformers_):
                 
-            feature_name = self.cfeature_list_[indice]                
-            beta = np.hstack([estimator[2].intercept_, estimator[2].coef_])
             ax1 = plt.Subplot(fig, outer[len(self.best_estimators_) + indice])
             ax2 = ax1.twinx()
             
             cvalues = self.cdensity_[feature_name]["density"]["values"]
             cscores = self.cdensity_[feature_name]["density"]["scores"]
+            
+            beta = self.cestimator['lr'].coef_[idx:len(cvalues)]
+            
             ax1.plot(np.arange(len(beta)), beta)
             ax2.bar(np.arange(len(cvalues)), cscores)
 
@@ -287,8 +289,9 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             ax1.set_xticks(input_ticks)
             ax1.set_xticklabels(input_labels)
             ax1.set_title(feature_name)
-
             fig.add_subplot(ax1)
+        
+            idx += len(cvalues)
         plt.show()
     
     def _fit_dummy(self, x, y, sample_weight):
@@ -301,10 +304,10 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                                         "scores":density}}})
 
         transformer_list = []
-        for idx in range(self.cfeature_num_):
+        for idx in range(self.cfeature_num_):http://localhost:8000/edit/zebin/Stein/pysim/pysim/simboost.py#
             feature_name = self.cfeature_list_[idx]
             feature_indice = self.cfeature_index_list_[idx]
-            transformer_list.append(('ohe_' + feature_name,
+            transformer_list.append((feature_name,
                              OneHotEncoder(sparse=False, drop="first",
                                       categories=[np.arange(len(cvalues_[feature_name]), dtype=np.float)]), [feature_indice]))
         self.cestimator_ = Pipeline(steps = [('ohe', ColumnTransformer(transformer_list)),
