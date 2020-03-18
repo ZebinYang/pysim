@@ -219,7 +219,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         check_is_fitted(self, "best_estimators_")
 
-        max_ids = len(self.best_estimators_) + len(self.cestimators_)
+        max_ids = len(self.best_estimators_) + len(self.cestimator_)
         fig = plt.figure(figsize=(8 * cols_per_row, 4.6 * int(np.ceil(max_ids / cols_per_row))))
         outer = gridspec.GridSpec(int(np.ceil(max_ids / cols_per_row)), cols_per_row, wspace=0.15, hspace=0.25)
 
@@ -334,7 +334,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
     def decision_function(self, x):
 
         if self.cfeature_num_ > 0:
-            check_is_fitted(self, "cestimators_")
+            check_is_fitted(self, "cestimator_")
             pred = self.cestimator_.predict(x)
         if self.nfeature_num_ > 0:
             check_is_fitted(self, "best_estimators_")
