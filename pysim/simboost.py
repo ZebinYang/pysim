@@ -268,38 +268,39 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 ax2.axvline(0, linestyle="dotted", color="black")
             fig.add_subplot(ax2)
         
-        idx = 0
-        for indice, feature_name in enumerate(self.cestimator_['ohe'].named_transformers_):
-                
-            if feature_name == 'remainder':
-                break 
+        if self.cfeature_num_ > 0:
+            idx = 0
+            for indice, feature_name in enumerate(self.cestimator_['ohe'].named_transformers_):
 
-            cvalues = self.cdensity_[feature_name]["density"]["values"]
-            cscores = self.cdensity_[feature_name]["density"]["scores"]
-            beta = np.hstack([0.0, self.cestimator_['lr'].coef_[idx:(idx + len(cvalues) - 1)]])
+                if feature_name == 'remainder':
+                    break 
 
-            inner = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer[len(self.best_estimators_) + indice],
-                                       wspace=0.1, hspace=0.1, height_ratios=[6, 1])
-            ax1_main = plt.Subplot(fig, inner[0]) 
-            ax1_main.plot(np.arange(len(cvalues)), beta)
-            ax1_main.set_xticklabels([])
-            ax1_main.set_title(feature_name)
-            fig.add_subplot(ax1_main)
+                cvalues = self.cdensity_[feature_name]["density"]["values"]
+                cscores = self.cdensity_[feature_name]["density"]["scores"]
+                beta = np.hstack([0.0, self.cestimator_['lr'].coef_[idx:(idx + len(cvalues) - 1)]])
 
-            ax1_density = plt.Subplot(fig, inner[1]) 
-            ax1_density.bar(np.arange(len(cvalues)), cscores)
-            ax1_density.get_shared_x_axes().join(ax1_main, ax1_density)
-            ax1_density.set_yticklabels([])
-            input_ticks = (np.arange(len(cvalues)) if len(cvalues) <= 6 else 
-                              np.linspace(0.1 * len(beta), len(beta) * 0.9, 4).astype(int))
-            input_labels = [cvalues[i] for i in input_ticks]
-            if len("".join(list(map(str, input_labels)))) > 30:
-                input_labels = [str(cvalues[i])[:4] for i in input_ticks]
-            ax1_density.set_xticks(input_ticks)
-            ax1_density.set_xticklabels(input_labels)
-            ax1_density.autoscale()
-            fig.add_subplot(ax1_density)        
-            idx += len(cvalues) - 1
+                inner = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer[len(self.best_estimators_) + indice],
+                                           wspace=0.1, hspace=0.1, height_ratios=[6, 1])
+                ax1_main = plt.Subplot(fig, inner[0]) 
+                ax1_main.plot(np.arange(len(cvalues)), beta)
+                ax1_main.set_xticklabels([])
+                ax1_main.set_title(feature_name)
+                fig.add_subplot(ax1_main)
+
+                ax1_density = plt.Subplot(fig, inner[1]) 
+                ax1_density.bar(np.arange(len(cvalues)), cscores)
+                ax1_density.get_shared_x_axes().join(ax1_main, ax1_density)
+                ax1_density.set_yticklabels([])
+                input_ticks = (np.arange(len(cvalues)) if len(cvalues) <= 6 else 
+                                  np.linspace(0.1 * len(beta), len(beta) * 0.9, 4).astype(int))
+                input_labels = [cvalues[i] for i in input_ticks]
+                if len("".join(list(map(str, input_labels)))) > 30:
+                    input_labels = [str(cvalues[i])[:4] for i in input_ticks]
+                ax1_density.set_xticks(input_ticks)
+                ax1_density.set_xticklabels(input_labels)
+                ax1_density.autoscale()
+                fig.add_subplot(ax1_density)        
+                idx += len(cvalues) - 1
         plt.show()
     
     def _fit_dummy(self, x, y, sample_weight):
