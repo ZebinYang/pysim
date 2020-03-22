@@ -8,7 +8,7 @@ from abc import ABCMeta, abstractmethod
 from sklearn.utils.extmath import softmax
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils.validation import check_is_fitted
-from sklearn.utils import check_array, check_X_y, column_or_1d
+from sklearn.utils import check_array, check_X_y
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 from patsy import dmatrix, build_design_matrices
 
@@ -97,7 +97,7 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         if self.maxiter <= 0:
             raise ValueError("maxiter must be > 0, got" % self.maxiter)
 
-    def diff(self, inputs, order=2):
+    def diff(self, x, order=2):
         
         # This function evaluates the derivative of the fitted ASpline w.r.t. the inputs, 
         # which is adopted from https://github.com/johntfoster/bspline/blob/master/bspline/bspline.py.
@@ -141,12 +141,13 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
             Bi2 = create_basis(inputs, p - 1, t[1:])
             return ((ci1, Bi1, t[:-1], p - 1), (ci2, Bi2, t[1:], p - 1))
 
+        x = check_array(x, accept_sparse=["csr", "csc", "coo"])
         knot_vector = np.array([self.xmin] * (self.degree + 1) + self.selected_knots_ + [self.xmax] * (self.degree + 1))
-        terms = [ (1., None, knot_vector, self.degree) ]
+        terms = [ (1., create_basis(x, self.degree, knot_vector), knot_vector, self.degree) ]
         for k in range(order):
             tmp = []
             for Ci, Bi, t, p in terms:
-                tmp.extend((Ci * cn, Bn, tn, pn) for cn, Bn, tn, pn in diff_inner(inputs, t, p))
+                tmp.extend((Ci * cn, Bn, tn, pn) for cn, Bn, tn, pn in diff_inner(x, t, p))
             terms = tmp
         basis_derivatives = np.sum([ci * Bi for ci, Bi, _, _ in terms], 0)
         return np.dot(basis_derivatives, self.coef_)
