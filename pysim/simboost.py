@@ -301,6 +301,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 ax1_density.autoscale()
                 fig.add_subplot(ax1_density)        
                 idx += len(cvalues) - 1
+                
+        plt.show()
         if max_ids > 0:
             if save_png:
                 f.savefig("%s.png" % save_path, bbox_inches='tight', dpi=100)
