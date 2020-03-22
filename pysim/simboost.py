@@ -215,7 +215,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True))
             plt.show()
         
-    def visualize(self, cols_per_row=3):
+    def visualize(self, cols_per_row=3, folder="./results/", name="demo", save_png=False, save_eps=False):
 
         check_is_fitted(self, "best_estimators_")
 
@@ -301,7 +301,11 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 ax1_density.autoscale()
                 fig.add_subplot(ax1_density)        
                 idx += len(cvalues) - 1
-        plt.show()
+        if max_ids > 0:
+            if save_png:
+                f.savefig("%s.png" % save_path, bbox_inches='tight', dpi=100)
+            if save_eps:
+                f.savefig("%s.eps" % save_path, bbox_inches='tight', dpi=100)
     
     def _fit_dummy(self, x, y, sample_weight):
 
