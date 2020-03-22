@@ -98,7 +98,9 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("maxiter must be > 0, got" % self.maxiter)
 
     def diff(self, inputs, order=2):
-
+        
+        # This function evaluates the derivative of the fitted ASpline w.r.t. the inputs, 
+        # which is adopted from https://github.com/johntfoster/bspline/blob/master/bspline/bspline.py.
         def create_basis(inputs, p, knot_vector):
 
             if p == 0:
@@ -128,7 +130,7 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
 
             numer1 = +p
             numer2 = -p
-            denom1 = t[p:-1]   - t[:-(p+1)]
+            denom1 = t[p:-1] - t[:-(p+1)]
             denom2 = t[(p+1):] - t[1:-p]
 
             with np.errstate(divide='ignore', invalid='ignore'):
@@ -139,14 +141,15 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
             Bi2 = create_basis(inputs, p - 1, t[1:])
             return ((ci1, Bi1, t[:-1], p - 1), (ci2, Bi2, t[1:], p - 1))
 
-        knot_vector = [self.xmin] * (self.degree + 1) + self.selected_knots_ + [self.xmax] * (self.degree + 1)
+        knot_vector = np.array([self.xmin] * (self.degree + 1) + self.selected_knots_ + [self.xmax] * (self.degree + 1))
         terms = [ (1., None, knot_vector, self.degree) ]
         for k in range(order):
             tmp = []
             for Ci, Bi, t, p in terms:
                 tmp.extend((Ci * cn, Bn, tn, pn) for cn, Bn, tn, pn in diff_inner(inputs, t, p))
             terms = tmp
-        return np.sum([ci * Bi for ci, Bi, _, _ in terms], 0)
+        basis_derivatives = np.sum([ci * Bi for ci, Bi, _, _ in terms], 0)
+        return np.dot(basis_derivatives, self.coef_)
 
         
     def visualize(self):
