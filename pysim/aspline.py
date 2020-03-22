@@ -51,19 +51,9 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
             D[i,i:(i+order+2)] = diss_operator
         return D
 
-    @property
-    def variable_density_(self):
-        """Return the projection indices.
-        Returns
-        -------
-        projection_indices_ : ndarray of shape (d, n_estimators)
-        """
-        if self.estimators_ is None or len(self.estimators_) == 0:
-            raise ValueError("Estimator not fitted, "
-                             "call `fit` before `feature_importances_`.")
-
-        return np.array([estimator.beta_.flatten() for estimator in self.estimators_]).T
-
+    def _estimate_density(self, x):
+        
+        self.density_, self.bins_ = np.histogram(x, bins=10, density=True)
 
     def _validate_hyperparameters(self):
         
@@ -210,15 +200,11 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
                          multi_output=True, y_numeric=True)
         return x, y.reshape([-1, 1])
 
-    def estimate_density(self, x):
-        
-        self.density_, self.bins_ = np.histogram(x, bins=10, density=True)
-
     def fit(self, x, y, sample_weight=None):
 
         self._validate_hyperparameters()
         x, y = self._validate_input(x, y)
-        self.estimate_density(x)
+        self._estimate_density(x)
         
         n_samples = x.shape[0]
         if sample_weight is None:
@@ -311,22 +297,17 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
         y = self._label_binarizer.transform(y) * 1.0
         return x, y
 
-    def estimate_density(self, x):
-        
-        self.density_, self.bins_ = np.histogram(x, bins=10, density=True)
-
     def fit(self, x, y, sample_weight=None):
 
         self._validate_hyperparameters()
         x, y = self._validate_input(x, y)
-        self.estimate_density(x)
+        self._estimate_density(x)
         n_samples = x.shape[0]
         if sample_weight is None:
             sample_weight = np.ones(n_samples)
         else:
             sample_weight = sample_weight * n_samples
 
-        self.estimate_density(x)
         knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
         xphi = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1",
                        {"x": [self.xmin, self.xmax], "knots": knots, "degree": self.degree})
