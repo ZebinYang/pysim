@@ -97,32 +97,32 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         if self.maxiter <= 0:
             raise ValueError("maxiter must be > 0, got" % self.maxiter)
 
-    def create_basis(self, inputs, p, knot_vector):
+    def diff(self, inputs, order=2):
 
-        if p == 0:
-            return tf.where(tf.reduce_all([knot_vector[:-1] <= inputs,
-                                   inputs <= knot_vector[1:]], axis=0), 1.0, 0.0)
-        else:
-            basis_p_minus_1 = self.create_basis(inputs, p - 1, knot_vector)
+        def create_basis(inputs, p, knot_vector):
 
-        first_term_numerator = inputs - knot_vector[:-p]
-        first_term_denominator = knot_vector[p:] - knot_vector[:-p]
+            if p == 0:
+                return np.where(np.all([knot_vector[:-1] <= inputs,
+                                       inputs <= knot_vector[1:]], axis=0), 1.0, 0.0)
+            else:
+                basis_p_minus_1 = create_basis(inputs, p - 1, knot_vector)
 
-        second_term_numerator = knot_vector[(p + 1):] - inputs
-        second_term_denominator = (knot_vector[(p + 1):] - knot_vector[1:-p])
+            first_term_numerator = inputs - knot_vector[:-p]
+            first_term_denominator = knot_vector[p:] - knot_vector[:-p]
 
-        with np.errstate(divide='ignore', invalid='ignore'):
-            first_term = np.where(first_term_denominator != 0.0,
-                                  (first_term_numerator /
-                                   first_term_denominator), 0.0)
-            second_term = np.where(second_term_denominator != 0.0,
-                                   (second_term_numerator /
-                                    second_term_denominator), 0.0)
+            second_term_numerator = knot_vector[(p + 1):] - inputs
+            second_term_denominator = (knot_vector[(p + 1):] - knot_vector[1:-p])
 
-        return (first_term[:, :-1] * basis_p_minus_1[:, :-1] +
-                 second_term * basis_p_minus_1[:, 1:])
+            with np.errstate(divide='ignore', invalid='ignore'):
+                first_term = np.where(first_term_denominator != 0.0,
+                                      (first_term_numerator /
+                                       first_term_denominator), 0.0)
+                second_term = np.where(second_term_denominator != 0.0,
+                                       (second_term_numerator /
+                                        second_term_denominator), 0.0)
 
-    def diff(self, inputs, knot_vector, order=2):
+            return (first_term[:, :-1] * basis_p_minus_1[:, :-1] +
+                     second_term * basis_p_minus_1[:, 1:])
 
         def diff_inner(inputs, t, p):
 
@@ -135,15 +135,16 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
                 ci1 = np.where(denom1 != 0., (numer1 / denom1), 0.)
                 ci2 = np.where(denom2 != 0., (numer2 / denom2), 0.)
 
-            Bi1 = self.create_basis(inputs, p - 1, t[:-1]) 
-            Bi2 = self.create_basis(inputs, p - 1, t[1:])
+            Bi1 = create_basis(inputs, p - 1, t[:-1]) 
+            Bi2 = create_basis(inputs, p - 1, t[1:])
             return ((ci1, Bi1, t[:-1], p - 1), (ci2, Bi2, t[1:], p - 1))
 
+        knot_vector = [self.xmin] * (self.degree + 1) + self.selected_knots_ + [self.xmax] * (self.degree + 1)
         terms = [ (1., None, knot_vector, self.degree) ]
         for k in range(order):
             tmp = []
             for Ci, Bi, t, p in terms:
-                tmp.extend( (Ci * cn, Bn, tn, pn) for cn, Bn, tn, pn in diff_inner(inputs, t, p))
+                tmp.extend((Ci * cn, Bn, tn, pn) for cn, Bn, tn, pn in diff_inner(inputs, t, p))
             terms = tmp
         return np.sum([ci * Bi for ci, Bi, _, _ in terms], 0)
 
