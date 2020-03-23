@@ -7,8 +7,8 @@ from matplotlib.ticker import MaxNLocator
 from abc import ABCMeta, abstractmethod
 
 from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LassoCV
 from sklearn.compose import ColumnTransformer
-from sklearn.linear_model import LinearRegression
 from sklearn.utils import check_X_y, column_or_1d
 from sklearn.utils.validation import check_is_fitted
 from sklearn.utils.extmath import softmax, stable_cumsum
@@ -96,20 +96,13 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         importance_ratios_ : ndarray of shape (n_estimators,)
             The estimator importances.
         """
-        if self.nfeature_num_ > 0:
-            if self.best_estimators_ is None or len(self.best_estimators_) == 0:
-                raise ValueError("Estimator not fitted, "
-                                 "call `fit` before `importance_ratios_`.")
-            estimator_importance = []
-            for indice, pipe in enumerate(self.best_estimators_):
-                estimator = pipe["sim_estimator"]
-                xgrid = np.linspace(estimator.shape_fit_.xmin, estimator.shape_fit_.xmax, 100).reshape([-1, 1])
-                ygrid = estimator.shape_fit_.decision_function(xgrid)
-                estimator_importance.append(np.std(ygrid))
-            importance_ratio = estimator_importance / np.sum(estimator_importance)
-            return importance_ratio
-        else:
-            return np.array([])
+        if self.component_importance_ is None or len(self.component_importance_) == 0:
+            raise ValueError("Estimator not fitted, "
+                             "call `fit` before `importance_ratios_`.")
+            
+        total_importance = np.sum([item for key, item in self.component_importance_.items()])
+        importance_ratios_ = {key: item / total_importance for key, item in self.component_importance_.items()}
+        return importance_ratios_
 
     @property
     def orthogonality_measure_(self):
@@ -164,7 +157,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         if not isinstance(meta_info, dict):
             raise ValueError("meta_info must be None or a dict, got" % meta_info)
         else:
-            self.cvalues_ = {}  
+            self.dummy_values_ = {}  
             self.cfeature_num_ = 0
             self.nfeature_num_ = 0
             self.cfeature_list_ = []
@@ -178,7 +171,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                     self.cfeature_num_ += 1
                     self.cfeature_list_.append(feature_name)
                     self.cfeature_index_list_.append(idx)
-                    self.cvalues_.update({feature_name:meta_info[feature_name]["values"]})
+                    self.dummy_values_.update({feature_name:meta_info[feature_name]["values"]})
                 else:
                     self.nfeature_num_ +=1
                     self.nfeature_list_.append(feature_name)
@@ -234,8 +227,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             ygrid = estimator.shape_fit_.decision_function(xgrid)
             ax1_main.plot(xgrid, ygrid)
             ax1_main.set_xticklabels([])
-            ax1_main.set_title("          Component " + str(indice + 1) +
-                               " (IR: " + str(np.round(100 * self.importance_ratios_[indice], 2)) + "%)", fontsize=16)
+            ax1_main.set_title("       Component " + str(indice + 1) +
+                         " (IR: " + str(np.round(100 * self.importance_ratios_["sim_estimator " + str(indice + 1)], 2)) + "%)", fontsize=16)
             fig.add_subplot(ax1_main)
 
             ax1_density = fig.add_subplot(inner[1, 0])  
@@ -270,37 +263,38 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         
         if self.cfeature_num_ > 0:
             idx = 0
-            for indice, feature_name in enumerate(self.cestimator_['ohe'].named_transformers_):
+            for indice, feature_name in enumerate(self.dummy_estimator_['ohe'].named_transformers_):
 
                 if feature_name == 'remainder':
                     break 
 
-                cvalues = self.cdensity_[feature_name]["density"]["values"]
-                cscores = self.cdensity_[feature_name]["density"]["scores"]
-                beta = np.hstack([0.0, self.cestimator_['lr'].coef_[idx:(idx + len(cvalues) - 1)]])
+                dummy_values = self.dummy_density_[feature_name]["density"]["values"]
+                dummy_scores = self.dummy_density_[feature_name]["density"]["scores"]
+                beta = np.hstack([0.0, self.dummy_estimator_['lr'].coef_[idx:(idx + len(dummy_values) - 1)]])
 
                 inner = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=outer[len(self.best_estimators_) + indice],
                                            wspace=0.1, hspace=0.1, height_ratios=[6, 1])
                 ax1_main = plt.Subplot(fig, inner[0]) 
-                ax1_main.plot(np.arange(len(cvalues)), beta)
+                ax1_main.plot(np.arange(len(dummy_values)), beta)
                 ax1_main.set_xticklabels([])
-                ax1_main.set_title(feature_name)
+                ax1_main.set_title(feature_name +
+                             " (IR: " + str(np.round(100 * self.importance_ratios_[feature_name], 2)) + "%)")
                 fig.add_subplot(ax1_main)
 
                 ax1_density = plt.Subplot(fig, inner[1]) 
-                ax1_density.bar(np.arange(len(cvalues)), cscores)
+                ax1_density.bar(np.arange(len(dummy_values)), dummy_scores)
                 ax1_density.get_shared_x_axes().join(ax1_main, ax1_density)
                 ax1_density.set_yticklabels([])
-                input_ticks = (np.arange(len(cvalues)) if len(cvalues) <= 6 else 
+                input_ticks = (np.arange(len(dummy_values)) if len(dummy_values) <= 6 else 
                                   np.linspace(0.1 * len(beta), len(beta) * 0.9, 4).astype(int))
-                input_labels = [cvalues[i] for i in input_ticks]
+                input_labels = [dummy_values[i] for i in input_ticks]
                 if len("".join(list(map(str, input_labels)))) > 30:
-                    input_labels = [str(cvalues[i])[:4] for i in input_ticks]
+                    input_labels = [str(dummy_values[i])[:4] for i in input_ticks]
                 ax1_density.set_xticks(input_ticks)
                 ax1_density.set_xticklabels(input_labels)
                 ax1_density.autoscale()
                 fig.add_subplot(ax1_density)        
-                idx += len(cvalues) - 1
+                idx += len(dummy_values) - 1
                 
         plt.show()
         if max_ids > 0:
@@ -311,7 +305,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
     
     def _fit_dummy(self, x, y, sample_weight):
 
-        self.cdensity_ = {}
+        self.dummy_density_ = {}
         transformer_list = []
         for idx in range(self.cfeature_num_):
             
@@ -319,17 +313,17 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             feature_indice = self.cfeature_index_list_[idx]
             
             unique, counts = np.unique(x[:, feature_indice], return_counts=True)
-            density = np.zeros((len(self.cvalues_[feature_name])))
+            density = np.zeros((len(self.dummy_values_[feature_name])))
             density[unique.astype(int)] = counts / x.shape[0]
-            self.cdensity_.update({feature_name:{"density":{"values":self.cvalues_[feature_name],
+            self.dummy_density_.update({feature_name:{"density":{"values":self.dummy_values_[feature_name],
                                             "scores":density}}})
 
             transformer_list.append((feature_name,
                              OneHotEncoder(sparse=False, drop="first",
-                                      categories=[np.arange(len(self.cvalues_[feature_name]), dtype=np.float)]), [feature_indice]))
-        self.cestimator_ = Pipeline(steps = [('ohe', ColumnTransformer(transformer_list)),
-                             ('lr', LinearRegression())])        
-        self.cestimator_.fit(x, y, lr__sample_weight=sample_weight)
+                             categories=[np.arange(len(self.dummy_values_[feature_name]), dtype=np.float)]), [feature_indice]))
+        self.dummy_estimator_ = Pipeline(steps = [('ohe', ColumnTransformer(transformer_list)),
+                             ('lr', LassoCV(n_alphas=100))])        
+        self.dummy_estimator_.fit(x, y, lr__sample_weight=sample_weight)
     
     def fit(self, x, y, sample_weight=None, meta_info=None):
 
@@ -342,6 +336,20 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         self.tr_idx, self.val_idx = train_test_split(np.arange(n_samples), test_size=self.val_ratio, random_state=self.random_state)
         self._fit(x, y, sample_weight)
+        
+        self.component_importance_ = {}
+        for indice, pipe in enumerate(self.best_estimators_):
+            estimator = pipe["sim_estimator"]
+            self.component_importance_.update("sim_estimator " + str(indice + 1): np.std(estimator.predict(x[:, self.tr_idx])))
+
+        for idx in range(self.cfeature_num_):
+
+            feature_name = self.cfeature_list_[idx]
+            feature_indice = self.cfeature_index_list_[idx]
+            x_temp = np.zeros(x[:, self.tr_idx].shape)
+            x_temp[:, feature_indice] = x[:, feature_indice]
+            self.component_importance_.update(feature_name: np.std(self.dummy_estimator_.predict(x_temp)))     
+        
         self.time_cost_ = time.time() - start
         return self
 
@@ -349,8 +357,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         pred = 0
         if self.cfeature_num_ > 0:
-            check_is_fitted(self, "cestimator_")
-            pred += self.cestimator_.predict(x)
+            check_is_fitted(self, "dummy_estimator_")
+            pred += self.dummy_estimator_.predict(x)
         if self.nfeature_num_ > 0:
             check_is_fitted(self, "best_estimators_")
             pred += np.sum([est.predict(x) for est in self.best_estimators_], axis=0)
@@ -392,8 +400,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         # Fit categorical variables
         if self.cfeature_num_ > 0:
             self._fit_dummy(x[self.tr_idx], z[self.tr_idx], sample_weight[self.tr_idx])
-            z = z - self.cestimator_.predict(x)
-            pred_val += self.cestimator_.predict(x[self.val_idx])
+            z = z - self.dummy_estimator_.predict(x)
+            pred_val += self.dummy_estimator_.predict(x[self.val_idx])
             val_mse = mean_squared_error(y[self.val_idx], pred_val)
             self.val_mse_.append(val_mse)
         else:
@@ -495,8 +503,8 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         # Fit categorical variables
         if self.cfeature_num_ > 0:
             self._fit_dummy(x[self.tr_idx], z[self.tr_idx], sample_weight[self.tr_idx])
-            pred_train += self.cestimator_.predict(x[self.tr_idx])
-            pred_val += self.cestimator_.predict(x[self.val_idx])
+            pred_train += self.dummy_estimator_.predict(x[self.tr_idx])
+            pred_val += self.dummy_estimator_.predict(x[self.val_idx])
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
             proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
             val_auc = roc_auc_score(y[self.val_idx], proba_val)
