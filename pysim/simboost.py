@@ -96,16 +96,46 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         importance_ratios_ : ndarray of shape (n_estimators,)
             The estimator importances.
         """
-        if self.component_importance_ is None or len(self.component_importance_) == 0:
+        if self.best_estimators_ is None or len(self.best_estimators_) == 0:
             raise ValueError("Estimator not fitted, "
                              "call `fit` before `importance_ratios_`.")
             
+        self.component_importance_ = {}
+        for indice, est in enumerate(self.best_estimators_):
+            
+            if "sim" in est.named_steps.keys():
+                self.component_importance_.update({"sim " + str(indice + 1): {"type": "sim",
+                                                          "indice": indice,
+                                                          "ir": np.std(est.predict(x[self.tr_idx, :]))}})
+
+            elif "dummy_lr" in est.named_steps.keys():
+                feature_name = self.cfeature_list_[indice]
+                self.component_importance_.update({feature_name: {"type": "dummy_lr",
+                                                  "indice": indice,
+                                                  "ir": np.std(est.predict(x[self.tr_idx, :]))}})
+
         total_importance = np.sum([item["ir"] for key, item in self.component_importance_.items()])
         importance_ratios_ = {key: {"type": item["type"],
                            "indice": item["indice"],
                            "ir": item["ir"] / total_importance} for key, item in self.component_importance_.items()}
         return importance_ratios_
 
+
+    @property
+    def projection_indices_(self):
+        """Return the projection indices.
+        Returns
+        -------
+        projection_indices_ : ndarray of shape (d, n_estimators)
+        """
+        if self.nfeature_num_ > 0:
+            if self.best_estimators_ is None or len(self.best_estimators_) == 0:
+                raise ValueError("Estimator not fitted, "
+                                 "call `fit` before `projection_indices_`.")
+            return np.array([est["sim"].beta_.flatten() for est in self.best_estimators_ if "sim" in est.named_steps.keys()]).T
+        else:
+            return np.array([])
+        
     @property
     def orthogonality_measure_(self):
         """Return the orthogonality measure (the lower, the better).
@@ -124,21 +154,6 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             if self.projection_indices_.shape[1] > 1:
                 ortho_measure /= ((self.projection_indices_.shape[1] ** 2 - self.projection_indices_.shape[1]))
         return ortho_measure
-
-    @property
-    def projection_indices_(self):
-        """Return the projection indices.
-        Returns
-        -------
-        projection_indices_ : ndarray of shape (d, n_estimators)
-        """
-        if self.nfeature_num_ > 0:
-            if self.best_estimators_ is None or len(self.best_estimators_) == 0:
-                raise ValueError("Estimator not fitted, "
-                                 "call `fit` before `projection_indices_`.")
-            return np.array([est["sim"].beta_.flatten() for est in self.best_estimators_ if "sim" in est.named_steps.keys()]).T
-        else:
-            return np.array([])
 
     def _validate_sample_weight(self, n_samples, sample_weight):
         
@@ -416,6 +431,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             else:
                 best_idx = np.argmax(self.val_auc_)
             self.best_estimators_ = self.estimators_[:(best_idx + 1)]
+
 
     def fit(self, x, y, sample_weight=None, meta_info=None):
 
