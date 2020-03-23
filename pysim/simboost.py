@@ -100,10 +100,10 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("Estimator not fitted, "
                              "call `fit` before `importance_ratios_`.")
             
-        total_importance = np.sum([item["ir"] for key, item in self.component_importance_.items()])
+        total_importance = np.sum([item["ci"] for key, item in self.component_importance_.items()])
         importance_ratios_ = {key: {"type": item["type"],
                            "indice": item["indice"],
-                           "ir": item["ir"] / total_importance} for key, item in self.component_importance_.items()}
+                           "ir": item["ci"] / total_importance} for key, item in self.component_importance_.items()}
         return importance_ratios_
 
 
@@ -348,29 +348,12 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         self.dummy_intercept_ = dummy_estimator_all["lr"].intercept_
         
     def _pruning(self, x, y):
-        
-        component_importance_temp = {}
-        for indice, est in enumerate(self.sim_estimators_):
-            component_importance_temp.update({"sim " + str(indice + 1): {"type": "sim",
-                                                      "indice": indice,
-                                                      "ir": np.std(est.predict(x[self.tr_idx, :]))}})
-
-        for indice, est in enumerate(self.dummy_estimators_):
-            feature_name = self.cfeature_list_[indice]
-            component_importance_temp.update({feature_name: {"type": "dummy_lr",
-                                              "indice": indice,
-                                              "ir": np.std(est.predict(x[self.tr_idx, :]))}})
-        
-        total_importance = np.sum([item["ir"] for key, item in component_importance_temp.items()])
-        importance_ratios_temp = {key: {"type": item["type"],
-                               "indice": item["indice"],
-                               "ir": item["ir"] / total_importance} for key, item in component_importance_temp.items()}
-                
+                        
         if is_regressor(self):
             
-            pred_val = 0
             self.val_mse_ = []
             self.estimators_ = []
+            pred_val = self.dummy_intercept_
             for key, item in sorted(importance_ratios_temp.items(), key=lambda item: item[1]["ir"])[::-1]:
             
                 if item["type"] == "sim":
@@ -392,9 +375,9 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         elif is_classifier(self):
             
-            pred_val = 0
             self.val_auc_ = []
             self.estimators_ = []
+            pred_val = self.dummy_intercept_
             for key, item in sorted(self.importance_ratios_.items(), key=lambda item: item[1]["ir"])[::-1]:
 
                 if item["type"] == "sim":
@@ -421,13 +404,13 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             if "sim" in est.named_steps.keys():
                 self.component_importance_.update({"sim " + str(indice + 1): {"type": "sim",
                                                           "indice": indice,
-                                                          "ir": np.std(est.predict(x[self.tr_idx, :]))}})
+                                                          "ci": np.std(est.predict(x[self.tr_idx, :]))}})
 
             elif "dummy_lr" in est.named_steps.keys():
                 feature_name = self.cfeature_list_[indice]
                 self.component_importance_.update({feature_name: {"type": "dummy_lr",
                                                   "indice": indice,
-                                                  "ir": np.std(est.predict(x[self.tr_idx, :]))}})
+                                                  "ci": np.std(est.predict(x[self.tr_idx, :]))}})
 
     def fit(self, x, y, sample_weight=None, meta_info=None):
 
@@ -560,14 +543,19 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         val_fold = np.ones((n_samples))
         val_fold[self.tr_idx] = -1
         
-        pred_train = 0
         z = y.ravel()
-        proba_train = 0.5 * np.ones(len(self.tr_idx))
         # Fit categorical variables
         if self.cfeature_num_ > 0:
             self._fit_dummy(x[self.tr_idx], z[self.tr_idx], sample_weight[self.tr_idx])
             pred_train = np.sum([est.predict(x[self.tr_idx]) for est in self.dummy_estimators_], axis=0) + self.dummy_intercept_
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
+            pred_val = np.sum([est.predict(x[self.val_idx]) for est in self.dummy_estimators_], axis=0) + self.dummy_intercept_
+            proba_val = 1 / (1 + np.exp(-pred_train.ravel()))
+        else:
+            pred_train = 0
+            pred_val = 0
+            proba_train = 0.5 * np.ones(len(self.tr_idx))
+            proba_val = 0.5 * np.ones(len(self.val_idx))
 
         # Fit Sim Boosting for numerical variables
         if self.nfeature_num_ > 0:
@@ -607,6 +595,8 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                 # update
                 pred_train += sim_estimator.predict(x[self.tr_idx])
                 proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
+                pred_val += sim_estimator.predict(x[self.val_idx])
+                proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
                 self.sim_estimators_.append(sim_estimator)
             
     def predict_proba(self, x):
