@@ -308,8 +308,6 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
     def _fit_dummy(self, x, y, sample_weight):
 
         transformer_list = []
-        self.dummy_density_ = {}
-        self.dummy_estimators_ = []
         for indice in range(self.cfeature_num_):
             
             feature_name = self.cfeature_list_[indice]
@@ -394,7 +392,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 best_idx = np.argmin(self.val_mse_)
             self.best_estimators_ = self.estimators_[:(best_idx + 1)]
 
-        if is_classifier(self):
+        elif is_classifier(self):
             
             pred_val = 0
             self.val_auc_ = []
@@ -419,19 +417,6 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 best_idx = np.argmax(self.val_auc_)
             self.best_estimators_ = self.estimators_[:(best_idx + 1)]
 
-        self.component_importance_ = {}
-        for indice, est in enumerate(self.best_estimators_):
-            
-            if "sim" in est.named_steps.keys():
-                self.component_importance_.update({"sim " + str(indice + 1): {"type": "sim",
-                                                          "indice": indice,
-                                                          "ir": np.std(est.predict(x[self.tr_idx, :]))}})
-            elif "dummy_lr" in est.named_steps.keys():
-                feature_name = self.cfeature_list_[indice]
-                self.component_importance_.update({feature_name: {"type": "dummy_lr",
-                                                  "indice": indice,
-                                                  "ir": np.std(est.predict(x[self.tr_idx, :]))}})
-
     def fit(self, x, y, sample_weight=None, meta_info=None):
 
         start = time.time()
@@ -440,6 +425,10 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         self._validate_hyperparameters()
         self._preprocess_meta_info(n_features, meta_info)
         sample_weight = self._validate_sample_weight(n_samples, sample_weight)
+
+        self.sim_estimators_ = []
+        self.dummy_estimators_ = []
+        self.dummy_density_ = {}
 
         self.tr_idx, self.val_idx = train_test_split(np.arange(n_samples), test_size=self.val_ratio,
                                       random_state=self.random_state)
@@ -482,8 +471,6 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         val_fold[self.tr_idx] = -1
         
         z = y.ravel()        
-        self.sim_estimators_ = []
-        
         # Fit categorical variables
         if self.cfeature_num_ > 0:
             self._fit_dummy(x[self.tr_idx], z[self.tr_idx], sample_weight[self.tr_idx])
@@ -562,9 +549,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         
         pred_train = 0
         z = y.ravel()
-        self.sim_estimators_ = []
         proba_train = 0.5 * np.ones(len(self.tr_idx))
-        
         # Fit categorical variables
         if self.cfeature_num_ > 0:
             self._fit_dummy(x[self.tr_idx], z[self.tr_idx], sample_weight[self.tr_idx])
