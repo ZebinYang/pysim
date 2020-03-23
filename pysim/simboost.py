@@ -7,7 +7,7 @@ from matplotlib.ticker import MaxNLocator
 from abc import ABCMeta, abstractmethod
 
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LassoCV
+from sklearn.linear_model import RidgeCV
 from sklearn.compose import ColumnTransformer
 from sklearn.utils import check_X_y, column_or_1d
 from sklearn.utils.validation import check_is_fitted
@@ -322,7 +322,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                              OneHotEncoder(sparse=False, drop="first",
                              categories=[np.arange(len(self.dummy_values_[feature_name]), dtype=np.float)]), [feature_indice]))
         self.dummy_estimator_ = Pipeline(steps = [('ohe', ColumnTransformer(transformer_list)),
-                             ('lr', LassoCV(n_alphas=100))])        
+                             ('lr', RidgeCV())])        
         self.dummy_estimator_.fit(x, y, lr__sample_weight=sample_weight)
     
     def fit(self, x, y, sample_weight=None, meta_info=None):
