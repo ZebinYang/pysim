@@ -332,7 +332,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             feature_name = self.cfeature_list_[indice]
             feature_indice = self.cfeature_index_list_[indice]
             dummy_num = self.dummy_values_[feature_name]
-            dummy_coef = np.hstack([0.0, dummy_estimator_all['lr'].coef_[idx:(idx + len(dummy_num) - 1)]])
+            dummy_coef = np.hstack([0.0, dummy_estimator_all['lr'].coef_[idx:(idx + len(dummy_num) - 1)].ravel()])
 
             dummy_estimator = Pipeline(steps=[('select', FunctionTransformer(lambda data, idx: data[:, [idx]],
                                                 validate=False, kw_args={"idx": feature_indice})),
@@ -454,7 +454,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         check_is_fitted(self, "best_estimators_")
         pred = np.sum([est.predict(x) for est in self.best_estimators_], axis=0) + self.dummy_intercept_
-        return pred
+        return pred.reshape([-1, 1])
 
 
 class SimBoostRegressor(BaseSimBooster, RegressorMixin):
