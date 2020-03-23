@@ -345,10 +345,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             self.dummy_estimators_.append(dummy_estimator)
             idx += len(dummy_num) - 1
 
-        intercept_estimator = LinearRegression()
-        intercept_estimator.coef_ = np.zeros(x.shape[1])
-        intercept_estimator.intercept_ = dummy_estimator_all["lr"].intercept_
-        self.dummy_estimators_.append(intercept_estimator)
+        self.dummy_intercept_ = dummy_estimator_all["lr"].intercept_
         
     def _pruning(self, x, y):
         
@@ -358,7 +355,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                                                       "indice": indice,
                                                       "ir": np.std(est.predict(x[self.tr_idx, :]))}})
 
-        for indice, est in enumerate(self.dummy_estimators_[:-1]):
+        for indice, est in enumerate(self.dummy_estimators_):
             feature_name = self.cfeature_list_[indice]
             component_importance_temp.update({feature_name: {"type": "dummy_lr",
                                               "indice": indice,
@@ -444,7 +441,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         self.sim_estimators_ = []
         self.dummy_estimators_ = []
         self.dummy_density_ = {}
-
+        self.dummy_intercept_ = 0
+        
         self.tr_idx, self.val_idx = train_test_split(np.arange(n_samples), test_size=self.val_ratio,
                                       random_state=self.random_state)
         self._fit(x, y, sample_weight)
@@ -455,7 +453,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
     def decision_function(self, x):
 
         check_is_fitted(self, "best_estimators_")
-        pred = np.sum([est.predict(x) for est in self.best_estimators_], axis=0)
+        pred = np.sum([est.predict(x) for est in self.best_estimators_], axis=0) + self.dummy_intercept_
         return pred
 
 
