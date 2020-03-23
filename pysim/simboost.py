@@ -348,7 +348,24 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         self.dummy_intercept_ = dummy_estimator_all["lr"].intercept_
         
     def _pruning(self, x, y):
-                        
+                
+        component_importance_temp = {}
+        for indice, est in enumerate(self.sim_estimators_):
+            component_importance_temp.update({"sim " + str(indice + 1): {"type": "sim",
+                                                      "indice": indice,
+                                                      "ci": np.std(est.predict(x[self.tr_idx, :]))}})
+
+        for indice, est in enumerate(self.dummy_estimators_[:-1]):
+            feature_name = self.cfeature_list_[indice]
+            component_importance_temp.update({feature_name: {"type": "dummy_lr",
+                                              "indice": indice,
+                                              "ci": np.std(est.predict(x[self.tr_idx, :]))}})
+        
+        total_importance = np.sum([item["ci"] for key, item in component_importance_temp.items()])
+        importance_ratios_temp = {key: {"type": item["type"],
+                               "indice": item["indice"],
+                               "ir": item["ci"] / total_importance} for key, item in component_importance_temp.items()}
+                
         if is_regressor(self):
             
             self.val_mse_ = []
