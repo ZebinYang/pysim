@@ -487,7 +487,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         # Fit categorical variables
         if self.cfeature_num_ > 0:
             self._fit_dummy(x[self.tr_idx], z[self.tr_idx], sample_weight[self.tr_idx])
-            z = z - np.sum([est.predict(x) for est in self.dummy_estimators_], axis=0)
+            z = z - np.sum([est.predict(x) for est in self.dummy_estimators_], axis=0) - self.dummy_intercept_
 
         # Fit Sim Boosting for numerical variables
         if self.nfeature_num_ > 0:
@@ -566,7 +566,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         # Fit categorical variables
         if self.cfeature_num_ > 0:
             self._fit_dummy(x[self.tr_idx], z[self.tr_idx], sample_weight[self.tr_idx])
-            pred_train = np.sum([est.predict(x[self.tr_idx]) for est in self.dummy_estimators_], axis=0)
+            pred_train = np.sum([est.predict(x[self.tr_idx]) for est in self.dummy_estimators_], axis=0) + self.dummy_intercept_
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
 
         # Fit Sim Boosting for numerical variables
