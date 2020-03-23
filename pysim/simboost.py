@@ -96,24 +96,10 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         importance_ratios_ : ndarray of shape (n_estimators,)
             The estimator importances.
         """
-        if self.best_estimators_ is None or len(self.best_estimators_) == 0:
+        if self.component_importance_ is None or len(self.component_importance_) == 0:
             raise ValueError("Estimator not fitted, "
                              "call `fit` before `importance_ratios_`.")
             
-        self.component_importance_ = {}
-        for indice, est in enumerate(self.best_estimators_):
-            
-            if "sim" in est.named_steps.keys():
-                self.component_importance_.update({"sim " + str(indice + 1): {"type": "sim",
-                                                          "indice": indice,
-                                                          "ir": np.std(est.predict(x[self.tr_idx, :]))}})
-
-            elif "dummy_lr" in est.named_steps.keys():
-                feature_name = self.cfeature_list_[indice]
-                self.component_importance_.update({feature_name: {"type": "dummy_lr",
-                                                  "indice": indice,
-                                                  "ir": np.std(est.predict(x[self.tr_idx, :]))}})
-
         total_importance = np.sum([item["ir"] for key, item in self.component_importance_.items()])
         importance_ratios_ = {key: {"type": item["type"],
                            "indice": item["indice"],
@@ -432,6 +418,19 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 best_idx = np.argmax(self.val_auc_)
             self.best_estimators_ = self.estimators_[:(best_idx + 1)]
 
+        self.component_importance_ = {}
+        for indice, est in enumerate(self.best_estimators_):
+            
+            if "sim" in est.named_steps.keys():
+                self.component_importance_.update({"sim " + str(indice + 1): {"type": "sim",
+                                                          "indice": indice,
+                                                          "ir": np.std(est.predict(x[self.tr_idx, :]))}})
+
+            elif "dummy_lr" in est.named_steps.keys():
+                feature_name = self.cfeature_list_[indice]
+                self.component_importance_.update({feature_name: {"type": "dummy_lr",
+                                                  "indice": indice,
+                                                  "ir": np.std(est.predict(x[self.tr_idx, :]))}})
 
     def fit(self, x, y, sample_weight=None, meta_info=None):
 
