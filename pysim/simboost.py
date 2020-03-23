@@ -340,14 +340,14 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         self.component_importance_ = {}
         for indice, pipe in enumerate(self.best_estimators_):
             estimator = pipe["sim_estimator"]
-            self.component_importance_.update({"sim_estimator " + str(indice + 1): np.std(estimator.predict(x[:, self.tr_idx]))})
+            self.component_importance_.update({"sim_estimator " + str(indice + 1): np.std(estimator.predict(x[self.tr_idx, :]))})
 
         for idx in range(self.cfeature_num_):
 
             feature_name = self.cfeature_list_[idx]
             feature_indice = self.cfeature_index_list_[idx]
-            x_temp = np.zeros(x[:, self.tr_idx].shape)
-            x_temp[:, feature_indice] = x[:, feature_indice]
+            x_temp = np.zeros(x[self.tr_idx, :].shape)
+            x_temp[:, feature_indice] = x[self.tr_idx, feature_indice]
             self.component_importance_.update({feature_name: np.std(self.dummy_estimator_.predict(x_temp))})     
         
         self.time_cost_ = time.time() - start
