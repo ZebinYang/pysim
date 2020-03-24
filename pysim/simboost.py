@@ -397,7 +397,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             pred_val = self.dummy_intercept_ + np.zeros(len(self.val_idx))
             proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
             val_mse = roc_auc_score(y[self.val_idx], pred_val)
-            for key, item in sorted(self.importance_ratios_temp.items(), key=lambda item: item[1]["ir"])[::-1]:
+            for key, item in sorted(importance_ratios_temp.items(), key=lambda item: item[1]["ir"])[::-1]:
 
                 if item["type"] == "sim":
                     est = self.sim_estimators_[item["indice"]]
