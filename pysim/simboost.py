@@ -427,7 +427,6 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 self.component_importance_.update({feature_name: {"type": "dummy_lr",
                                                   "indice": indice,
                                                   "ci": np.std(est.predict(x[self.tr_idx, :]))}})
-                dummy_indice += 1
 
     def fit(self, x, y, sample_weight=None, meta_info=None):
 
