@@ -269,7 +269,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         
             elif "dummy_lr" in est.named_steps.keys():
 
-                feature_name = est.est.named_steps.keys()[0]
+                feature_name = est.named_steps.keys()[0]
                 dummy_values = self.dummy_density_[feature_name]["density"]["values"]
                 dummy_scores = self.dummy_density_[feature_name]["density"]["scores"]
                 dummy_coef = est["dummy_lr"].coef_
@@ -355,7 +355,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                                                       "ci": np.std(est.predict(x[self.tr_idx, :]))}})
 
         for indice, est in enumerate(self.dummy_estimators_):
-            feature_name = est.est.named_steps.keys()[0]
+            feature_name = est.named_steps.keys()[0]
             component_importance_temp.update({feature_name: {"type": "dummy_lr",
                                               "indice": indice,
                                               "ci": np.std(est.predict(x[self.tr_idx, :]))}})
