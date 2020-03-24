@@ -224,7 +224,6 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         xlim_min = - max(np.abs(self.projection_indices_.min() - 0.1), np.abs(self.projection_indices_.max() + 0.1))
         xlim_max = max(np.abs(self.projection_indices_.min() - 0.1), np.abs(self.projection_indices_.max() + 0.1))
         
-        
         for indice, est in enumerate(self.best_estimators_):
             
             if "sim" in est.named_steps.keys():
@@ -270,7 +269,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         
             elif "dummy_lr" in est.named_steps.keys():
 
-                feature_name = self.feature_list_[indice]
+                feature_name = est.est.named_steps.keys()[0]
                 dummy_values = self.dummy_density_[feature_name]["density"]["values"]
                 dummy_scores = self.dummy_density_[feature_name]["density"]["scores"]
                 dummy_coef = est["dummy_lr"].coef_
@@ -334,7 +333,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             dummy_num = self.dummy_values_[feature_name]
             dummy_coef = np.hstack([0.0, dummy_estimator_all["lr"].coef_[idx:(idx + len(dummy_num) - 1)].ravel()])
 
-            dummy_estimator = Pipeline(steps=[("select", FunctionTransformer(lambda data, idx: data[:, [idx]],
+            dummy_estimator = Pipeline(steps=[(feature_name, FunctionTransformer(lambda data, idx: data[:, [idx]],
                                                 validate=False, kw_args={"idx": feature_indice})),
                             ("ohe", OneHotEncoder(sparse=False,
                                           categories=[np.arange(len(self.dummy_values_[feature_name]), dtype=np.float)])),
@@ -356,7 +355,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                                                       "ci": np.std(est.predict(x[self.tr_idx, :]))}})
 
         for indice, est in enumerate(self.dummy_estimators_):
-            feature_name = self.cfeature_list_[indice]
+            feature_name = est.est.named_steps.keys()[0]
             component_importance_temp.update({feature_name: {"type": "dummy_lr",
                                               "indice": indice,
                                               "ci": np.std(est.predict(x[self.tr_idx, :]))}})
@@ -416,17 +415,15 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 best_idx = np.argmax(self.val_auc_)
             self.best_estimators_ = self.estimators_[:(best_idx + 1)]
 
-        dummy_indice = 0
         self.component_importance_ = {}
         for indice, est in enumerate(self.best_estimators_):
-            
             if "sim" in est.named_steps.keys():
                 self.component_importance_.update({"sim " + str(indice + 1): {"type": "sim",
                                                           "indice": indice,
                                                           "ci": np.std(est.predict(x[self.tr_idx, :]))}})
 
             elif "dummy_lr" in est.named_steps.keys():
-                feature_name = self.cfeature_list_[dummy_indice]
+                feature_name = est.est.named_steps.keys()[0]
                 self.component_importance_.update({feature_name: {"type": "dummy_lr",
                                                   "indice": indice,
                                                   "ci": np.std(est.predict(x[self.tr_idx, :]))}})
