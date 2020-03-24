@@ -301,9 +301,9 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         plt.show()
         if max_ids > 0:
             if save_png:
-                f.savefig("%s.png" % save_path, bbox_inches='tight', dpi=100)
+                f.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
             if save_eps:
-                f.savefig("%s.eps" % save_path, bbox_inches='tight', dpi=100)
+                f.savefig("%s.eps" % save_path, bbox_inches="tight", dpi=100)
 
 
     def _fit_dummy(self, x, y, sample_weight):
@@ -323,7 +323,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             transformer_list.append((feature_name,
                              OneHotEncoder(sparse=False, drop="first",
                              categories=[np.arange(len(self.dummy_values_[feature_name]), dtype=np.float)]), [feature_indice]))
-        dummy_estimator_all = Pipeline(steps = [('ohe', ColumnTransformer(transformer_list)), ('lr', RidgeCV())])        
+        dummy_estimator_all = Pipeline(steps = [("ohe", ColumnTransformer(transformer_list)), ("lr", RidgeCV())])        
         dummy_estimator_all.fit(x, y, lr__sample_weight=sample_weight)
 
         idx = 0
@@ -332,13 +332,13 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             feature_name = self.cfeature_list_[indice]
             feature_indice = self.cfeature_index_list_[indice]
             dummy_num = self.dummy_values_[feature_name]
-            dummy_coef = np.hstack([0.0, dummy_estimator_all['lr'].coef_[idx:(idx + len(dummy_num) - 1)].ravel()])
+            dummy_coef = np.hstack([0.0, dummy_estimator_all["lr"].coef_[idx:(idx + len(dummy_num) - 1)].ravel()])
 
-            dummy_estimator = Pipeline(steps=[('select', FunctionTransformer(lambda data, idx: data[:, [idx]],
+            dummy_estimator = Pipeline(steps=[("select", FunctionTransformer(lambda data, idx: data[:, [idx]],
                                                 validate=False, kw_args={"idx": feature_indice})),
-                            ('ohe', OneHotEncoder(sparse=False,
+                            ("ohe", OneHotEncoder(sparse=False,
                                           categories=[np.arange(len(self.dummy_values_[feature_name]), dtype=np.float)])),
-                            ('dummy_lr', LinearRegression())])
+                            ("dummy_lr", LinearRegression())])
             dummy_estimator.fit(x, y)
             dummy_estimator["dummy_lr"].intercept_ = 0
             dummy_estimator["dummy_lr"].coef_ = dummy_coef
@@ -363,14 +363,15 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         
         total_importance = np.sum([item["ci"] for key, item in component_importance_temp.items()])
         importance_ratios_temp = {key: {"type": item["type"],
-                               "indice": item["indice"],
-                               "ir": item["ci"] / total_importance} for key, item in component_importance_temp.items()}
+                              "indice": item["indice"],
+                              "ir": item["ci"] / total_importance} for key, item in component_importance_temp.items()}
                 
         if is_regressor(self):
             
             self.val_mse_ = []
             self.estimators_ = []
-            pred_val = self.dummy_intercept_
+            pred_val = self.dummy_intercept_ + np.zeros(len(self.val_idx))
+            val_mse = mean_squared_error(y[self.val_idx], pred_val)
             for key, item in sorted(importance_ratios_temp.items(), key=lambda item: item[1]["ir"])[::-1]:
             
                 if item["type"] == "sim":
@@ -415,6 +416,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 best_idx = np.argmax(self.val_auc_)
             self.best_estimators_ = self.estimators_[:(best_idx + 1)]
 
+        dummy_indice = 0
         self.component_importance_ = {}
         for indice, est in enumerate(self.best_estimators_):
             
@@ -424,10 +426,11 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                                                           "ci": np.std(est.predict(x[self.tr_idx, :]))}})
 
             elif "dummy_lr" in est.named_steps.keys():
-                feature_name = self.cfeature_list_[indice]
+                feature_name = self.cfeature_list_[dummy_indice]
                 self.component_importance_.update({feature_name: {"type": "dummy_lr",
                                                   "indice": indice,
                                                   "ci": np.std(est.predict(x[self.tr_idx, :]))}})
+                dummy_indice += 1
 
     def fit(self, x, y, sample_weight=None, meta_info=None):
 
@@ -511,8 +514,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                              cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
                 grid.fit(x[:, self.nfeature_index_list_], y, sample_weight=sample_weight, proj_mat=proj_mat)
                 sim = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
-                sim_estimator = Pipeline(steps=[('select', FunctionTransformer(lambda data: data[:, self.nfeature_index_list_], validate=False)),
-                                      ('sim', sim)])
+                sim_estimator = Pipeline(steps=[("select", FunctionTransformer(lambda data: data[:, self.nfeature_index_list_], validate=False)),
+                                      ("sim", sim)])
                 sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
                            sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
 
@@ -604,9 +607,9 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
                 grid.fit(x[:, self.nfeature_index_list_], z, sample_weight=sample_weight, proj_mat=proj_mat)
                 sim = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
-                sim_estimator = Pipeline(steps = [('select', FunctionTransformer(lambda data: data[:, self.nfeature_index_list_], 
+                sim_estimator = Pipeline(steps = [("select", FunctionTransformer(lambda data: data[:, self.nfeature_index_list_], 
                                                             validate=False)),
-                                       ('sim', sim)])
+                                       ("sim", sim)])
                 sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
                             sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
                 # update

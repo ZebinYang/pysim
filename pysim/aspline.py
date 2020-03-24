@@ -108,7 +108,7 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
             second_term_numerator = knot_vector[(p + 1):] - inputs
             second_term_denominator = (knot_vector[(p + 1):] - knot_vector[1:-p])
 
-            with np.errstate(divide='ignore', invalid='ignore'):
+            with np.errstate(divide="ignore", invalid="ignore"):
                 first_term = np.where(first_term_denominator != 0.0,
                                       (first_term_numerator /
                                        first_term_denominator), 0.0)
@@ -128,7 +128,7 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
             denom1 = t[p:-1] - t[:-(p+1)]
             denom2 = t[(p+1):] - t[1:-p]
 
-            with np.errstate(divide='ignore', invalid='ignore'):
+            with np.errstate(divide="ignore", invalid="ignore"):
                 ci1 = np.where(denom1 != 0., (numer1 / denom1), 0.)
                 ci2 = np.where(denom2 != 0., (numer2 / denom2), 0.)
 
