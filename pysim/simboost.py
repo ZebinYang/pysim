@@ -566,7 +566,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
             pred_train = np.sum([est.predict(x[self.tr_idx]) for est in self.dummy_estimators_], axis=0) + self.dummy_intercept_
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
             pred_val = np.sum([est.predict(x[self.val_idx]) for est in self.dummy_estimators_], axis=0) + self.dummy_intercept_
-            proba_val = 1 / (1 + np.exp(-pred_train.ravel()))
+            proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
         else:
             pred_train = 0
             pred_val = 0
