@@ -6,11 +6,12 @@ from matplotlib.ticker import MaxNLocator
 
 from abc import ABCMeta, abstractmethod
 
+
 from sklearn.pipeline import Pipeline
+from sklearn.utils.extmath import softmax
 from sklearn.compose import ColumnTransformer
 from sklearn.utils import check_X_y, column_or_1d
 from sklearn.utils.validation import check_is_fitted
-from sklearn.utils.extmath import softmax, stable_cumsum
 from sklearn.linear_model import LinearRegression, RidgeCV
 from sklearn.metrics import make_scorer, mean_squared_error, roc_auc_score
 from sklearn.model_selection import GridSearchCV, PredefinedSplit, train_test_split
@@ -455,7 +456,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         check_is_fitted(self, "best_estimators_")
         pred = np.sum([est.predict(x) for est in self.best_estimators_], axis=0) + self.dummy_intercept_
-        return pred.reshape([-1, 1])
+        return pred
 
 
 class SimBoostRegressor(BaseSimBooster, RegressorMixin):
