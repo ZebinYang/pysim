@@ -94,10 +94,13 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         def create_basis(inputs, p, knot_vector):
 
             if p == 0:
-                return np.where(np.all([knot_vector[:-1] <= inputs,
-                                       inputs <= knot_vector[1:]], axis=0), 1.0, 0.0)
+                basis = np.where(np.all([knot_vector[:-1] <= inputs,
+                                       inputs < knot_vector[1:]], axis=0), 1.0, 0.0)
+                basis[np.where(inputs == knot_vector[-1])[0], -1] = 1.0
+                return basis
             else:
                 basis_p_minus_1 = create_basis(inputs, p - 1, knot_vector)
+
 
             first_term_numerator = inputs - knot_vector[:-p]
             first_term_denominator = knot_vector[p:] - knot_vector[:-p]
@@ -113,8 +116,10 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
                                        (second_term_numerator /
                                         second_term_denominator), 0.0)
 
-            return (first_term[:, :-1] * basis_p_minus_1[:, :-1] +
+            basis = (first_term[:, :-1] * basis_p_minus_1[:, :-1] +
                      second_term * basis_p_minus_1[:, 1:])
+            basis[np.where(inputs == knot_vector[-1])[0], -1] = 1.0
+            return basis
 
         def diff_inner(inputs, t, p):
 

@@ -355,7 +355,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                                                       "indice": indice,
                                                       "ci": np.std(est.predict(x[self.tr_idx, :]))}})
 
-        for indice, est in enumerate(self.dummy_estimators_[:-1]):
+        for indice, est in enumerate(self.dummy_estimators_):
             feature_name = self.cfeature_list_[indice]
             component_importance_temp.update({feature_name: {"type": "dummy_lr",
                                               "indice": indice,
