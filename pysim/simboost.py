@@ -375,7 +375,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             
                 if item["type"] == "sim":
                     est = self.sim_estimators_[item["indice"]]
-                elif item["type"] == "dummy":
+                elif item["type"] == "dummy_lr":
                     est = self.dummy_estimators_[item["indice"]]
 
                 pred_val += est.predict(x[self.val_idx])
