@@ -338,8 +338,8 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
 
         self.selected_knots_ = list(np.array(knots)[(update_w * np.dot(D, update_a) ** 2 > self.threshold).ravel()])
-        self.selected_knot_vector = np.array([self.xmin] * (self.degree + 1) + self.selected_knots_ + [self.xmax] * (self.degree + 1))
-        selected_basis = self._create_basis(x, self.degree, knot_vector)
+        self.selected_knot_vector_ = np.array([self.xmin] * (self.degree + 1) + self.selected_knots_ + [self.xmax] * (self.degree + 1))
+        selected_basis = self._create_basis(x, self.degree, self.selected_knot_vector_)
 
         seBWB = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), selected_basis, axes=([0], [0]))
         seBWY = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), self._inv_link(tempy), axes=([0], [0]))
