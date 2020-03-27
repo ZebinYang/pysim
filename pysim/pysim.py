@@ -325,7 +325,7 @@ class SimRegressor(BaseSim, RegressorMixin):
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True, y_numeric=True)
-        return x, y
+        return x, y.ravel()
 
     def _estimate_shape(self, x, y, sample_weight=None, xmin=-1, xmax=1):
 

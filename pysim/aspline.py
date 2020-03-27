@@ -197,7 +197,7 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True, y_numeric=True)
-        return x, y
+        return x, y.ravel()
 
     def get_loss(self, label, pred, sample_weight=None):
         return np.average((label - pred) ** 2, axis=0, weights=sample_weight)

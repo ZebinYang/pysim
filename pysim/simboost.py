@@ -101,10 +101,10 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("Estimator not fitted, "
                              "call `fit` before `importance_ratios_`.")
             
-        total_importance = np.sum([item["ci"] for key, item in self.component_importance_.items()])
+        total_importance = np.sum([item["importance"] for key, item in self.component_importance_.items()])
         importance_ratios_ = {key: {"type": item["type"],
                            "indice": item["indice"],
-                           "ir": item["ci"] / total_importance} for key, item in self.component_importance_.items()}
+                           "ir": item["importance"] / total_importance} for key, item in self.component_importance_.items()}
         return importance_ratios_
 
 
@@ -235,7 +235,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 ygrid = sim.shape_fit_.decision_function(xgrid)
                 ax1_main.plot(xgrid, ygrid)
                 ax1_main.set_xticklabels([])
-                ax1_main.set_title("IR: " + str(np.round(100 * self.importance_ratios_["sim " + str(indice + 1)]["ir"], 2)) + "%", fontsize=16)
+                ax1_main.set_title("SIM " + "(IR: " + str(np.round(100 * self.importance_ratios_["sim "
+                             + str(indice + 1)]["ir"], 2)) + "%)", fontsize=16)
                 fig.add_subplot(ax1_main)
 
                 ax1_density = fig.add_subplot(inner[1, 0])  
@@ -352,90 +353,6 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             idx += len(dummy_num) - 1
 
         self.dummy_intercept_ = dummy_estimator_all["lr"].intercept_
-        
-    def _pruning(self, x, y):
-                
-        component_importance_temp = {}
-        for indice, est in enumerate(self.sim_estimators_):
-            component_importance_temp.update({"sim " + str(indice + 1): {"type": "sim",
-                                                      "indice": indice,
-                                                      "ci": np.std(est.predict(x[self.tr_idx, :]))}})
-
-        for indice, est in enumerate(self.dummy_estimators_):
-            feature_name = list(est.named_steps.keys())[0]
-            component_importance_temp.update({feature_name: {"type": "dummy_lr",
-                                              "indice": indice,
-                                              "ci": np.std(est.predict(x[self.tr_idx, :]))}})
-        
-        total_importance = np.sum([item["ci"] for key, item in component_importance_temp.items()])
-        importance_ratios_temp = {key: {"type": item["type"],
-                              "indice": item["indice"],
-                              "ir": item["ci"] / total_importance} for key, item in component_importance_temp.items()}
-                
-        if is_regressor(self):
-            
-            self.val_mse_ = []
-            self.estimators_ = []
-            pred_val = self.dummy_intercept_ + np.zeros(len(self.val_idx))
-            val_mse = mean_squared_error(y[self.val_idx], pred_val)
-            for key, item in sorted(importance_ratios_temp.items(), key=lambda item: item[1]["ir"])[::-1]:
-            
-                if item["type"] == "sim":
-                    est = self.sim_estimators_[item["indice"]]
-                elif item["type"] == "dummy_lr":
-                    est = self.dummy_estimators_[item["indice"]]
-
-                pred_val += est.predict(x[self.val_idx])
-                val_mse = mean_squared_error(y[self.val_idx], pred_val)
-                self.val_mse_.append(val_mse)
-                self.estimators_.append(est)
-                
-            best_loss = np.min(self.val_mse_)
-            if np.sum((self.val_mse_ / best_loss - 1) < self.loss_threshold) > 0:
-                best_idx = np.where((self.val_mse_ / best_loss - 1) < self.loss_threshold)[0][0]
-            else:
-                best_idx = np.argmin(self.val_mse_)
-            self.best_estimators_ = self.estimators_[:(best_idx + 1)]
-
-        elif is_classifier(self):
-            
-            self.val_auc_ = []
-            self.estimators_ = []
-            pred_val = self.dummy_intercept_ + np.zeros(len(self.val_idx))
-            proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
-            val_mse = roc_auc_score(y[self.val_idx], pred_val)
-            for key, item in sorted(importance_ratios_temp.items(), key=lambda item: item[1]["ir"])[::-1]:
-
-                if item["type"] == "sim":
-                    est = self.sim_estimators_[item["indice"]]
-                elif item["type"] == "dummy":
-                    est = self.dummy_estimators_[item["indice"]]
-
-                pred_val += est.predict(x[self.val_idx])
-                proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
-                val_auc = roc_auc_score(y[self.val_idx], proba_val)
-                self.val_auc_.append(val_auc)
-                self.estimators_.append(est)
-                
-            best_auc = np.max(self.val_auc_)
-            if np.sum((1 - self.val_auc_ / best_auc) < self.loss_threshold) > 0:
-                best_idx = np.where((1 - self.val_auc_ / best_auc) < self.loss_threshold)[0][0]
-            else:
-                best_idx = np.argmax(self.val_auc_)
-            self.best_estimators_ = self.estimators_[:(best_idx + 1)]
-
-        self.component_importance_ = {}
-        for indice, est in enumerate(self.best_estimators_):
-            if "sim" in est.named_steps.keys():
-                self.component_importance_.update({"sim " + str(indice + 1): {"type": "sim",
-                                                          "indice": indice,
-                                                          "ci": np.std(est.predict(x[self.tr_idx, :]))}})
-
-            elif "dummy_lr" in est.named_steps.keys():
-                feature_name = list(est.named_steps.keys())[0]
-                self.component_importance_.update({feature_name: {"type": "dummy_lr",
-                                                  "indice": indice,
-                                                  "ci": np.std(est.predict(x[self.tr_idx, :]))}})
 
     def fit(self, x, y, sample_weight=None, meta_info=None):
 
@@ -483,7 +400,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True, y_numeric=True)
-        return x, y
+        return x, y.ravel()
 
     def _fit(self, x, y, sample_weight=None):
    
@@ -499,35 +416,74 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
         # Fit Sim Boosting for numerical variables
         if self.nfeature_num_ > 0:
+            return 
+        
+        for i in range(self.n_estimators):
 
-            for i in range(self.n_estimators):
+            # projection matrix
+            if (i == 0) or (i >= self.nfeature_num_) or (self.ortho_shrink == 0):
+                proj_mat = np.eye(self.nfeature_num_)
+            else:
+                projection_indices_ = np.array([est["sim"].beta_.flatten() for est in self.sim_estimators_]).T
+                u, _, _ = np.linalg.svd(projection_indices_, full_matrices=False)
+                proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
 
-                # projection matrix
-                if (i == 0) or (i >= self.nfeature_num_) or (self.ortho_shrink == 0):
-                    proj_mat = np.eye(self.nfeature_num_)
-                else:
-                    projection_indices_ = np.array([est["sim"].beta_.flatten() for est in self.sim_estimators_]).T
-                    u, _, _ = np.linalg.svd(projection_indices_, full_matrices=False)
-                    proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
+            # fit Sim estimator
+            param_grid = {"method": ["second_order", "first_order"], 
+                          "reg_lambda": self.reg_lambda_list,
+                          "reg_gamma": self.reg_gamma_list}
+            grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
+                         scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
+                         cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
+            grid.fit(x[:, self.nfeature_index_list_], y, sample_weight=sample_weight, proj_mat=proj_mat)
+            sim = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
+            sim_estimator = Pipeline(steps=[("select", FunctionTransformer(lambda data: data[:, self.nfeature_index_list_], validate=False)),
+                                  ("sim", sim)])
+            sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
+                       sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
 
-                # fit Sim estimator
-                param_grid = {"method": ["second_order", "first_order"], 
-                              "reg_lambda": self.reg_lambda_list,
-                              "reg_gamma": self.reg_gamma_list}
-                grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
-                             scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
-                             cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
-                grid.fit(x[:, self.nfeature_index_list_], y, sample_weight=sample_weight, proj_mat=proj_mat)
-                sim = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
-                sim_estimator = Pipeline(steps=[("select", FunctionTransformer(lambda data: data[:, self.nfeature_index_list_], validate=False)),
-                                      ("sim", sim)])
-                sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
-                           sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
+            # update    
+            z = z - sim_estimator.predict(x)
+            self.sim_estimators_.append(sim_estimator)
 
-                # update    
-                z = z - sim_estimator.predict(x)
-                self.sim_estimators_.append(sim_estimator)
+    def _pruning(self, x, y):
+                
+        self.val_mse_ = []
+        self.estimators_ = []
+        component_importance_temp = {}
+        self.component_importance_ = {}
+        pred_val = self.dummy_intercept_ + np.zeros(len(self.val_idx))
+        val_mse = mean_squared_error(y[self.val_idx], pred_val)
 
+        for indice, est in enumerate(self.sim_estimators_):
+            component_importance_temp.update({"sim " + str(indice + 1): {"type": "sim", "indice": indice,
+                                                     "importance": np.std(est.predict(x[self.tr_idx, :]))}})
+
+        for indice, est in enumerate(self.dummy_estimators_):
+            feature_name = list(est.named_steps.keys())[0]
+            component_importance_temp.update({feature_name: {"type": "dummy_lr", "indice": indice,
+                                             "importance": np.std(est.predict(x[self.tr_idx, :]))}})
+        
+        for key, item in sorted(importance_ratios_temp.items(), key=lambda item: item[1]["ir"])[::-1]:
+
+            if item["type"] == "sim":
+                est = self.sim_estimators_[item["indice"]]
+            elif item["type"] == "dummy_lr":
+                est = self.dummy_estimators_[item["indice"]]
+
+            pred_val += est.predict(x[self.val_idx])
+            val_mse = mean_squared_error(y[self.val_idx], pred_val)
+            self.val_mse_.append(val_mse)
+            self.estimators_.append(est)
+            self.component_importance_.update({key: item})
+
+        best_loss = np.min(self.val_mse_)
+        if np.sum((self.val_mse_ / best_loss - 1) < self.loss_threshold) > 0:
+            best_idx = np.where((self.val_mse_ / best_loss - 1) < self.loss_threshold)[0][0]
+        else:
+            best_idx = np.argmin(self.val_mse_)
+        self.best_estimators_ = self.estimators_[:(best_idx + 1)]
+        
     def predict(self, x):
 
         pred = self.decision_function(x)
@@ -584,46 +540,87 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
         # Fit Sim Boosting for numerical variables
         if self.nfeature_num_ > 0:
-            for i in range(self.n_estimators):
-                sample_weight[self.tr_idx] = proba_train * (1 - proba_train)
-                sample_weight[self.tr_idx] /= np.sum(sample_weight[self.tr_idx])
-                sample_weight[self.tr_idx] = np.maximum(sample_weight[self.tr_idx], 2 * np.finfo(np.float64).eps)
+            return 
 
-                with np.errstate(divide="ignore", over="ignore"):
-                    z = np.where(y.ravel(), 1. / np.hstack([proba_train, proba_val]),
-                                    -1. / (1. - np.hstack([proba_train, proba_val]))) 
-                    z = np.clip(z, a_min=-8, a_max=8)
+        for i in range(self.n_estimators):
+            sample_weight[self.tr_idx] = proba_train * (1 - proba_train)
+            sample_weight[self.tr_idx] /= np.sum(sample_weight[self.tr_idx])
+            sample_weight[self.tr_idx] = np.maximum(sample_weight[self.tr_idx], 2 * np.finfo(np.float64).eps)
 
-                # projection matrix
-                if (i == 0) or (i >= self.nfeature_num_) or (self.ortho_shrink == 0):
-                    proj_mat = np.eye(self.nfeature_num_)
-                else:
-                    projection_indices_ = np.array([est["sim"].beta_.flatten() for est in self.sim_estimators_]).T
-                    u, _, _ = np.linalg.svd(projection_indices_, full_matrices=False)
-                    proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
+            with np.errstate(divide="ignore", over="ignore"):
+                z = np.where(y.ravel(), 1. / np.hstack([proba_train, proba_val]),
+                                -1. / (1. - np.hstack([proba_train, proba_val]))) 
+                z = np.clip(z, a_min=-8, a_max=8)
 
-                # fit Sim estimator
-                param_grid = {"method": ["second_order", "first_order"], 
-                              "reg_lambda": self.reg_lambda_list,
-                              "reg_gamma": self.reg_gamma_list}
-                grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
-                              scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
-                              cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
+            # projection matrix
+            if (i == 0) or (i >= self.nfeature_num_) or (self.ortho_shrink == 0):
+                proj_mat = np.eye(self.nfeature_num_)
+            else:
+                projection_indices_ = np.array([est["sim"].beta_.flatten() for est in self.sim_estimators_]).T
+                u, _, _ = np.linalg.svd(projection_indices_, full_matrices=False)
+                proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
 
-                grid.fit(x[:, self.nfeature_index_list_], z, sample_weight=sample_weight, proj_mat=proj_mat)
-                sim = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
-                sim_estimator = Pipeline(steps = [("select", FunctionTransformer(lambda data: data[:, self.nfeature_index_list_], 
-                                                            validate=False)),
-                                       ("sim", sim)])
-                sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
-                            sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
-                # update
-                pred_train += sim_estimator.predict(x[self.tr_idx])
-                proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
-                pred_val += sim_estimator.predict(x[self.val_idx])
-                proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
-                self.sim_estimators_.append(sim_estimator)
-            
+            # fit Sim estimator
+            param_grid = {"method": ["second_order", "first_order"], 
+                          "reg_lambda": self.reg_lambda_list,
+                          "reg_gamma": self.reg_gamma_list}
+            grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
+                          scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
+                          cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
+
+            grid.fit(x[:, self.nfeature_index_list_], z, sample_weight=sample_weight, proj_mat=proj_mat)
+            sim = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
+            sim_estimator = Pipeline(steps = [("select", FunctionTransformer(lambda data: data[:, self.nfeature_index_list_], 
+                                                        validate=False)),
+                                   ("sim", sim)])
+            sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
+                        sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
+            # update
+            pred_train += sim_estimator.predict(x[self.tr_idx])
+            proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
+            pred_val += sim_estimator.predict(x[self.val_idx])
+            proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
+            self.sim_estimators_.append(sim_estimator)
+     
+    def _pruning(self, x, y):
+                
+        self.val_auc_ = []
+        self.estimators_ = []
+        component_importance_temp = {}
+        self.component_importance_ = {}
+        pred_val = self.dummy_intercept_ + np.zeros(len(self.val_idx))
+        proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
+        val_mse = roc_auc_score(y[self.val_idx], pred_val)
+
+        for indice, est in enumerate(self.sim_estimators_):
+            component_importance_temp.update({"sim " + str(indice + 1): {"type": "sim", "indice": indice,
+                                                  "importance": np.std(est.predict(x[self.tr_idx, :]))}})
+
+        for indice, est in enumerate(self.dummy_estimators_):
+            feature_name = list(est.named_steps.keys())[0]
+            component_importance_temp.update({feature_name: {"type": "dummy_lr", "indice": indice,
+                                              "importance": np.std(est.predict(x[self.tr_idx, :]))}})
+    
+        for key, item in sorted(importance_ratios_temp.items(), key=lambda item: item[1]["ir"])[::-1]:
+
+            if item["type"] == "sim":
+                est = self.sim_estimators_[item["indice"]]
+            elif item["type"] == "dummy":
+                est = self.dummy_estimators_[item["indice"]]
+
+            pred_val += est.predict(x[self.val_idx])
+            proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
+            val_auc = roc_auc_score(y[self.val_idx], proba_val)
+            self.val_auc_.append(val_auc)
+            self.estimators_.append(est)
+
+        best_auc = np.max(self.val_auc_)
+        if np.sum((1 - self.val_auc_ / best_auc) < self.loss_threshold) > 0:
+            best_idx = np.where((1 - self.val_auc_ / best_auc) < self.loss_threshold)[0][0]
+        else:
+            best_idx = np.argmax(self.val_auc_)
+        self.best_estimators_ = self.estimators_[:(best_idx + 1)]
+        
     def predict_proba(self, x):
 
         pred = self.decision_function(x)
