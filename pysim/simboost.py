@@ -441,7 +441,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                                   ("sim", sim)])
             sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
                        sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
-            sim_estimator["sim"].inner_update_adam(x, z, sample_weight=sample_weight, proj_mat=proj_mat)
+            sim_estimator["sim"].fit_inner_update(x, z, sample_weight=sample_weight, proj_mat=proj_mat)
             # update    
             z = z - sim_estimator.predict(x)
             self.sim_estimators_.append(sim_estimator)
@@ -571,7 +571,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                                    ("sim", sim)])
             sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
                         sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
-            sim_estimator["sim"].inner_update_adam(x, z, sample_weight=sample_weight, proj_mat=proj_mat)
+            sim_estimator["sim"].fit_inner_update(x, z, sample_weight=sample_weight, proj_mat=proj_mat)
 
             # update
             pred_train += sim_estimator.predict(x[self.tr_idx])
