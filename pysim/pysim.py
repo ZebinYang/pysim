@@ -154,7 +154,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         self._estimate_shape(xb, y, sample_weight, xmin=np.min(xb), xmax=np.max(xb))
         return self
     
-    def fit_inner_update(self, x, y, sample_weight=None, proj_mat=None, max_inner_iter=10, epoches=100, n_iter_no_change=100,
+    def fit_inner_update(self, x, y, sample_weight=None, proj_mat=None, max_inner_iter=5, epoches=100, n_iter_no_change=10,
                          batch_size=100, val_ratio=0.2, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, tol=0.0001, verbose=True):
         
         x, y = self._validate_input(x, y)
@@ -297,12 +297,16 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 if np.abs(beta) > 0:
                     active_beta.append(beta)
                     active_beta_idx.append(idx)
-                    
-            input_ticks = np.linspace(0.1 * len(active_beta), len(active_beta) * 0.9, 4).astype(int)
-            input_labels = ["X" + str(idx + 1) for idx in input_ticks][::-1] 
+           
             rects = ax2.barh(np.arange(len(active_beta)), [beta for beta in active_beta][::-1])
-            ax2.set_yticks(input_ticks)
-            ax2.set_yticklabels(input_labels)
+            if len (active_beta) > 10:
+                input_ticks = np.linspace(0.1 * len(active_beta), len(active_beta) * 0.9, 4).astype(int)
+                input_labels = ["X" + str(active_beta_idx[idx] + 1) for idx in input_ticks][::-1] 
+                ax2.set_yticks(input_ticks)
+                ax2.set_yticklabels(input_labels)
+            else:
+                ax2.set_yticks(np.arange(len(active_beta)))
+                ax2.set_yticklabels(["X" + str(idx + 1) for idx in active_beta_idx][::-1])
             ax2.set_xlim(xlim_min, xlim_max)
             ax2.set_ylim(-1, len(active_beta_idx))
             ax2.axvline(0, linestyle="dotted", color="black")

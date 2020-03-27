@@ -260,11 +260,15 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                         if np.abs(beta) > 0:
                             active_beta.append(beta)
                             active_beta_idx.append(idx)
-                    input_ticks = np.linspace(0.1 * len(active_beta), len(active_beta) * 0.9, 4).astype(int)
-                    input_labels = ["X" + str(idx + 1) for idx in input_ticks][::-1] 
                     rects = ax2.barh(np.arange(len(active_beta)), [beta for beta in active_beta][::-1])
-                    ax2.set_yticks(input_ticks)
-                    ax2.set_yticklabels(input_labels)
+                    if len (active_beta) > 10:
+                        input_ticks = np.linspace(0.1 * len(active_beta), len(active_beta) * 0.9, 4).astype(int)
+                        input_labels = ["X" + str(active_beta_idx[idx] + 1) for idx in input_ticks][::-1] 
+                        ax2.set_yticks(input_ticks)
+                        ax2.set_yticklabels(input_labels)
+                    else:
+                        ax2.set_yticks(np.arange(len(active_beta)))
+                        ax2.set_yticklabels(["X" + str(idx + 1) for idx in active_beta_idx][::-1])
                     ax2.set_xlim(xlim_min, xlim_max)
                     ax2.set_ylim(-1, len(active_beta_idx))
                     ax2.axvline(0, linestyle="dotted", color="black")
