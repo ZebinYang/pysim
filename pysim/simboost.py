@@ -226,7 +226,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         xlim_max = max(np.abs(self.projection_indices_.min() - 0.1), np.abs(self.projection_indices_.max() + 0.1))
         for indice, est in enumerate(self.best_estimators_):
             
-            estimator_key = list(clf.importance_ratios_)[indice]
+            estimator_key = list(self.importance_ratios_)[indice]
             if "sim" in est.named_steps.keys():
                 sim = est["sim"]
                 inner = outer[idx].subgridspec(2, 2, wspace=0.15, height_ratios=[6, 1], width_ratios=[3, 1])
