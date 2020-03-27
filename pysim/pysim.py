@@ -194,7 +194,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                         r = batch_yy - self.shape_fit_.predict_proba(xb)
                     
                     # gradient
-                    dfxb = clf.shape_fit_.diff(xb, order=1)
+                    dfxb = self.shape_fit_.diff(xb, order=1)
                     g_t = np.average((- dfxb * r.reshape(-1, 1)) * batch_xx, axis=0, weights=batch_sample_weight).reshape(-1, 1)
 
                     # update the moving average 
@@ -226,7 +226,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     break
 
             ## thresholding and normalization
-            theta_0 = np.sign(theta_0) * np.maximum(np.abs(theta_0) - clf.reg_lambda * np.sum(np.abs(theta_0)), 0)
+            theta_0 = np.sign(theta_0) * np.maximum(np.abs(theta_0) - self.reg_lambda * np.sum(np.abs(theta_0)), 0)
             if proj_mat is not None:
                 theta_0 = np.dot(proj_mat, theta_0)
             if np.linalg.norm(theta_0) > 0:
