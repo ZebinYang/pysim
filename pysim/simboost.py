@@ -132,8 +132,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             if (self.best_estimators_ is not None) and (len(self.best_estimators_) > 0):
                 ortho_measure = np.linalg.norm(np.dot(self.projection_indices_.T,
                                       self.projection_indices_) - np.eye(self.projection_indices_.shape[1]))
-            if self.projection_indices_.shape[1] > 1:
-                ortho_measure /= ((self.projection_indices_.shape[1] ** 2 - self.projection_indices_.shape[1]))
+                if len(self.best_estimators_) > 1:
+                    ortho_measure /= ((self.projection_indices_.shape[1] ** 2 - self.projection_indices_.shape[1]))
         return ortho_measure
 
     def _validate_sample_weight(self, n_samples, sample_weight):
