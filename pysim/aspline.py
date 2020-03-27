@@ -203,7 +203,7 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True, y_numeric=True)
-        return x, y.reshape([-1, 1])
+        return x, y
 
     def fit(self, x, y, sample_weight=None):
 
@@ -300,7 +300,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
         self.classes_ = self._label_binarizer.classes_
 
         y = self._label_binarizer.transform(y) * 1.0
-        return x, y
+        return x, y.ravel()
 
     def fit(self, x, y, sample_weight=None):
 

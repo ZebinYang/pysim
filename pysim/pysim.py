@@ -8,7 +8,7 @@ from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils import check_X_y, column_or_1d
 from sklearn.utils.validation import check_is_fitted
 from sklearn.metrics import mean_squared_error, roc_auc_score
-from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
+from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin, is_classifier, is_regressor
 
 from abc import ABCMeta, abstractmethod
 from .aspline import ASplineClassifier, ASplineRegressor
@@ -30,7 +30,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
      """
 
     @abstractmethod
-    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=10, knot_num=20, degree=2, random_state=0):
+    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=10, 
+                 knot_num=20, degree=2, random_state=0):
 
         self.method = method
         self.reg_lambda = reg_lambda
@@ -62,6 +63,14 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
         if self.reg_gamma < 0:
             raise ValueError("reg_gamma must be >= 0, got %s." % self.reg_gamma)
+
+    def _validate_sample_weight(self, n_samples, sample_weight):
+        
+        if sample_weight is None:
+            sample_weight = np.ones(n_samples) / n_samples
+        else:
+            sample_weight = sample_weight.ravel() / np.sum(sample_weight)
+        return sample_weight
 
     def _first_order_thres(self, x, y, sample_weight=None, proj_mat=None):
 
@@ -117,7 +126,131 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * beta_svd_l1norm))
         beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * np.sum(np.abs(beta_svd_l1norm))))
         return beta
+
+    def fit(self, x, y, sample_weight=None, proj_mat=None):
+
+        np.random.seed(self.random_state)
+        
+        self._validate_hyperparameters()
+        x, y = self._validate_input(x, y)
+        n_samples, n_features = x.shape
+        if sample_weight is None:
+            sample_weight = np.ones(n_samples) / n_samples
+        else:
+            sample_weight = sample_weight / np.sum(sample_weight)
+        
+        if self.method == "first_order":
+            self.beta_ = self._first_order(x, y, sample_weight, proj_mat)
+        elif self.method == "first_order_thres":
+            self.beta_ = self._first_order_thres(x, y, sample_weight, proj_mat)
+        elif self.method == "second_order":
+            self.beta_ = self._second_order(x, y, sample_weight, proj_mat)
+
+        if len(self.beta_[np.abs(self.beta_) > 0]) > 0:
+            if (self.beta_[np.abs(self.beta_) > 0][0] < 0):
+                self.beta_ = - self.beta_
+        xb = np.dot(x, self.beta_)
+        self._estimate_shape(xb, y, sample_weight, xmin=np.min(xb), xmax=np.max(xb))
+        return self
     
+    def fit_inner_update(self, x, y, sample_weight=None, proj_mat=None, max_inner_iter=10, epoches=100, n_iter_no_change=100,
+                         batch_size=100, val_ratio=0.2, learning_rate=1e-3, beta_1=0.9, beta_2=0.999):
+        
+        x, y = self._validate_input(x, y)
+        n_samples = x.shape[0]
+        sample_weight = self._validate_sample_weight(n_samples, sample_weight)
+
+        idx1, idx2 = train_test_split(np.arange(n_samples),test_size=val_ratio, random_state=self.random_state)
+        tr_x, tr_y, val_x, val_y = x[idx1], y[idx1], x[idx2], y[idx2]
+
+        for inner_iter in range(max_inner_iter):
+
+            m_t = 0 # moving average of the gradient
+            v_t = 0 # moving average of the gradient square
+            no_change = 0
+            num_updates = 0
+            theta_0 = self.beta_ 
+            val_loss_best = np.inf
+            train_size = tr_x.shape[0]
+            for epoch in range(epoches):
+
+                shuffle_index = np.arange(tr_x.shape[0])
+                np.random.shuffle(shuffle_index)
+                tr_x = tr_x[shuffle_index]
+                tr_y = tr_y[shuffle_index]
+
+                for iterations in range(train_size // batch_size):
+
+                    num_updates += 1
+                    offset = (iterations * batch_size) % train_size
+                    batch_xx = tr_x[offset:(offset + batch_size), :]
+                    batch_yy = tr_y[offset:(offset + batch_size)]
+                    batch_sample_weight = sample_weight[offset:(offset + batch_size)]
+
+                    xb = np.dot(batch_xx, theta_0)
+                    if is_regressor(self):
+                        r = batch_yy - self.shape_fit_.predict(xb)
+                    elif is_classifier(self):
+                        r = batch_yy - self.shape_fit_.predict_proba(xb)
+                    
+                    # gradient
+                    dfxb = clf.shape_fit_.diff(xb, order=1)
+                    g_t = np.average((- dfxb * r.reshape(-1, 1)) * batch_xx, axis=0, weights=batch_sample_weight).reshape(-1, 1)
+
+                    # update the moving average 
+                    m_t = beta_1 * m_t + (1 - beta_1) * g_t
+                    v_t = beta_2 * v_t + (1 - beta_2) * (g_t * g_t)
+                    # calculates the bias-corrected estimates
+                    m_cap = m_t / (1 - (beta_1 ** (num_updates + 1)))  
+                    v_cap = v_t / (1 - (beta_2 ** (num_updates + 1)))
+                    # updates the parameters
+                    theta_0 = theta_0 - (learning_rate * m_cap) / (np.sqrt(v_cap) + 1e-8)
+
+                # validation loss
+                val_xb = np.dot(val_x, theta_0)
+                if is_regressor(self):
+                    val_r = val_y - self.shape_fit_.predict(val_xb)
+                    val_loss = np.average(val_r ** 2, axis=0, weights=sample_weight[idx2])
+                elif is_classifier(self):
+                    val_p = self.shape_fit_.predict_proba(val_xb)
+                    val_loss = np.average(- val_y * np.log(val_p) - (1 - val_y) * np.log(1 - val_p),
+                                          axis=0, weights=sample_weight[idx2])
+                print(val_loss)
+                # stop criterion
+                if np.abs(val_loss_best - val_loss) > 0.0001:
+                    val_loss_best = val_loss
+                    no_change = 0
+                else:
+                    no_change += 1
+                if no_change >= n_iter_no_change:
+                    break
+
+            ## thresholding and normalization
+            theta_0 = np.sign(theta_0) * np.maximum(np.abs(theta_0) - clf.reg_lambda * np.sum(np.abs(theta_0)), 0)
+            if proj_mat is not None:
+                theta_0 = np.dot(proj_mat, theta_0)
+            if np.linalg.norm(theta_0) > 0:
+                theta_0 = theta_0 / np.linalg.norm(theta_0)
+            else:
+                theta_0 = theta_0
+
+            if len(theta_0[np.abs(theta_0) > 0]) > 0:
+                if (theta_0[np.abs(theta_0) > 0][0] < 0):
+                    theta_0 = - theta_0
+
+            # ridge update
+            self.beta_ = theta_0
+            xb = np.dot(x, self.beta_)
+            self._estimate_shape(xb, y, sample_weight, xmin=np.min(xb), xmax=np.max(xb))
+
+    def decision_function(self, x):
+
+        check_is_fitted(self, "beta_")
+        check_is_fitted(self, "shape_fit_")
+        xb = np.dot(x, self.beta_)
+        pred = self.shape_fit_.decision_function(xb)
+        return pred
+
     def visualize(self):
 
         check_is_fitted(self, "beta_")
@@ -160,49 +293,18 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 if np.abs(beta) > 0:
                     active_beta.append(beta)
                     active_beta_idx.append(idx)
+                    
+            input_ticks = np.linspace(0.1 * len(active_beta), len(active_beta) * 0.9, 4).astype(int)
+            input_labels = ["X" + str(idx + 1) for idx in input_ticks][::-1] 
             rects = ax2.barh(np.arange(len(active_beta)), [beta for beta in active_beta][::-1])
-            ax2.set_yticks(np.arange(len(active_beta)))
-            ax2.set_yticklabels(["X" + str(idx + 1) for idx in active_beta_idx][::-1])
+            ax2.set_yticks(input_ticks)
+            ax2.set_yticklabels(input_labels)
             ax2.set_xlim(xlim_min, xlim_max)
             ax2.set_ylim(-1, len(active_beta_idx))
             ax2.axvline(0, linestyle="dotted", color="black")
         ax2.set_title("Projection Indice", fontsize=12)
         fig.add_subplot(ax2)
         plt.show()
-
-    def fit(self, x, y, sample_weight=None, proj_mat=None):
-
-        np.random.seed(self.random_state)
-        
-        self._validate_hyperparameters()
-        x, y = self._validate_input(x, y)
-        n_samples, n_features = x.shape
-        if sample_weight is None:
-            sample_weight = np.ones(n_samples) / n_samples
-        else:
-            sample_weight = sample_weight / np.sum(sample_weight)
-        
-        if self.method == "first_order":
-            self.beta_ = self._first_order(x, y, sample_weight, proj_mat)
-        elif self.method == "first_order_thres":
-            self.beta_ = self._first_order_thres(x, y, sample_weight, proj_mat)
-        elif self.method == "second_order":
-            self.beta_ = self._second_order(x, y, sample_weight, proj_mat)
-
-        if len(self.beta_[np.abs(self.beta_) > 0]) > 0:
-            if (self.beta_[np.abs(self.beta_) > 0][0] < 0):
-                self.beta_ = - self.beta_
-        xb = np.dot(x, self.beta_)
-        self._estimate_shape(xb, y, sample_weight, xmin=np.min(xb), xmax=np.max(xb))
-        return self
-
-    def decision_function(self, x):
-
-        check_is_fitted(self, "beta_")
-        check_is_fitted(self, "shape_fit_")
-        xb = np.dot(x, self.beta_)
-        pred = self.shape_fit_.decision_function(xb)
-        return pred
 
 
 class SimRegressor(BaseSim, RegressorMixin):
@@ -219,7 +321,7 @@ class SimRegressor(BaseSim, RegressorMixin):
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True, y_numeric=True)
-        return x, y.reshape([-1, 1])
+        return x, y
 
     def _estimate_shape(self, x, y, sample_weight=None, xmin=-1, xmax=1):
 
@@ -255,7 +357,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
         self.classes_ = self._label_binarizer.classes_
 
         y = self._label_binarizer.transform(y) * 1.0
-        return x, y
+        return x, y.ravel()
 
     def _estimate_shape(self, x, y, sample_weight=None, xmin=-1, xmax=1):
 

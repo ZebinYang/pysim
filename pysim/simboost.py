@@ -82,11 +82,11 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         if isinstance(self.reg_gamma, list):
             for val in self.reg_gamma:
                 if val < 0:
-                    raise ValueError("all the elements in reg_lambda must be >= 0, got %s." % self.reg_gamma)
+                    raise ValueError("all the elements in reg_gamma must be >= 0, got %s." % self.reg_gamma)
             self.reg_gamma_list = self.reg_gamma  
         elif (isinstance(self.reg_gamma, float)) or (isinstance(self.reg_gamma, int)):
             if self.reg_gamma < 0:
-                raise ValueError("all the elements in reg_lambda must be >= 0, got %s." % self.reg_gamma)
+                raise ValueError("all the elements in reg_gamma must be >= 0, got %s." % self.reg_gamma)
             self.reg_gamma_list = [self.reg_gamma]
 
     @property
@@ -147,7 +147,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         if sample_weight is None:
             sample_weight = np.ones(n_samples) / n_samples
         else:
-            sample_weight = sample_weight / np.sum(sample_weight)
+            sample_weight = sample_weight.ravel() / np.sum(sample_weight)
         return sample_weight
     
     def _preprocess_meta_info(self, n_features, meta_info):
@@ -260,9 +260,11 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                         if np.abs(beta) > 0:
                             active_beta.append(beta)
                             active_beta_idx.append(idx)
+                    input_ticks = np.linspace(0.1 * len(active_beta), len(active_beta) * 0.9, 4).astype(int)
+                    input_labels = ["X" + str(idx + 1) for idx in input_ticks][::-1] 
                     rects = ax2.barh(np.arange(len(active_beta)), [beta for beta in active_beta][::-1])
-                    ax2.set_yticks(np.arange(len(active_beta)))
-                    ax2.set_yticklabels(["X" + str(idx + 1) for idx in active_beta_idx][::-1])
+                    ax2.set_yticks(input_ticks)
+                    ax2.set_yticklabels(input_labels)
                     ax2.set_xlim(xlim_min, xlim_max)
                     ax2.set_ylim(-1, len(active_beta_idx))
                     ax2.axvline(0, linestyle="dotted", color="black")
@@ -444,7 +446,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         self.dummy_estimators_ = []
         self.dummy_density_ = {}
         self.dummy_intercept_ = 0
-        
+
         self.tr_idx, self.val_idx = train_test_split(np.arange(n_samples), test_size=self.val_ratio,
                                       random_state=self.random_state)
         self._fit(x, y, sample_weight)
@@ -477,7 +479,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True, y_numeric=True)
-        return x, y.reshape([-1, 1])
+        return x, y
 
     def _fit(self, x, y, sample_weight=None):
    
@@ -485,7 +487,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         val_fold = np.ones((n_samples))
         val_fold[self.tr_idx] = -1
         
-        z = y.ravel()        
+        z = y.copy()   
         # Fit categorical variables
         if self.cfeature_num_ > 0:
             self._fit_dummy(x[self.tr_idx], z[self.tr_idx], sample_weight[self.tr_idx])
@@ -554,7 +556,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         self.classes_ = self._label_binarizer.classes_
 
         y = self._label_binarizer.transform(y) * 1.0
-        return x, y
+        return x, y.ravel()
 
     def _fit(self, x, y, sample_weight=None):
 
@@ -562,7 +564,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         val_fold = np.ones((n_samples))
         val_fold[self.tr_idx] = -1
         
-        z = y.ravel()
+        z = y.copy()
         # Fit categorical variables
         if self.cfeature_num_ > 0:
             self._fit_dummy(x[self.tr_idx], z[self.tr_idx], sample_weight[self.tr_idx])
