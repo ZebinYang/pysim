@@ -154,7 +154,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         return self
     
     def fit_inner_update(self, x, y, sample_weight=None, proj_mat=None, max_inner_iter=10, epoches=100, n_iter_no_change=100,
-                         batch_size=100, val_ratio=0.2, learning_rate=1e-3, beta_1=0.9, beta_2=0.999):
+                         batch_size=100, val_ratio=0.2, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, verbose=True):
         
         x, y = self._validate_input(x, y)
         n_samples = x.shape[0]
@@ -195,7 +195,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     
                     # gradient
                     dfxb = self.shape_fit_.diff(xb, order=1)
-                    g_t = np.average((- dfxb * r.reshape(-1, 1)) * batch_xx, axis=0, weights=batch_sample_weight).reshape(-1, 1)
+                    g_t = np.average((- dfxb * r.reshape(-1, 1)) * batch_xx, axis=0,
+                                weights=batch_sample_weight).reshape(-1, 1)
 
                     # update the moving average 
                     m_t = beta_1 * m_t + (1 - beta_1) * g_t
@@ -215,7 +216,6 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     val_p = self.shape_fit_.predict_proba(val_xb)
                     val_loss = np.average(- val_y * np.log(val_p) - (1 - val_y) * np.log(1 - val_p),
                                           axis=0, weights=sample_weight[idx2])
-                print(val_loss)
                 # stop criterion
                 if np.abs(val_loss_best - val_loss) > 0.0001:
                     val_loss_best = val_loss
@@ -224,7 +224,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     no_change += 1
                 if no_change >= n_iter_no_change:
                     break
-
+                if verbose:
+                    print("Inner iter:", inner_iter, "epoch:", epoch, "with validation loss:", np.round(val_loss, 5))
+  
             ## thresholding and normalization
             theta_0 = np.sign(theta_0) * np.maximum(np.abs(theta_0) - self.reg_lambda * np.sum(np.abs(theta_0)), 0)
             if proj_mat is not None:
