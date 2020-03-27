@@ -196,7 +196,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     
                     # gradient
                     dfxb = self.shape_fit_.diff(xb, order=1)
-                    g_t = np.average((- dfxb * r.reshape(-1, 1)) * batch_xx, axis=0,
+                    g_t = np.average((- dfxb * r).reshape(-1, 1) * batch_xx, axis=0,
                                 weights=batch_sample_weight).reshape(-1, 1)
 
                     # update the moving average 
