@@ -286,12 +286,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 dummy_scores = self.dummy_density_[feature_name]["density"]["scores"]
                 dummy_coef = est["dummy_lr"].coef_
 
-                ax1_main = plt.Subplot(fig, outer[subfig_idx])  
-                ax1_main.plot(np.arange(len(dummy_values)), dummy_coef, color="red")
-                ax1_main.set_title(feature_name +
-                             " (IR: " + str(np.round(100 * self.importance_ratios_[feature_name]["ir"], 2)) + "%)", fontsize=16)
-
-                ax1_density = ax1_main.twinx()
+                ax1_density = fig.add_subplot(outer[subfig_idx])
                 ax1_density.bar(np.arange(len(dummy_values)), dummy_scores)
 
                 input_ticks = (np.arange(len(dummy_values)) if len(dummy_values) <= 6 else 
@@ -299,10 +294,14 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 input_labels = [dummy_values[i] for i in input_ticks]
                 if len("".join(list(map(str, input_labels)))) > 30:
                     input_labels = [str(dummy_values[i])[:4] for i in input_ticks]
-                ax1_density.set_xticks(input_ticks)
-                ax1_density.set_xticklabels(input_labels)
-                fig.add_subplot(ax1_main)
-                fig.add_subplot(ax1_density) 
+
+                ax1_main = ax1_density.twinx()
+                ax1_main.set_xticks(input_ticks)
+                ax1_main.set_xticklabels(input_labels)
+
+                ax1_main.plot(np.arange(len(dummy_values)), dummy_coef, color="red")
+                ax1_main.set_title(feature_name +
+                             " (IR: " + str(np.round(100 * self.importance_ratios_[feature_name]["ir"], 2)) + "%)", fontsize=16)
                 subfig_idx += 1
         plt.show()
         if max_ids > 0:
@@ -442,7 +441,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                                   ("sim", sim)])
             sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
                        sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
-
+            sim_estimator["sim"].inner_update_adam(x, z, sample_weight=sample_weight, proj_mat=proj_mat)
             # update    
             z = z - sim_estimator.predict(x)
             self.sim_estimators_.append(sim_estimator)
@@ -572,6 +571,8 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                                    ("sim", sim)])
             sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
                         sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
+            sim_estimator["sim"].inner_update_adam(x, z, sample_weight=sample_weight, proj_mat=proj_mat)
+
             # update
             pred_train += sim_estimator.predict(x[self.tr_idx])
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
