@@ -214,7 +214,7 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
         else:
             sample_weight = sample_weight * n_samples
         knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
-        knot_vector = [self.xmin] * (self.degree + 1) + knots + [self.xmax] * (self.degree + 1)
+        knot_vector = np.array([self.xmin] * (self.degree + 1) + knots + [self.xmax] * (self.degree + 1))
         init_basis = self._create_basis(x, self.degree, knot_vector)
 
         D = self._diff_matrix(self.degree, self.knot_num)
@@ -233,7 +233,7 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
 
         self.selected_knots_ = list(np.array(knots)[np.reshape(update_w * np.dot(D, update_a) ** 2 > self.threshold, [-1])])
-        self.selected_knot_vector_ = [self.xmin] * (self.degree + 1) + self.selected_knots_ + [self.xmax] * (self.degree + 1)
+        self.selected_knot_vector_ = np.array([self.xmin] * (self.degree + 1) + self.selected_knots_ + [self.xmax] * (self.degree + 1))
         selected_basis = self._create_basis(x, self.degree, self.selected_knot_vector_)
         seBWB = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), selected_basis, axes=([0], [0]))
         seBWY = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), y, axes=([0], [0]))
@@ -302,7 +302,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
             sample_weight = sample_weight * n_samples
 
         knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
-        knot_vector = [self.xmin] * (self.degree + 1) + knots + [self.xmax] * (self.degree + 1)
+        knot_vector = np.array([self.xmin] * (self.degree + 1) + knots + [self.xmax] * (self.degree + 1))
         init_basis = self._create_basis(x, self.degree, knot_vector)
 
         tempy = y.copy().astype(np.float32)
@@ -338,7 +338,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
 
         self.selected_knots_ = list(np.array(knots)[(update_w * np.dot(D, update_a) ** 2 > self.threshold).ravel()])
-        self.selected_knot_vector = [self.xmin] * (self.degree + 1) + self.selected_knots_ + [self.xmax] * (self.degree + 1)
+        self.selected_knot_vector = np.array([self.xmin] * (self.degree + 1) + self.selected_knots_ + [self.xmax] * (self.degree + 1))
         selected_basis = self._create_basis(x, self.degree, knot_vector)
 
         seBWB = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), selected_basis, axes=([0], [0]))
