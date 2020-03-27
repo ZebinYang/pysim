@@ -97,14 +97,12 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         importance_ratios_ : ndarray of shape (n_estimators,)
             The estimator importances.
         """
-        if self.component_importance_ is None or len(self.component_importance_) == 0:
-            raise ValueError("Estimator not fitted, "
-                             "call `fit` before `importance_ratios_`.")
-            
-        total_importance = np.sum([item["importance"] for key, item in self.component_importance_.items()])
-        importance_ratios_ = {key: {"type": item["type"],
-                           "indice": item["indice"],
-                           "ir": item["importance"] / total_importance} for key, item in self.component_importance_.items()}
+        importance_ratios_ = {}
+        if (self.component_importance_ is not None) and (len(self.component_importance_) > 0):
+            total_importance = np.sum([item["importance"] for key, item in self.component_importance_.items()])
+            importance_ratios_ = {key: {"type": item["type"],
+                               "indice": item["indice"],
+                               "ir": item["importance"] / total_importance} for key, item in self.component_importance_.items()}
         return importance_ratios_
 
 
@@ -115,13 +113,12 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         -------
         projection_indices_ : ndarray of shape (d, n_estimators)
         """
+        projection_indices = np.array([])
         if self.nfeature_num_ > 0:
-            if self.best_estimators_ is None or len(self.best_estimators_) == 0:
-                raise ValueError("Estimator not fitted, "
-                                 "call `fit` before `projection_indices_`.")
-            return np.array([est["sim"].beta_.flatten() for est in self.best_estimators_ if "sim" in est.named_steps.keys()]).T
-        else:
-            return np.array([])
+            if (self.best_estimators_ is not None) and (len(self.best_estimators_) > 0):
+                projection_indices = np.array([est["sim"].beta_.flatten() 
+                                    for est in self.best_estimators_ if "sim" in est.named_steps.keys()]).T
+        return projection_indices
         
     @property
     def orthogonality_measure_(self):
@@ -132,11 +129,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         """
         ortho_measure = np.nan
         if self.nfeature_num_ > 0:
-            if self.best_estimators_ is None or len(self.best_estimators_) == 0:
-                raise ValueError("Estimator not fitted, "
-                                 "call `fit` before `orthogonality_measure_`.")
-
-            ortho_measure = np.linalg.norm(np.dot(self.projection_indices_.T,
+            if (self.best_estimators_ is not None) and (len(self.best_estimators_) > 0):
+                ortho_measure = np.linalg.norm(np.dot(self.projection_indices_.T,
                                       self.projection_indices_) - np.eye(self.projection_indices_.shape[1]))
             if self.projection_indices_.shape[1] > 1:
                 ortho_measure /= ((self.projection_indices_.shape[1] ** 2 - self.projection_indices_.shape[1]))
