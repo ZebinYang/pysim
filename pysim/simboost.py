@@ -218,7 +218,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         check_is_fitted(self, "best_estimators_")
 
-        idx = 0
+        subfig_idx = 0
         max_ids = len(self.best_estimators_)
         fig = plt.figure(figsize=(8 * cols_per_row, 4.6 * int(np.ceil(max_ids / cols_per_row))))
         outer = gridspec.GridSpec(int(np.ceil(max_ids / cols_per_row)), cols_per_row, wspace=0.15, hspace=0.25)
@@ -229,7 +229,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             estimator_key = list(self.importance_ratios_)[indice]
             if "sim" in est.named_steps.keys():
                 sim = est["sim"]
-                inner = outer[idx].subgridspec(2, 2, wspace=0.15, height_ratios=[6, 1], width_ratios=[3, 1])
+                inner = outer[subfig_idx].subgridspec(2, 2, wspace=0.15, height_ratios=[6, 1], width_ratios=[3, 1])
                 ax1_main = fig.add_subplot(inner[0, 0])
                 xgrid = np.linspace(sim.shape_fit_.xmin, sim.shape_fit_.xmax, 100).reshape([-1, 1])
                 ygrid = sim.shape_fit_.decision_function(xgrid)
@@ -275,7 +275,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                     ax2.set_ylim(-1, len(active_beta_idx))
                     ax2.axvline(0, linestyle="dotted", color="black")
                 fig.add_subplot(ax2)
-                idx += 1
+                subfig_idx += 1
                 
         for indice, est in enumerate(self.best_estimators_):
             
@@ -286,7 +286,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 dummy_scores = self.dummy_density_[feature_name]["density"]["scores"]
                 dummy_coef = est["dummy_lr"].coef_
 
-                ax1_main = plt.Subplot(fig, outer[idx])  
+                ax1_main = plt.Subplot(fig, outer[subfig_idx])  
                 ax1_main.plot(np.arange(len(dummy_values)), dummy_coef, color="red")
                 ax1_main.set_title(feature_name +
                              " (IR: " + str(np.round(100 * self.importance_ratios_[feature_name]["ir"], 2)) + "%)", fontsize=16)
@@ -303,7 +303,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 ax1_density.set_xticklabels(input_labels)
                 fig.add_subplot(ax1_main)
                 fig.add_subplot(ax1_density) 
-                idx += 1
+                subfig_idx += 1
         plt.show()
         if max_ids > 0:
             if save_png:
