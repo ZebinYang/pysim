@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from sklearn.utils.extmath import softmax
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils import check_X_y, column_or_1d
+from sklearn.model_selection import train_test_split
 from sklearn.utils.validation import check_is_fitted
 from sklearn.metrics import mean_squared_error, roc_auc_score
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin, is_classifier, is_regressor
