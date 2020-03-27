@@ -153,7 +153,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         return self
     
     def fit_inner_update(self, x, y, sample_weight=None, proj_mat=None, max_inner_iter=5, epoches=100, n_iter_no_change=10,
-                         batch_size=100, val_ratio=0.2, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, tol=0.0001, verbose=True):
+                         batch_size=100, val_ratio=0.2, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, tol=0.0001, verbose=False):
         
         x, y = self._validate_input(x, y)
         n_samples = x.shape[0]
