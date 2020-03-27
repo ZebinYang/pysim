@@ -448,12 +448,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
     def _pruning(self, x, y):
                 
-        self.val_mse_ = []
-        self.estimators_ = []
         component_importance = {}
-        pred_val = self.dummy_intercept_ + np.zeros(len(self.val_idx))
-        val_mse = mean_squared_error(y[self.val_idx], pred_val)
-
         for indice, est in enumerate(self.sim_estimators_):
             component_importance.update({"sim " + str(indice + 1): {"type": "sim", "indice": indice,
                                                      "importance": np.std(est.predict(x[self.tr_idx, :]))}})
@@ -463,6 +458,9 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             component_importance.update({feature_name: {"type": "dummy_lr", "indice": indice,
                                              "importance": np.std(est.predict(x[self.tr_idx, :]))}})
         
+        self.estimators_ = []
+        pred_val = self.dummy_intercept_ * np.ones(len(self.val_idx))
+        self.val_mse_ = [mean_squared_error(y[self.val_idx], pred_val)]
         for key, item in sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1]:
 
             if item["type"] == "sim":
@@ -470,18 +468,17 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             elif item["type"] == "dummy_lr":
                 est = self.dummy_estimators_[item["indice"]]
 
-            pred_val += est.predict(x[self.val_idx])
-            val_mse = mean_squared_error(y[self.val_idx], pred_val)
-            self.val_mse_.append(val_mse)
             self.estimators_.append(est)
+            pred_val += est.predict(x[self.val_idx])
+            self.val_mse_.append(mean_squared_error(y[self.val_idx], pred_val))
 
         best_loss = np.min(self.val_mse_)
         if np.sum((self.val_mse_ / best_loss - 1) < self.loss_threshold) > 0:
             best_idx = np.where((self.val_mse_ / best_loss - 1) < self.loss_threshold)[0][0]
         else:
             best_idx = np.argmin(self.val_mse_)
-        self.best_estimators_ = self.estimators_[:(best_idx + 1)]
-        self.component_importance_ = dict(sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1][:(best_idx + 1)])
+        self.best_estimators_ = self.estimators_[:best_idx]
+        self.component_importance_ = dict(sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1][:best_idx])
     
     def predict(self, x):
 
@@ -583,14 +580,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
      
     def _pruning(self, x, y):
                 
-        self.val_auc_ = []
-        self.estimators_ = []
         component_importance = {}
-        self.component_importance_ = {}
-        pred_val = self.dummy_intercept_ + np.zeros(len(self.val_idx))
-        proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
-        val_mse = roc_auc_score(y[self.val_idx], pred_val)
-
         for indice, est in enumerate(self.sim_estimators_):
             component_importance.update({"sim " + str(indice + 1): {"type": "sim", "indice": indice,
                                                   "importance": np.std(est.predict(x[self.tr_idx, :]))}})
@@ -600,6 +590,10 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
             component_importance.update({feature_name: {"type": "dummy_lr", "indice": indice,
                                               "importance": np.std(est.predict(x[self.tr_idx, :]))}})
     
+        self.estimators_ = []
+        pred_val = self.dummy_intercept_ + np.zeros(len(self.val_idx))
+        proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
+        self.val_auc_ = [roc_auc_score(y[self.val_idx], pred_val)]
         for key, item in sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1]:
 
             if item["type"] == "sim":
@@ -607,19 +601,18 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
             elif item["type"] == "dummy":
                 est = self.dummy_estimators_[item["indice"]]
 
+            self.estimators_.append(est)
             pred_val += est.predict(x[self.val_idx])
             proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
-            val_auc = roc_auc_score(y[self.val_idx], proba_val)
-            self.val_auc_.append(val_auc)
-            self.estimators_.append(est)
+            self.val_auc_.append(roc_auc_score(y[self.val_idx], proba_val))
 
         best_auc = np.max(self.val_auc_)
         if np.sum((1 - self.val_auc_ / best_auc) < self.loss_threshold) > 0:
             best_idx = np.where((1 - self.val_auc_ / best_auc) < self.loss_threshold)[0][0]
         else:
             best_idx = np.argmax(self.val_auc_)
-        self.best_estimators_ = self.estimators_[:(best_idx + 1)]
-        self.component_importance_ = dict(sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1][:(best_idx + 1)])
+        self.best_estimators_ = self.estimators_[:best_idx]
+        self.component_importance_ = dict(sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1][:best_idx])
 
     def predict_proba(self, x):
 
