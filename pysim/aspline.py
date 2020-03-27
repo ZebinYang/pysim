@@ -149,7 +149,6 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         basis_derivatives = np.sum([ci * Bi for ci, Bi, _, _ in terms], 0)
         return np.dot(basis_derivatives, self.coef_)
 
-        
     def visualize(self):
 
         check_is_fitted(self, "coef_")
@@ -223,7 +222,6 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
         init_basis = np.asarray(build_design_matrices([xphi.design_info],
                    {"x": x, "knots": knots, "degree": self.degree})[0])
 
-        best_loss = np.inf
         D = self.diff_matrix(self.degree, self.knot_num)
         update_w = np.ones([self.knot_num, 1], dtype=np.float32) 
         BWB = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), init_basis, axes=([0], [0]))
@@ -231,15 +229,11 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
         for i in range(self.maxiter):
             DwD = np.tensordot(D * update_w.reshape([-1, 1]), D, axes=([0], [0]))
             try:
-                U = cholesky(BWB + 10 * self.reg_gamma * DwD)
+                U = cholesky(BWB + self.reg_gamma * DwD)
                 M = scipy.linalg.lapack.clapack.dtrtri(U)[0]
                 update_a_temp = np.dot(np.dot(M, M.T.conj()), BWY)
             except:
-                update_a_temp = np.dot(np.linalg.pinv(BWB + 10 * self.reg_gamma * DwD, rcond=1e-5), BWY)
-            new_loss = self.get_loss(y, np.dot(init_basis, update_a_temp), sample_weight)
-            if new_loss - best_loss >= 0:
-                break
-            best_loss = new_loss
+                update_a_temp = np.dot(np.linalg.pinv(BWB + self.reg_gamma * DwD, rcond=1e-5), BWY)
             update_a = update_a_temp
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
 
@@ -329,9 +323,9 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
         BWB = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), init_basis, axes=([0], [0]))
         BWY = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), self._inv_link(tempy), axes=([0], [0]))
         update_a = np.dot(np.linalg.pinv(BWB + self.reg_gamma * DwD, rcond=1e-5), BWY)
-        best_loss = self.get_loss(y, self._link(np.dot(init_basis, update_a)), sample_weight)
+#         best_loss = self.get_loss(y, self._link(np.dot(init_basis, update_a)), sample_weight)
         for i in range(self.maxiter):
-            best_loss_irls = np.inf
+            # best_loss_irls = np.inf
             for j in range(self.maxiter_irls):
                 lp = np.dot(init_basis, update_a)
                 mu = self._link(lp)
@@ -346,15 +340,15 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
                 BWOB = np.tensordot(BW * omega[mask].reshape([-1, 1]), init_basis[mask], axes=([0], [0]))
                 update_a_temp = np.dot(np.linalg.pinv(BWOB + self.reg_gamma * DwD, rcond=1e-5),
                                 BWOB.dot(update_a) + np.tensordot(BW, y[mask] - mu[mask], axes=([0], [0])))
-                new_loss = self.get_loss(y, self._link(np.dot(init_basis, update_a_temp)), sample_weight)
-                if new_loss - best_loss_irls >= 0:
-                    break
-                best_loss_irls = new_loss
-                update_a = update_a_temp
+#                 new_loss = self.get_loss(y, self._link(np.dot(init_basis, update_a_temp)), sample_weight)
+#                 if new_loss - best_loss_irls >= 0:
+#                     break
+#                 best_loss_irls = new_loss
+#                 update_a = update_a_temp
 
-            if best_loss_irls - best_loss >= 0:
-                break
-            best_loss = best_loss_irls
+#             if best_loss_irls - best_loss >= 0:
+#                 break
+#             best_loss = best_loss_irls
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
 
         self.selected_knots_ = list(np.array(knots)[(update_w * np.dot(D, update_a) ** 2 > self.threshold).ravel()])
