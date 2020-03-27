@@ -450,21 +450,20 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                 
         self.val_mse_ = []
         self.estimators_ = []
-        component_importance_temp = {}
-        self.component_importance_ = {}
+        component_importance = {}
         pred_val = self.dummy_intercept_ + np.zeros(len(self.val_idx))
         val_mse = mean_squared_error(y[self.val_idx], pred_val)
 
         for indice, est in enumerate(self.sim_estimators_):
-            component_importance_temp.update({"sim " + str(indice + 1): {"type": "sim", "indice": indice,
+            component_importance.update({"sim " + str(indice + 1): {"type": "sim", "indice": indice,
                                                      "importance": np.std(est.predict(x[self.tr_idx, :]))}})
 
         for indice, est in enumerate(self.dummy_estimators_):
             feature_name = list(est.named_steps.keys())[0]
-            component_importance_temp.update({feature_name: {"type": "dummy_lr", "indice": indice,
+            component_importance.update({feature_name: {"type": "dummy_lr", "indice": indice,
                                              "importance": np.std(est.predict(x[self.tr_idx, :]))}})
         
-        for key, item in sorted(component_importance_temp.items(), key=lambda item: item[1]["ir"])[::-1]:
+        for key, item in sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1]:
 
             if item["type"] == "sim":
                 est = self.sim_estimators_[item["indice"]]
@@ -475,7 +474,6 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             val_mse = mean_squared_error(y[self.val_idx], pred_val)
             self.val_mse_.append(val_mse)
             self.estimators_.append(est)
-            self.component_importance_.update({key: item})
 
         best_loss = np.min(self.val_mse_)
         if np.sum((self.val_mse_ / best_loss - 1) < self.loss_threshold) > 0:
@@ -483,7 +481,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         else:
             best_idx = np.argmin(self.val_mse_)
         self.best_estimators_ = self.estimators_[:(best_idx + 1)]
-        
+        self.component_importance_ = dict(sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1][:(best_idx + 1)])
+    
     def predict(self, x):
 
         pred = self.decision_function(x)
@@ -586,22 +585,22 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                 
         self.val_auc_ = []
         self.estimators_ = []
-        component_importance_temp = {}
+        component_importance = {}
         self.component_importance_ = {}
         pred_val = self.dummy_intercept_ + np.zeros(len(self.val_idx))
         proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
         val_mse = roc_auc_score(y[self.val_idx], pred_val)
 
         for indice, est in enumerate(self.sim_estimators_):
-            component_importance_temp.update({"sim " + str(indice + 1): {"type": "sim", "indice": indice,
+            component_importance.update({"sim " + str(indice + 1): {"type": "sim", "indice": indice,
                                                   "importance": np.std(est.predict(x[self.tr_idx, :]))}})
 
         for indice, est in enumerate(self.dummy_estimators_):
             feature_name = list(est.named_steps.keys())[0]
-            component_importance_temp.update({feature_name: {"type": "dummy_lr", "indice": indice,
+            component_importance.update({feature_name: {"type": "dummy_lr", "indice": indice,
                                               "importance": np.std(est.predict(x[self.tr_idx, :]))}})
     
-        for key, item in sorted(component_importance_temp.items(), key=lambda item: item[1]["ir"])[::-1]:
+        for key, item in sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1]:
 
             if item["type"] == "sim":
                 est = self.sim_estimators_[item["indice"]]
@@ -620,7 +619,8 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         else:
             best_idx = np.argmax(self.val_auc_)
         self.best_estimators_ = self.estimators_[:(best_idx + 1)]
-        
+        self.component_importance_ = dict(sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1][:(best_idx + 1)])
+
     def predict_proba(self, x):
 
         pred = self.decision_function(x)
