@@ -415,7 +415,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             z = z - np.sum([est.predict(x) for est in self.dummy_estimators_], axis=0) - self.dummy_intercept_
 
         # Fit Sim Boosting for numerical variables
-        if self.nfeature_num_ > 0:
+        if self.nfeature_num_ == 0:
             return 
         
         for i in range(self.n_estimators):
@@ -464,7 +464,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             component_importance_temp.update({feature_name: {"type": "dummy_lr", "indice": indice,
                                              "importance": np.std(est.predict(x[self.tr_idx, :]))}})
         
-        for key, item in sorted(importance_ratios_temp.items(), key=lambda item: item[1]["ir"])[::-1]:
+        for key, item in sorted(component_importance_temp.items(), key=lambda item: item[1]["ir"])[::-1]:
 
             if item["type"] == "sim":
                 est = self.sim_estimators_[item["indice"]]
@@ -539,7 +539,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
             proba_val = 0.5 * np.ones(len(self.val_idx))
 
         # Fit Sim Boosting for numerical variables
-        if self.nfeature_num_ > 0:
+        if self.nfeature_num_ == 0:
             return 
 
         for i in range(self.n_estimators):
@@ -601,7 +601,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
             component_importance_temp.update({feature_name: {"type": "dummy_lr", "indice": indice,
                                               "importance": np.std(est.predict(x[self.tr_idx, :]))}})
     
-        for key, item in sorted(importance_ratios_temp.items(), key=lambda item: item[1]["ir"])[::-1]:
+        for key, item in sorted(component_importance_temp.items(), key=lambda item: item[1]["ir"])[::-1]:
 
             if item["type"] == "sim":
                 est = self.sim_estimators_[item["indice"]]
