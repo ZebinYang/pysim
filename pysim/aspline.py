@@ -356,7 +356,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
                 break
             seBW = selected_basis[mask] * sample_weight[mask].reshape([-1, 1])
             seBWOB = np.tensordot(seBW * omega[mask].reshape([-1, 1]), selected_basis[mask], axes=([0], [0]))
-            coef_temp = np.dot(np.linalg.pinv(seBWOB, rcond=1e-3), seBWOB.dot(shape_fit_.coef_) \
+            coef_temp = np.dot(np.linalg.pinv(seBWOB, rcond=1e-3), seBWOB.dot(self.coef_) \
                     + np.tensordot(seBW, y[mask] - mu[mask], axes=([0], [0])))
             new_loss = self.get_loss(y, self._link(np.dot(selected_basis, coef_temp)), sample_weight)
             if new_loss - best_loss_irls >= 0:
