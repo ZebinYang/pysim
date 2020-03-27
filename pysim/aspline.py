@@ -334,14 +334,15 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
                 new_loss = self.get_loss(y, self._link(np.dot(init_basis, update_a_temp)), sample_weight)
                 if new_loss - best_loss_irls >= 0:
                     break
-                best_loss_irls = new_loss
                 update_a = update_a_temp
+                best_loss_irls = new_loss
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
 
         self.selected_knots_ = list(np.array(knots)[(update_w * np.dot(D, update_a) ** 2 > self.threshold).ravel()])
         self.selected_knot_vector_ = np.array([self.xmin] * (self.degree + 1) + self.selected_knots_ + [self.xmax] * (self.degree + 1))
         selected_basis = self._create_basis(x, self.degree, self.selected_knot_vector_)
 
+        best_loss_irls = np.inf
         seBWB = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), selected_basis, axes=([0], [0]))
         seBWY = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), self._inv_link(tempy), axes=([0], [0]))
         self.coef_ = np.dot(np.linalg.pinv(seBWB, rcond=1e-3), seBWY)
@@ -355,8 +356,13 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
                 break
             seBW = selected_basis[mask] * sample_weight[mask].reshape([-1, 1])
             seBWOB = np.tensordot(seBW * omega[mask].reshape([-1, 1]), selected_basis[mask], axes=([0], [0]))
-            self.coef_ = np.dot(np.linalg.pinv(seBWOB, rcond=1e-3),
-                          seBWOB.dot(self.coef_) + np.tensordot(seBW, y[mask] - mu[mask], axes=([0], [0])))
+            coef_temp = np.dot(np.linalg.pinv(seBWOB, rcond=1e-3), seBWOB.dot(shape_fit_.coef_) \
+                    + np.tensordot(seBW, y[mask] - mu[mask], axes=([0], [0])))
+            new_loss = self.get_loss(y, self._link(np.dot(selected_basis, coef_temp)), sample_weight)
+            if new_loss - best_loss_irls >= 0:
+                break
+            self.coef_ = coef_temp
+            best_loss_irls = new_loss
         return self
     
     def predict_proba(self, x):
