@@ -105,8 +105,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         u, s, v = np.linalg.svd(sigmat)
         sigmat = np.dot(np.dot(u, np.diag(s)), u.T)
         
-        spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * np.sum(np.abs(zbar))))
-        beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * np.sum(np.abs(zbar))))
+        reg_lambda_max = np.max(np.abs(sigmat) - np.abs(sigmat) * np.eye(sigmat.shape[0]), axis=0).max()
+        spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * reg_lambda_max))
+        beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * reg_lambda_max))
         return beta
 
     def _second_order(self, x, y, sample_weight=None, proj_mat=None):
@@ -123,9 +124,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         u, s, v = np.linalg.svd(sigmat)
         sigmat = np.dot(np.dot(u, np.diag(s)), u.T)
 
-        beta_svd_l1norm = np.sum(np.abs(np.linalg.svd(sigmat)[0][:, 0]))  
-        spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * beta_svd_l1norm))
-        beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * np.sum(np.abs(beta_svd_l1norm))))
+        reg_lambda_max = np.max(np.abs(sigmat) - np.abs(sigmat) * np.eye(sigmat.shape[0]), axis=0).max()
+        spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * reg_lambda_max))
+        beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * reg_lambda_max))
         return beta
 
     def fit(self, x, y, sample_weight=None, proj_mat=None):
