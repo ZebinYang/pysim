@@ -1,7 +1,6 @@
-import scipy
 import numpy as np
 import pandas as pd 
-from scipy.linalg import cholesky
+from matplotlib import gridspec
 from matplotlib import pyplot as plt
 from abc import ABCMeta, abstractmethod
 
@@ -10,6 +9,9 @@ from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils.validation import check_is_fitted
 from sklearn.utils import check_array, check_X_y
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
+
+import scipy
+from scipy.linalg import cholesky
 from patsy import dmatrix, build_design_matrices
 
 
@@ -196,14 +198,13 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
                                   threshold=threshold,
                                   maxiter=maxiter)
 
-    @staticmethod
-    def _get_loss(label, pred):
-        return - np.mean((label - pred) ** 2)
-
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True, y_numeric=True)
         return x, y
+
+    def get_loss(self, label, pred, sample_weight):
+        return np.average((label - pred) ** 2, axis=0, weights=sample_weight)
 
     def fit(self, x, y, sample_weight=None):
 
@@ -235,7 +236,7 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
                 update_a_temp = np.dot(np.dot(M, M.T.conj()), BWY)
             except:
                 update_a_temp = np.dot(np.linalg.pinv(BWB + 10 * self.reg_gamma * DwD, rcond=1e-5), BWY)
-            new_loss = self._get_loss(y, np.dot(init_basis, update_a_temp))
+            new_loss = self.get_loss(y, np.dot(init_basis, update_a_temp), sample_weight)
             if new_loss - best_loss >= 0:
                 break
             best_loss = new_loss
@@ -285,11 +286,11 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
         with np.errstate(divide="ignore", over="ignore"):
             return np.log(x) - np.log(1 - x)
     
-    @staticmethod
-    def _get_loss(label, pred):
+    def get_loss(self, label, pred, sample_weight=None):
         with np.errstate(divide="ignore", over="ignore"):
-            pred = np.clip(pred, 10 ** (-8), 1. - 10 ** (-8))
-            return - np.mean(label * np.log(pred) + (1 - label) * np.log(1 - pred))
+            pred = np.clip(pred, self.EPS, 1. - self.EPS)
+            return - np.average(label * np.log(pred) + (1 - label) * np.log(1 - pred),
+                                axis=0, weights=sample_weight)
        
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
@@ -328,7 +329,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
         BWB = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), init_basis, axes=([0], [0]))
         BWY = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), self._inv_link(tempy), axes=([0], [0]))
         update_a = np.dot(np.linalg.pinv(BWB + self.reg_gamma * DwD, rcond=1e-5), BWY)
-        best_loss = self._get_loss(y, self._link(np.dot(init_basis, update_a)))
+        best_loss = self.get_loss(y, self._link(np.dot(init_basis, update_a)), sample_weight)
         for i in range(self.maxiter):
             best_loss_irls = np.inf
             for j in range(self.maxiter_irls):
@@ -345,7 +346,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
                 BWOB = np.tensordot(BW * omega[mask].reshape([-1, 1]), init_basis[mask], axes=([0], [0]))
                 update_a_temp = np.dot(np.linalg.pinv(BWOB + self.reg_gamma * DwD, rcond=1e-5),
                                 BWOB.dot(update_a) + np.tensordot(BW, y[mask] - mu[mask], axes=([0], [0])))
-                new_loss = self._get_loss(y, self._link(np.dot(init_basis, update_a_temp)))
+                new_loss = self.get_loss(y, self._link(np.dot(init_basis, update_a_temp)), sample_weight)
                 if new_loss - best_loss_irls >= 0:
                     break
                 best_loss_irls = new_loss
@@ -375,7 +376,8 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
                 break
             seBW = selected_basis[mask] * sample_weight[mask].reshape([-1, 1])
             seBWOB = np.tensordot(seBW * omega[mask].reshape([-1, 1]), selected_basis[mask], axes=([0], [0]))
-            self.coef_ = np.dot(np.linalg.pinv(seBWOB, rcond=1e-5),
+            # The value of rcond for classifier is set to a relatively small value as compared to regressor.
+            self.coef_ = np.dot(np.linalg.pinv(seBWOB, rcond=1e-3),
                           seBWOB.dot(self.coef_) + np.tensordot(seBW, y[mask] - mu[mask], axes=([0], [0])))
         return self
     

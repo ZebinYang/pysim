@@ -210,12 +210,10 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 val_xb = np.dot(val_x, theta_0)
                 if is_regressor(self):
                     val_r = val_y - self.shape_fit_.predict(val_xb)
-                    val_loss = np.average(val_r ** 2, axis=0, weights=sample_weight[idx2])
+                    val_loss = self.shape_fit_.get_loss(val_y, val_p, sample_weight[idx2])
                 elif is_classifier(self):
                     val_p = self.shape_fit_.predict_proba(val_xb)
-                    val_p = np.clip(val_p, 1e-15, 1 - 1e-15)
-                    val_loss = np.average(- val_y * np.log(val_p) - (1 - val_y) * np.log(1 - val_p),
-                                          axis=0, weights=sample_weight[idx2])
+                    val_loss = self.shape_fit_.get_loss(val_y, val_p, sample_weight[idx2])
                 # stop criterion
                 if np.abs(val_loss_best - val_loss) > tol:
                     val_loss_best = val_loss
