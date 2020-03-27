@@ -132,8 +132,8 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
                 ci1 = np.where(denom1 != 0., (numer1 / denom1), 0.)
                 ci2 = np.where(denom2 != 0., (numer2 / denom2), 0.)
 
-            Bi1 = create_basis(inputs, p - 1, t[:-1]) 
-            Bi2 = create_basis(inputs, p - 1, t[1:])
+            Bi1 = self._create_basis(inputs, p - 1, t[:-1]) 
+            Bi2 = self._create_basis(inputs, p - 1, t[1:])
             return ((ci1, Bi1, t[:-1], p - 1), (ci2, Bi2, t[1:], p - 1))
 
         x = check_array(x, accept_sparse=["csr", "csc", "coo"])
