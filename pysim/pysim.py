@@ -59,11 +59,11 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         if self.knot_num <= 0:
             raise ValueError("knot_num must be > 0, got" % self.knot_num)
 
-        if self.reg_lambda < 0:
-            raise ValueError("reg_lambda must be >= 0, got %s." % self.reg_lambda)
+        if (self.reg_lambda < 0) or (self.reg_lambda > 1):
+            raise ValueError("reg_lambda must be >= 0 and <=1, got %s." % self.reg_lambda)
 
-        if self.reg_gamma < 0:
-            raise ValueError("reg_gamma must be >= 0, got %s." % self.reg_gamma)
+        if (self.reg_gamma < 0) or (self.reg_gamma > 1):
+            raise ValueError("reg_gamma must be >= 0 and <=1, got %s." % self.reg_gamma)
 
     def _validate_sample_weight(self, n_samples, sample_weight):
         
@@ -80,10 +80,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         self.inv_cov = np.linalg.pinv(self.cov)
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
         zbar = np.average(y.reshape(-1, 1) * s1, axis=0, weights=sample_weight)
-        if np.all(np.abs(zbar) < self.reg_lambda * np.sum(np.abs(zbar))):
-            zbar[np.abs(zbar) < np.max(np.abs(zbar))] = 0
-        else:
-            zbar[np.abs(zbar) < self.reg_lambda * np.sum(np.abs(zbar))] = 0
+        zbar[np.abs(zbar) < self.reg_lambda * np.max(np.abs(zbar))] = 0
         if proj_mat is not None:
             zbar = np.dot(proj_mat, zbar)
         if np.linalg.norm(zbar) > 0:
@@ -231,7 +228,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     print("Inner iter:", inner_iter + 1, "epoch:", epoch + 1, "with validation loss:", np.round(val_loss, 5))
   
             ## thresholding and normalization
-            theta_0 = np.sign(theta_0) * np.maximum(np.abs(theta_0) - self.reg_lambda * np.sum(np.abs(theta_0)), 0)
+            theta_0 = np.sign(theta_0) * np.maximum(np.abs(theta_0) - self.reg_lambda * np.max(np.abs(theta_0)), 0)
             if proj_mat is not None:
                 theta_0 = np.dot(proj_mat, theta_0)
             if np.linalg.norm(theta_0) > 0:
