@@ -12,7 +12,6 @@ from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 
 import scipy
 from scipy.linalg import cholesky
-from patsy import dmatrix, build_design_matrices
 
 
 class BaseASpline(BaseEstimator, metaclass=ABCMeta):
@@ -32,8 +31,7 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         self.threshold = threshold
         self.maxiter = maxiter
 
-    @staticmethod
-    def diff_matrix(order, knot_num):
+    def _diff_matrix(self, order, knot_num):
         results = [] # a container to collect the rows
         n_rows = order + 2
         for _ in range(n_rows): 
@@ -89,39 +87,39 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         if self.maxiter <= 0:
             raise ValueError("maxiter must be > 0, got" % self.maxiter)
 
+    def _create_basis(self, inputs, p, knot_vector):
+
+        if p == 0:
+            basis = np.where(np.all([knot_vector[:-1] <= inputs,
+                                   inputs < knot_vector[1:]], axis=0), 1.0, 0.0)
+            basis[np.where(inputs == knot_vector[-1])[0], -1] = 1.0
+            return basis
+        else:
+            basis_p_minus_1 = self._create_basis(inputs, p - 1, knot_vector)
+
+        first_term_numerator = inputs - knot_vector[:-p]
+        first_term_denominator = knot_vector[p:] - knot_vector[:-p]
+
+        second_term_numerator = knot_vector[(p + 1):] - inputs
+        second_term_denominator = (knot_vector[(p + 1):] - knot_vector[1:-p])
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            first_term = np.where(first_term_denominator != 0.0,
+                                  (first_term_numerator /
+                                   first_term_denominator), 0.0)
+            second_term = np.where(second_term_denominator != 0.0,
+                                   (second_term_numerator /
+                                    second_term_denominator), 0.0)
+
+        basis = (first_term[:, :-1] * basis_p_minus_1[:, :-1] +
+                 second_term * basis_p_minus_1[:, 1:])
+        basis[np.where(inputs == knot_vector[-1])[0], -1] = 1.0
+        return basis
+
     def diff(self, x, order=2):
         
         # This function evaluates the derivative of the fitted ASpline w.r.t. the inputs, 
         # which is adopted from https://github.com/johntfoster/bspline/blob/master/bspline/bspline.py.
-        def create_basis(inputs, p, knot_vector):
-
-            if p == 0:
-                basis = np.where(np.all([knot_vector[:-1] <= inputs,
-                                       inputs < knot_vector[1:]], axis=0), 1.0, 0.0)
-                basis[np.where(inputs == knot_vector[-1])[0], -1] = 1.0
-                return basis
-            else:
-                basis_p_minus_1 = create_basis(inputs, p - 1, knot_vector)
-
-
-            first_term_numerator = inputs - knot_vector[:-p]
-            first_term_denominator = knot_vector[p:] - knot_vector[:-p]
-
-            second_term_numerator = knot_vector[(p + 1):] - inputs
-            second_term_denominator = (knot_vector[(p + 1):] - knot_vector[1:-p])
-
-            with np.errstate(divide="ignore", invalid="ignore"):
-                first_term = np.where(first_term_denominator != 0.0,
-                                      (first_term_numerator /
-                                       first_term_denominator), 0.0)
-                second_term = np.where(second_term_denominator != 0.0,
-                                       (second_term_numerator /
-                                        second_term_denominator), 0.0)
-
-            basis = (first_term[:, :-1] * basis_p_minus_1[:, :-1] +
-                     second_term * basis_p_minus_1[:, 1:])
-            basis[np.where(inputs == knot_vector[-1])[0], -1] = 1.0
-            return basis
 
         def diff_inner(inputs, t, p):
 
@@ -140,7 +138,7 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
 
         x = check_array(x, accept_sparse=["csr", "csc", "coo"])
         knot_vector = np.array([self.xmin] * (self.degree + 1) + self.selected_knots_ + [self.xmax] * (self.degree + 1))
-        terms = [ (1., create_basis(x, self.degree, knot_vector), knot_vector, self.degree) ]
+        terms = [ (1., self._create_basis(x, self.degree, knot_vector), knot_vector, self.degree) ]
         for k in range(order):
             tmp = []
             for Ci, Bi, t, p in terms:
@@ -178,9 +176,8 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         x = x.copy()
         x[x < self.xmin] = self.xmin
         x[x > self.xmax] = self.xmax
-        design_matrix = np.asarray(build_design_matrices([self.selected_xphi_.design_info],
-                                         {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
-        pred = np.dot(design_matrix, self.coef_).ravel()
+        selected_basis = self._create_basis(x, self.degree, self.selected_knot_vector_)
+        pred = np.dot(selected_basis, self.coef_).ravel()
         return pred
 
 
@@ -202,7 +199,7 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
                          multi_output=True, y_numeric=True)
         return x, y
 
-    def get_loss(self, label, pred, sample_weight):
+    def get_loss(self, label, pred, sample_weight=None):
         return np.average((label - pred) ** 2, axis=0, weights=sample_weight)
 
     def fit(self, x, y, sample_weight=None):
@@ -217,12 +214,10 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
         else:
             sample_weight = sample_weight * n_samples
         knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
-        xphi = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1",
-                   {"x": [self.xmin, self.xmax], "knots": knots, "degree": self.degree})
-        init_basis = np.asarray(build_design_matrices([xphi.design_info],
-                   {"x": x, "knots": knots, "degree": self.degree})[0])
+        knot_vector = [self.xmin] * (self.degree + 1) + knots + [self.xmax] * (self.degree + 1)
+        init_basis = self._create_basis(x, self.degree, knot_vector)
 
-        D = self.diff_matrix(self.degree, self.knot_num)
+        D = self._diff_matrix(self.degree, self.knot_num)
         update_w = np.ones([self.knot_num, 1], dtype=np.float32) 
         BWB = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), init_basis, axes=([0], [0]))
         BWY = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), y, axes=([0], [0]))
@@ -238,10 +233,8 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
 
         self.selected_knots_ = list(np.array(knots)[np.reshape(update_w * np.dot(D, update_a) ** 2 > self.threshold, [-1])])
-        self.selected_xphi_ = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1", 
-               {"x": [self.xmin, self.xmax], "knots": self.selected_knots_, "degree": self.degree})
-        selected_basis = np.asarray(build_design_matrices([self.selected_xphi_.design_info],
-                          {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
+        self.selected_knot_vector_ = [self.xmin] * (self.degree + 1) + self.selected_knots_ + [self.xmax] * (self.degree + 1)
+        selected_basis = self._create_basis(x, self.degree, self.selected_knot_vector_)
         seBWB = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), selected_basis, axes=([0], [0]))
         seBWY = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), y, axes=([0], [0]))
         self.coef_ = np.dot(np.linalg.pinv(seBWB, rcond=1e-5), seBWY)
@@ -309,15 +302,13 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
             sample_weight = sample_weight * n_samples
 
         knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
-        xphi = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1",
-                       {"x": [self.xmin, self.xmax], "knots": knots, "degree": self.degree})
-        init_basis = np.asarray(build_design_matrices([xphi.design_info],
-                          {"x": x, "knots": knots, "degree": self.degree})[0])
+        knot_vector = [self.xmin] * (self.degree + 1) + knots + [self.xmax] * (self.degree + 1)
+        init_basis = self._create_basis(x, self.degree, knot_vector)
 
         tempy = y.copy().astype(np.float32)
         tempy[tempy==0] = 0.01
         tempy[tempy==1] = 0.99
-        D = self.diff_matrix(self.degree, self.knot_num)
+        D = self._diff_matrix(self.degree, self.knot_num)
         update_w = np.ones([self.knot_num, 1], dtype=np.float32) 
         DwD = np.tensordot(D * update_w.reshape([-1, 1]), D, axes=([0], [0]))
         BWB = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), init_basis, axes=([0], [0]))
@@ -347,10 +338,8 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
 
         self.selected_knots_ = list(np.array(knots)[(update_w * np.dot(D, update_a) ** 2 > self.threshold).ravel()])
-        self.selected_xphi_ = dmatrix("bs(x, knots = knots, degree=degree, include_intercept=True) - 1", 
-               {"x": [self.xmin, self.xmax], "knots": self.selected_knots_, "degree": self.degree})
-        selected_basis = np.asarray(build_design_matrices([self.selected_xphi_.design_info],
-                          {"x": x, "knots": self.selected_knots_, "degree": self.degree})[0])
+        self.selected_knot_vector = [self.xmin] * (self.degree + 1) + self.selected_knots_ + [self.xmax] * (self.degree + 1)
+        selected_basis = self._create_basis(x, self.degree, knot_vector)
 
         seBWB = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), selected_basis, axes=([0], [0]))
         seBWY = np.tensordot(selected_basis * sample_weight.reshape([-1, 1]), self._inv_link(tempy), axes=([0], [0]))

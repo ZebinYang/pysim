@@ -4,6 +4,5 @@
 
 rpy2
 numpy>=1.15.2
-patsy
 sklearn
 matplotlib>=2.2.2
