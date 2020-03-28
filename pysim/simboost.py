@@ -282,7 +282,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 inner = outer[subfig_idx].subgridspec(1, 2, wspace=0.0, width_ratios=[8, 1])
                 ax1_density = fig.add_subplot(inner[0, 0])
                 ax1_density.bar(np.arange(len(dummy_values)), dummy_scores)
-                ax1_density.set_ylim(0, dummy_scores.max() * 1.1)
+                ax1_density.set_ylim(0, dummy_scores.max() * 1.2)
                 
                 input_ticks = (np.arange(len(dummy_values)) if len(dummy_values) <= 6 else 
                                   np.linspace(0.1 * len(dummy_coef), len(dummy_coef) * 0.9, 4).astype(int))
