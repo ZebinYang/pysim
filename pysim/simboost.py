@@ -226,7 +226,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 ax1_main = fig.add_subplot(inner[0, 0])
                 xgrid = np.linspace(sim.shape_fit_.xmin, sim.shape_fit_.xmax, 100).reshape([-1, 1])
                 ygrid = sim.shape_fit_.decision_function(xgrid)
-                ax1_main.plot(xgrid, ygrid)
+                ax1_main.plot(xgrid, ygrid, color="red")
                 ax1_main.set_xticklabels([])
                 ax1_main.set_title("SIM " + str(self.importance_ratios_[estimator_key]["indice"] + 1) +
                              " (IR: " + str(np.round(100 * self.importance_ratios_[estimator_key]["ir"], 2)) + "%)",
@@ -279,7 +279,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 dummy_scores = self.dummy_density_[feature_name]["density"]["scores"]
                 dummy_coef = est["dummy_lr"].coef_
 
-                ax1_density = fig.add_subplot(outer[subfig_idx])
+                inner = outer[subfig_idx].subgridspec(2, 1, wspace=0.15, width_ratios=[3, 1])
+                ax1_density = fig.add_subplot(inner[0, 0])
                 ax1_density.bar(np.arange(len(dummy_values)), dummy_scores)
 
                 input_ticks = (np.arange(len(dummy_values)) if len(dummy_values) <= 6 else 
