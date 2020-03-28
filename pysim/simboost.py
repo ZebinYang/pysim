@@ -369,7 +369,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
     def decision_function(self, x):
 
         check_is_fitted(self, "best_estimators_")
-        pred = np.sum([est.predict(x) for est in self.best_estimators_], axis=0) + self.intercept_
+        pred = np.sum([est.predict(x) for est in self.best_estimators_], axis=0) + self.intercept_ * np.ones(x.shape[0])
         return pred
 
 
