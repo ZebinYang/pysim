@@ -6,7 +6,6 @@ from matplotlib.ticker import MaxNLocator
 
 from abc import ABCMeta, abstractmethod
 
-
 from sklearn.pipeline import Pipeline
 from sklearn.utils.extmath import softmax
 from sklearn.compose import ColumnTransformer
