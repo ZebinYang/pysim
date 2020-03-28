@@ -279,7 +279,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 dummy_scores = self.dummy_density_[feature_name]["density"]["scores"]
                 dummy_coef = est["dummy_lr"].coef_
 
-                inner = outer[subfig_idx].subgridspec(2, 1, wspace=0.15, width_ratios=[3, 1])
+                inner = outer[subfig_idx].subgridspec(1, 2, wspace=0.15, width_ratios=[3, 1])
                 ax1_density = fig.add_subplot(inner[0, 0])
                 ax1_density.bar(np.arange(len(dummy_values)), dummy_scores)
 
