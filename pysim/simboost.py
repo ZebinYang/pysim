@@ -230,7 +230,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 ax1_main.plot(xgrid, ygrid)
                 ax1_main.set_xticklabels([])
                 ax1_main.set_title("SIM " + str(self.importance_ratios_[estimator_key]["indice"] + 1) +
-                             "(IR: " + str(np.round(100 * self.importance_ratios_[estimator_key]["ir"], 2)) + "%)",
+                             " (IR: " + str(np.round(100 * self.importance_ratios_[estimator_key]["ir"], 2)) + "%)",
                              fontsize=16)
                 fig.add_subplot(ax1_main)
 
