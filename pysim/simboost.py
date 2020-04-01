@@ -447,7 +447,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                 proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
 
             # fit Sim estimator
-            param_grid = {"method": self.stein_method, 
+            param_grid = {"method": self.stein_method_list, 
                           "reg_lambda": self.reg_lambda_list,
                           "reg_gamma": self.reg_gamma_list}
             grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
@@ -576,7 +576,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                 proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
 
             # fit Sim estimator
-            param_grid = {"method": self.stein_method, 
+            param_grid = {"method": self.stein_method_list, 
                           "reg_lambda": self.reg_lambda_list,
                           "reg_gamma": self.reg_gamma_list}
             grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
