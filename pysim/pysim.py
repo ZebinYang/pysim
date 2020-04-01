@@ -151,26 +151,42 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         self._estimate_shape(xb, y, sample_weight, xmin=np.min(xb), xmax=np.max(xb))
         return self
     
-    def fit_inner_update(self, x, y, sample_weight=None, proj_mat=None, max_inner_iter=5, epoches=100, n_iter_no_change=10,
-                         batch_size=100, val_ratio=0.2, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, tol=0.0001, verbose=False):
+    def fit_inner_update(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, max_inner_iter=10,
+                  n_inner_iter_no_change=1, max_epoches=100, n_epoch_no_change=5, batch_size=100,
+                  learning_rate=1e-3, beta_1=0.9, beta_2=0.999, tol=0.0001, verbose=False):
         
         x, y = self._validate_input(x, y)
         n_samples = x.shape[0]
+        batch_size = min(batch_size, n_samples)
         sample_weight = self._validate_sample_weight(n_samples, sample_weight)
 
-        idx1, idx2 = train_test_split(np.arange(n_samples),test_size=val_ratio, random_state=self.random_state)
-        tr_x, tr_y, val_x, val_y = x[idx1], y[idx1], x[idx2], y[idx2]
+        if is_regressor(self):
+            idx1, idx2 = train_test_split(np.arange(n_samples),test_size=val_ratio, random_state=self.random_state)
+            tr_x, tr_y, val_x, val_y = x[idx1], y[idx1], x[idx2], y[idx2]
+        elif is_classifier(self):
+            idx1, idx2 = train_test_split(np.arange(n_samples),test_size=val_ratio, stratify=y, random_state=self.random_state)
+            tr_x, tr_y, val_x, val_y = x[idx1], y[idx1], x[idx2], y[idx2]
 
+        val_xb = np.dot(val_x, self.beta_)
+        if is_regressor(self):
+            val_pred = self.shape_fit_.predict(val_xb)
+            val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
+        elif is_classifier(self):
+            val_pred = self.shape_fit_.predict_proba(val_xb)
+            val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
+
+        no_inner_iter_change = 0
+        val_loss_inner_iter_best = val_loss
         for inner_iter in range(max_inner_iter):
 
             m_t = 0 # moving average of the gradient
             v_t = 0 # moving average of the gradient square
-            no_change = 0
             num_updates = 0
+            no_epoch_change = 0
             theta_0 = self.beta_ 
-            val_loss_best = np.inf
             train_size = tr_x.shape[0]
-            for epoch in range(epoches):
+            val_loss_epoch_best = np.inf
+            for epoch in range(max_epoches):
 
                 shuffle_index = np.arange(tr_x.shape[0])
                 np.random.shuffle(shuffle_index)
@@ -214,12 +230,12 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     val_pred = self.shape_fit_.predict_proba(val_xb)
                     val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
                 # stop criterion
-                if np.abs(val_loss_best - val_loss) > tol:
-                    val_loss_best = val_loss
-                    no_change = 0
+                if np.abs(val_loss_epoch_best - val_loss) > tol:
+                    val_loss_epoch_best = val_loss
+                    no_epoch_change = 0
                 else:
-                    no_change += 1
-                if no_change >= n_iter_no_change:
+                    no_epoch_change += 1
+                if no_epoch_change >= n_epoch_no_change:
                     break
                 if verbose:
                     print("Inner iter:", inner_iter + 1, "epoch:", epoch + 1, "with validation loss:", np.round(val_loss, 5))
@@ -239,9 +255,25 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
             # ridge update
             self.beta_ = theta_0
-            xb = np.dot(x, self.beta_)
-            self._estimate_shape(xb, y, sample_weight, xmin=np.min(xb), xmax=np.max(xb))
+            tr_xb = np.dot(tr_x, self.beta_)
+            self._estimate_shape(tr_xb, tr_y, sample_weight, xmin=np.min(tr_xb), xmax=np.max(tr_xb))
+            
+            val_xb = np.dot(val_x, self.beta_)
+            if is_regressor(self):
+                val_pred = self.shape_fit_.predict(val_xb)
+                val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
+            elif is_classifier(self):
+                val_pred = self.shape_fit_.predict_proba(val_xb)
+                val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
 
+            if np.abs(val_loss_inner_iter_best - val_loss) > tol:
+                val_loss_inner_iter_best = val_loss
+                no_inner_iter_change = 0
+            else:
+                no_inner_iter_change += 1
+            if no_inner_iter_change >= n_inner_iter_no_change:
+                break
+            
     def decision_function(self, x):
 
         check_is_fitted(self, "beta_")

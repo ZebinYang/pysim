@@ -27,13 +27,14 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, ortho_shrink=1, loss_threshold=0.01, 
-                 reg_lambda=0.1, reg_gamma=10, random_state=0):
+                 reg_lambda=0.1, reg_gamma=10, stein_method="first_order", random_state=0):
 
         self.n_estimators = n_estimators
         self.val_ratio = val_ratio
         self.ortho_shrink = ortho_shrink
         self.loss_threshold = loss_threshold
-    
+        self.stein_method = stein_method
+        
         self.degree = degree
         self.knot_num = knot_num
         self.reg_lambda = reg_lambda
@@ -46,6 +47,9 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         if not isinstance(self.n_estimators, int):
             raise ValueError("n_estimators must be an integer, got %s." % self.n_estimators)
+
+        if self.stein_method not in ["first_order", "second_order", "first_order_thres"]:
+            raise ValueError("method must be an element of [first_order, second_order, first_order_thres], got %s." % self.stein_method)
 
         if self.n_estimators < 0:
             raise ValueError("n_estimators must be >= 0, got" % self.n_estimators)
@@ -364,8 +368,13 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         self.dummy_estimators_ = []
         self.dummy_density_ = {}
         
-        self.tr_idx, self.val_idx = train_test_split(np.arange(n_samples), test_size=self.val_ratio,
-                                      random_state=self.random_state)
+        if is_regressor(self):
+            self.tr_idx, self.val_idx = train_test_split(np.arange(n_samples), test_size=self.val_ratio,
+                                          random_state=self.random_state)
+        elif is_classifier(self):
+            self.tr_idx, self.val_idx = train_test_split(np.arange(n_samples), test_size=self.val_ratio,
+                                          stratify=y, random_state=self.random_state)
+
         self._fit(x, y, sample_weight)
         self._pruning(x, y)
         self.time_cost_ = time.time() - start
@@ -380,8 +389,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
 class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
-    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20,
-                 reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, loss_threshold=0.01, random_state=0):
+    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10,
+                 ortho_shrink=1, loss_threshold=0.01, stein_method="first_order", random_state=0):
 
         super(SimBoostRegressor, self).__init__(n_estimators=n_estimators,
                                    val_ratio=val_ratio,
@@ -389,6 +398,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                                    knot_num=knot_num,
                                    reg_lambda=reg_lambda,
                                    reg_gamma=reg_gamma,
+                                   stein_method=stein_method,
                                    ortho_shrink=ortho_shrink,
                                    loss_threshold=loss_threshold,
                                    random_state=random_state)
@@ -428,7 +438,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                 proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
 
             # fit Sim estimator
-            param_grid = {"method": ["second_order", "first_order"], 
+            param_grid = {"method": self.stein_method, 
                           "reg_lambda": self.reg_lambda_list,
                           "reg_gamma": self.reg_gamma_list}
             grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
@@ -440,7 +450,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                                   ("sim", sim)])
             sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
                        sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
-            # sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z, sample_weight=sample_weight, proj_mat=proj_mat)
+            sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z, sample_weight=sample_weight, proj_mat=proj_mat)
             # update    
             z = z - sim_estimator.predict(x)
             self.sim_estimators_.append(sim_estimator)
@@ -487,8 +497,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     
 class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
-    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20,
-                 reg_lambda=0.1, reg_gamma=10, ortho_shrink=1, loss_threshold=0.01, random_state=0):
+    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, ortho_shrink=1, loss_threshold=0.01, 
+                 reg_lambda=0.1, reg_gamma=10, stein_method="first_order", random_state=0):
 
         super(SimBoostClassifier, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
@@ -496,6 +506,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                                       knot_num=knot_num,
                                       reg_lambda=reg_lambda,
                                       reg_gamma=reg_gamma,
+                                      stein_method=stein_method,
                                       ortho_shrink=ortho_shrink,
                                       loss_threshold=loss_threshold,
                                       random_state=random_state)
@@ -556,7 +567,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                 proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
 
             # fit Sim estimator
-            param_grid = {"method": ["second_order", "first_order"], 
+            param_grid = {"method": self.stein_method, 
                           "reg_lambda": self.reg_lambda_list,
                           "reg_gamma": self.reg_gamma_list}
             grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
@@ -572,7 +583,8 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                         sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
 
             # update
-            # sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z, sample_weight=sample_weight, proj_mat=proj_mat)
+            sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z,
+                        sample_weight=sample_weight, proj_mat=proj_mat, val_ratio=self.val_ratio)
             pred_train += sim_estimator.predict(x[self.tr_idx])
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
             pred_val += sim_estimator.predict(x[self.val_idx])
