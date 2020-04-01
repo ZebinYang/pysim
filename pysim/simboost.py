@@ -48,8 +48,17 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         if not isinstance(self.n_estimators, int):
             raise ValueError("n_estimators must be an integer, got %s." % self.n_estimators)
 
-        if self.stein_method not in ["first_order", "second_order", "first_order_thres"]:
-            raise ValueError("method must be an element of [first_order, second_order, first_order_thres], got %s." % self.stein_method)
+        if isinstance(self.stein_method, list):
+            for val in self.stein_method:
+                if val not in ["first_order", "second_order", "first_order_thres"]:
+                    raise ValueError("method must be an element of [first_order, second_order, first_order_thres], got %s." % 
+                                 self.stein_method)
+            self.stein_method_list = self.stein_method  
+        elif isinstance(self.stein_method, str):
+            if self.stein_method not in ["first_order", "second_order", "first_order_thres"]:
+                raise ValueError("method must be an element of [first_order, second_order, first_order_thres], got %s." % 
+                                 self.stein_method)
+            self.stein_method_list = [self.stein_method]
 
         if self.n_estimators < 0:
             raise ValueError("n_estimators must be >= 0, got" % self.n_estimators)
