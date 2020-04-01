@@ -93,7 +93,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         """Return the estimator importance ratios (the higher, the more important the feature).
         Returns
         -------
-        importance_ratios_ : ndarray of shape (n_estimators,)
+        importance_ratios_ : dict of selected estimators
             The estimator importances.
         """
         importance_ratios_ = {}
@@ -271,7 +271,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 subfig_idx += 1
                 
         for indice, est in enumerate(self.best_estimators_):
-            
+
             if "dummy_lr" in est.named_steps.keys():
 
                 feature_name = list(est.named_steps.keys())[0]
@@ -279,24 +279,28 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 dummy_scores = self.dummy_density_[feature_name]["density"]["scores"]
                 dummy_coef = est["dummy_lr"].coef_
 
-                inner = outer[subfig_idx].subgridspec(1, 2, wspace=0.0, width_ratios=[8, 1])
-                ax1_density = fig.add_subplot(inner[0, 0])
-                ax1_density.bar(np.arange(len(dummy_values)), dummy_scores)
-                ax1_density.set_ylim(0, dummy_scores.max() * 1.2)
-                
+                ax_main = fig.add_subplot(outer[subfig_idx])
+                ax_density = ax_main.twinx()
+                ax_density.bar(np.arange(len(dummy_values)), dummy_scores, width=0.6)
+                ax_density.set_ylim(0, dummy_scores.max() * 1.2)
+                ax_density.set_yticklabels([])
+
                 input_ticks = (np.arange(len(dummy_values)) if len(dummy_values) <= 6 else 
                                   np.linspace(0.1 * len(dummy_coef), len(dummy_coef) * 0.9, 4).astype(int))
                 input_labels = [dummy_values[i] for i in input_ticks]
                 if len("".join(list(map(str, input_labels)))) > 30:
                     input_labels = [str(dummy_values[i])[:4] for i in input_ticks]
 
-                ax1_main = ax1_density.twinx()
-                ax1_main.set_xticks(input_ticks)
-                ax1_main.set_xticklabels(input_labels)
+                ax_main.set_xticks(input_ticks)
+                ax_main.set_xticklabels(input_labels)
+                ax_main.set_ylim(- np.abs(dummy_coef).max() * 1.2, np.abs(dummy_coef).max() * 1.2)
+                ax_main.plot(np.arange(len(dummy_values)), dummy_coef, color="red", marker="o")
+                ax_main.axhline(0, linestyle="dotted", color="black")
+                ax_main.set_title(feature_name +
+                                 " (IR: " + str(np.round(100 * self.importance_ratios_[feature_name]["ir"], 2)) + "%)", fontsize=16)
+                ax_main.set_zorder(ax_density.get_zorder() + 1)
+                ax_main.patch.set_visible(False)
 
-                ax1_main.plot(np.arange(len(dummy_values)), dummy_coef, color="red")
-                ax1_main.set_title(feature_name +
-                             " (IR: " + str(np.round(100 * self.importance_ratios_[feature_name]["ir"], 2)) + "%)", fontsize=16)
                 subfig_idx += 1
         plt.show()
         if max_ids > 0:
