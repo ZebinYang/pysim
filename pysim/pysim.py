@@ -230,11 +230,13 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     val_pred = self.shape_fit_.predict_proba(val_xb)
                     val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
                 # stop criterion
-                if val_loss_epoch_best - val_loss > tol:
-                    val_loss_epoch_best = val_loss
-                    no_epoch_change = 0
-                else:
+                if val_loss > val_loss_epoch_best - tol:
                     no_epoch_change += 1
+                else:
+                    no_epoch_change = 0
+                if val_loss < val_loss_epoch_best:
+                    val_loss_epoch_best = val_loss
+                
                 if no_epoch_change >= n_epoch_no_change:
                     break
                 if verbose:
@@ -266,11 +268,12 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 val_pred = self.shape_fit_.predict_proba(val_xb)
                 val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
 
-            if val_loss_inner_iter_best - val_loss > tol:
-                val_loss_inner_iter_best = val_loss
-                no_inner_iter_change = 0
-            else:
+            if val_loss > val_loss_inner_iter_best - tol:
                 no_inner_iter_change += 1
+            else:
+                no_inner_iter_change = 0
+            if val_loss < val_loss_inner_iter_best:
+                val_loss_inner_iter_best = val_loss
             if no_inner_iter_change >= n_inner_iter_no_change:
                 break
             
