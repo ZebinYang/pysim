@@ -332,6 +332,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 estimator_key = list(self.importance_ratios_)[indice]
                 ytick_label.append("SIM " + str(self.importance_ratios_[estimator_key]["indice"] + 1))
             if "dummy_lr" in est.named_steps.keys():
+                feature_name = list(est.named_steps.keys())[0]
                 ytick_label.append(feature_name)
 
         if is_regressor(self):
@@ -367,22 +368,22 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             if "sim" in est.named_steps.keys():
                 sim = est["sim"]
                 derivative += sim.beta_ * sim.shape_fit_.diff(np.dot(x[:, self.nfeature_index_list_], sim.beta_), 1)
-        plt.bar(np.arange(self.nfeature_num_), derivative.ravel())
-             
-        fig = plt.figure(figsize=(6, round((self.nfeature_num_ + 1) * 0.45)))
-        plt.barh(np.arange(self.nfeature_num_), derivative.ravel()[::-1])
-        plt.yticks(np.arange(self.nfeature_num_), ["X" + str(idx + 1) for idx in range(self.nfeature_num_)][::-1])
-        plt.title("Derivatives", fontsize=12)
 
-        save_path = folder + name
-        if (max_ids > 0) & save_eps:
-            if not os.path.exists(folder):
-                os.makedirs(folder)
-            fig.savefig("%s.eps" % save_path, bbox_inches="tight", dpi=100)
-        if (max_ids > 0) & save_png:
-            if not os.path.exists(folder):
-                os.makedirs(folder)
-            fig.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
+        if self.nfeature_num_ > 0:
+            fig = plt.figure(figsize=(6, round((self.nfeature_num_ + 1) * 0.45)))
+            plt.barh(np.arange(self.nfeature_num_), derivative.ravel()[::-1])
+            plt.yticks(np.arange(self.nfeature_num_), ["X" + str(idx + 1) for idx in range(self.nfeature_num_)][::-1])
+            plt.title("Derivatives", fontsize=12)
+
+            save_path = folder + name
+            if save_eps:
+                if not os.path.exists(folder):
+                    os.makedirs(folder)
+                fig.savefig("%s.eps" % save_path, bbox_inches="tight", dpi=100)
+            if save_png:
+                if not os.path.exists(folder):
+                    os.makedirs(folder)
+                fig.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
 
 
     def _fit_dummy(self, x, y, sample_weight):
