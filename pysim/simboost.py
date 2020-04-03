@@ -363,7 +363,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         self.intercept_ += dummy_estimator_all["lr"].intercept_
 
-    def fit(self, x, y, sample_weight=None, meta_info=None):
+    def fit(self, x, y, sample_weight=None, meta_info=None, inner_update=True):
 
         start = time.time()
         x, y = self._validate_input(x, y)
@@ -384,7 +384,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             self.tr_idx, self.val_idx = train_test_split(np.arange(n_samples), test_size=self.val_ratio,
                                           stratify=y, random_state=self.random_state)
 
-        self._fit(x, y, sample_weight)
+        self._fit(x, y, sample_weight, inner_update)
         self._pruning(x, y)
         self.time_cost_ = time.time() - start
         return self
@@ -417,7 +417,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                          multi_output=True, y_numeric=True)
         return x, y.ravel()
 
-    def _fit(self, x, y, sample_weight=None):
+    def _fit(self, x, y, sample_weight=None, inner_update=True):
    
         n_samples = x.shape[0]
         val_fold = np.ones((n_samples))
@@ -459,7 +459,9 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                                   ("sim", sim)])
             sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
                        sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
-            sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z, sample_weight=sample_weight, proj_mat=proj_mat)
+            if inner_update:
+                sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z,
+                        sample_weight=sample_weight, proj_mat=proj_mat, val_ratio=self.val_ratio)
             # update    
             z = z - sim_estimator.predict(x)
             self.sim_estimators_.append(sim_estimator)
@@ -533,7 +535,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         y = self._label_binarizer.transform(y) * 1.0
         return x, y.ravel()
 
-    def _fit(self, x, y, sample_weight=None):
+    def _fit(self, x, y, sample_weight=None, inner_update=True):
 
         n_samples = x.shape[0]
         val_fold = np.ones((n_samples))
@@ -592,7 +594,8 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                         sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
 
             # update
-            sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z,
+            if inner_update:
+                sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z,
                         sample_weight=sample_weight, proj_mat=proj_mat, val_ratio=self.val_ratio)
             pred_train += sim_estimator.predict(x[self.tr_idx])
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
