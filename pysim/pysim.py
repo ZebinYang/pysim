@@ -246,9 +246,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             theta_0[np.abs(theta_0) < self.reg_lambda * np.max(np.abs(theta_0))] = 0
             if proj_mat is not None:
                 theta_0 = np.dot(proj_mat, theta_0)
-            theta_0 = theta_0 / np.linalg.norm(theta_0)
             
-            if len(theta_0[np.abs(theta_0) > 0]) > 0:
+            if np.linalg.norm(theta_0) > 0:
+                theta_0 = theta_0 / np.linalg.norm(theta_0)
                 if (theta_0[np.abs(theta_0) > 0][0] < 0):
                     theta_0 = - theta_0
 
