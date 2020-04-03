@@ -220,7 +220,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True))
             plt.show()
         
-    def visualize(self, cols_per_row=3, folder="./results/", name="demo", save_png=False, save_eps=False):
+    def visualize(self, cols_per_row=3, folder="./results/", name="global_plot", save_png=False, save_eps=False):
 
         check_is_fitted(self, "best_estimators_")
 
@@ -321,6 +321,69 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 f.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
             if save_eps:
                 f.savefig("%s.eps" % save_path, bbox_inches="tight", dpi=100)
+
+
+    def local_visualize(self, x, y=None, folder="./results/", name="local_plot", save_png=False, save_eps=False):
+
+        ytick_label = ["Intercept"]
+        max_ids = len(self.best_estimators_) + 1
+        for indice, est in enumerate(self.best_estimators_):
+            if "sim" in est.named_steps.keys():
+                estimator_key = list(self.importance_ratios_)[indice]
+                ytick_label.append("SIM " + str(self.importance_ratios_[estimator_key]["indice"] + 1))
+            if "dummy_lr" in est.named_steps.keys():
+                ytick_label.append(feature_name)
+
+        if is_regressor(self):
+            predicted = self.predict(x)
+        elif is_classifier(self):
+            predicted = self.predict_proba(x)
+        
+        fig = plt.figure(figsize=(6, round((max_ids + 1) * 0.45)))
+        plt.barh(np.arange(max_ids), np.hstack([self.intercept_] + [est.predict(x) for est in self.best_estimators_])[::-1])
+        plt.yticks(np.arange(max_ids), ytick_label[::-1])
+
+        if y is not None:
+            title = "Predicted: %0.4f | Actual: %0.4f" % (predicted, y)  
+        else:
+            title = "Predicted: %0.4f"% (predicted)
+        plt.title(title, fontsize=12)
+
+        save_path = folder + name
+        if (max_ids > 0) & save_eps:
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            fig.savefig("%s.eps" % save_path, bbox_inches="tight", dpi=100)
+        if (max_ids > 0) & save_png:
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            fig.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
+
+
+    def local_derivative_visualize(self, x, folder="./results/", name="local_derivative", save_png=False, save_eps=False):
+
+        derivative = 0
+        for est in self.best_estimators_:
+            if "sim" in est.named_steps.keys():
+                sim = est["sim"]
+                derivative += sim.beta_ * sim.shape_fit_.diff(np.dot(x[:, self.nfeature_index_list_], sim.beta_), 1)
+        plt.bar(np.arange(self.nfeature_num_), derivative.ravel())
+             
+        fig = plt.figure(figsize=(6, round((self.nfeature_num_ + 1) * 0.45)))
+        plt.barh(np.arange(self.nfeature_num_), derivative.ravel()[::-1])
+        plt.yticks(np.arange(self.nfeature_num_), ["X" + str(idx + 1) for idx in range(self.nfeature_num_)][::-1])
+        plt.title("Derivatives", fontsize=12)
+
+        save_path = folder + name
+        if (max_ids > 0) & save_eps:
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            fig.savefig("%s.eps" % save_path, bbox_inches="tight", dpi=100)
+        if (max_ids > 0) & save_png:
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            fig.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
+
 
     def _fit_dummy(self, x, y, sample_weight):
 
