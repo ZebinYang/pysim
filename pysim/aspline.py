@@ -71,8 +71,8 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         if self.reg_gamma < 0:
             raise ValueError("reg_gamma must be >= 0, got %s." % self.reg_gamma)
 
-        if self.xmin >= self.xmax:
-            raise ValueError("xmin must be < xmax, got %s and %s." % (self.xmin, self.xmax))
+        if self.xmin > self.xmax:
+            raise ValueError("xmin must be <= xmax, got %s and %s." % (self.xmin, self.xmax))
 
         if self.epsilon <= 0:
             raise ValueError("epsilon must be > 0, got %s." % self.epsilon)
