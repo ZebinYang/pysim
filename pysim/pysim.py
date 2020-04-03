@@ -243,14 +243,11 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     print("Inner iter:", inner_iter + 1, "epoch:", epoch + 1, "with validation loss:", np.round(val_loss, 5))
   
             ## thresholding and normalization
-            theta_0 = np.sign(theta_0) * np.maximum(np.abs(theta_0) - self.reg_lambda * np.max(np.abs(theta_0)), 0)
+            theta_0[np.abs(theta_0) < self.reg_lambda * np.max(np.abs(theta_0))] = 0
             if proj_mat is not None:
                 theta_0 = np.dot(proj_mat, theta_0)
-            if np.linalg.norm(theta_0) > 0:
-                theta_0 = theta_0 / np.linalg.norm(theta_0)
-            else:
-                theta_0 = theta_0
-
+            theta_0 = theta_0 / np.linalg.norm(theta_0)
+            
             if len(theta_0[np.abs(theta_0) > 0]) > 0:
                 if (theta_0[np.abs(theta_0) > 0][0] < 0):
                     theta_0 = - theta_0
