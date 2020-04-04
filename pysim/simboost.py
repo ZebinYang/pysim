@@ -378,7 +378,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         gradient = self.get_gradient(x)
         fig = plt.figure(figsize=(6, round((self.nfeature_num_ + self.cfeature_num_ + 1) * 0.45)))
         plt.barh(np.arange(self.nfeature_num_ + self.cfeature_num_), gradient[::-1])
-        plt.yticks(np.arange(self.nfeature_num_ + self.cfeature_num_)[::-1], self.feature_list_[::-1])
+        plt.yticks(np.arange(self.nfeature_num_ + self.cfeature_num_), self.feature_list_[::-1])
         plt.title("Partial Gradients", fontsize=12)
 
         save_path = folder + name
@@ -399,7 +399,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         fig = plt.figure(figsize=(12, 0.45 * (self.nfeature_num_ + self.cfeature_num_)))
         plt.imshow(gradients, aspect="auto", cmap="hot")
         plt.title("Partial Gradients Summary", fontsize=12)
-        plt.yticks(np.arange(self.nfeature_num_ + self.cfeature_num_)[::-1], self.feature_list_[::-1])
+        plt.yticks(np.arange(self.nfeature_num_ + self.cfeature_num_), self.feature_list_[::-1])
         plt.xlabel("Samples")
         plt.colorbar()
 
