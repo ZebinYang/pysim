@@ -115,7 +115,7 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         basis[np.where(inputs == knot_vector[-1])[0], -1] = 1.0
         return basis
 
-    def diff(self, x, order=2):
+    def diff(self, x, order=1):
         
         # This function evaluates the derivative of the fitted ASpline w.r.t. the inputs, 
         # which is adopted from https://github.com/johntfoster/bspline/blob/master/bspline/bspline.py.
@@ -135,7 +135,13 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
             Bi2 = self._create_basis(inputs, p - 1, t[1:])
             return ((ci1, Bi1, t[:-1], p - 1), (ci2, Bi2, t[1:], p - 1))
 
+        x = x.copy()
         x = check_array(x, accept_sparse=["csr", "csc", "coo"])
+        if order > self.degree: 
+            return np.zeros(x.shape[0], dtype=np.float32)
+
+        x[x < self.xmin] = self.xmin
+        x[x > self.xmax] = self.xmax
         knot_vector = np.array([self.xmin] * (self.degree + 1) + self.selected_knots_ + [self.xmax] * (self.degree + 1))
         terms = [ (1., self._create_basis(x, self.degree, knot_vector), knot_vector, self.degree) ]
         for k in range(order):
