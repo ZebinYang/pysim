@@ -257,7 +257,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 if len(sim.beta_) <= 10:
                     rects = ax2.barh(np.arange(len(sim.beta_)), [beta for beta in sim.beta_.ravel()][::-1])
                     ax2.set_yticks(np.arange(len(sim.beta_)))
-                    ax2.set_yticklabels(["X" + str(idx + 1) for idx in range(len(sim.beta_.ravel()))][::-1])
+                    ax2.set_yticklabels(["X" + str(self.nfeature_index_list_[idx] + 1) for idx in range(len(sim.beta_.ravel()))][::-1])
                     ax2.set_xlim(xlim_min, xlim_max)
                     ax2.set_ylim(-1, len(sim.beta_))
                     ax2.axvline(0, linestyle="dotted", color="black")
@@ -271,12 +271,12 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                     rects = ax2.barh(np.arange(len(active_beta)), [beta for beta in active_beta][::-1])
                     if len (active_beta) > 10:
                         input_ticks = np.linspace(0.1 * len(active_beta), len(active_beta) * 0.9, 4).astype(int)
-                        input_labels = ["X" + str(active_beta_idx[idx] + 1) for idx in input_ticks][::-1] 
+                        input_labels = ["X" + str(self.nfeature_index_list_[active_beta_idx[idx]] + 1) for idx in input_ticks][::-1] 
                         ax2.set_yticks(input_ticks)
                         ax2.set_yticklabels(input_labels)
                     else:
                         ax2.set_yticks(np.arange(len(active_beta)))
-                        ax2.set_yticklabels(["X" + str(idx + 1) for idx in active_beta_idx][::-1])
+                        ax2.set_yticklabels(["X" + str(self.nfeature_index_list_[idx] + 1) for idx in active_beta_idx][::-1])
                     ax2.set_xlim(xlim_min, xlim_max)
                     ax2.set_ylim(-1, len(active_beta_idx))
                     ax2.axvline(0, linestyle="dotted", color="black")
@@ -361,29 +361,58 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             fig.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
 
 
-    def local_derivative_visualize(self, x, folder="./results/", name="local_derivative", save_png=False, save_eps=False):
-
-        derivative = 0
+    def get_gradient(self, x):
+        
+        gradient = np.zeros((self.nfeature_num_ + self.cfeature_num_, 1))
         for est in self.best_estimators_:
             if "sim" in est.named_steps.keys():
                 sim = est["sim"]
-                derivative += sim.beta_ * sim.shape_fit_.diff(np.dot(x[:, self.nfeature_index_list_], sim.beta_), 1)
+                gradient[self.nfeature_index_list_] += sim.beta_ * sim.shape_fit_.diff(np.dot(x[:, self.nfeature_index_list_], sim.beta_), 1)
+            elif "dummy_lr" in est.named_steps.keys():
+                gradient[self.cfeature_index_list_] += (np.sum(est["dummy_lr"].coef_) - est.predict(x)) / (len(est["dummy_lr"].coef_) - 1)
+        return gradient.ravel()
 
-        if self.nfeature_num_ > 0:
-            fig = plt.figure(figsize=(6, round((self.nfeature_num_ + 1) * 0.45)))
-            plt.barh(np.arange(self.nfeature_num_), derivative.ravel()[::-1])
-            plt.yticks(np.arange(self.nfeature_num_), ["X" + str(idx + 1) for idx in range(self.nfeature_num_)][::-1])
-            plt.title("Derivatives", fontsize=12)
 
-            save_path = folder + name
-            if save_eps:
-                if not os.path.exists(folder):
-                    os.makedirs(folder)
-                fig.savefig("%s.eps" % save_path, bbox_inches="tight", dpi=100)
-            if save_png:
-                if not os.path.exists(folder):
-                    os.makedirs(folder)
-                fig.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
+    def local_gradient_visualize(self, x, folder="./results/", name="local_gradient", save_png=False, save_eps=False):
+
+        gradient = self.get_gradient(x)
+        fig = plt.figure(figsize=(6, round((self.nfeature_num_ + self.cfeature_num_ + 1) * 0.45)))
+        plt.barh(np.arange(self.nfeature_num_ + self.cfeature_num_), gradient[::-1])
+        plt.yticks(np.arange(self.nfeature_num_ + self.cfeature_num_),
+               ["X" + str(idx + 1) for idx in range(self.nfeature_num_ + self.cfeature_num_)][::-1])
+        plt.title("Partial Gradients", fontsize=12)
+
+        save_path = folder + name
+        if save_eps:
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            fig.savefig("%s.eps" % save_path, bbox_inches="tight", dpi=100)
+        if save_png:
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            fig.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
+
+
+    def local_gradient_summary(self, x, folder="./results/", name="local_gradient_summary", save_png=False, save_eps=False):
+
+        n_samples = x.shape[0]
+        gradients = np.vstack([self.get_gradient(x[[i]]).ravel() for i in range(n_samples)]).T
+        fig = plt.figure(figsize=(12, 6))
+        plt.imshow(gradients, aspect="auto", cmap="rainbow")
+        plt.title("Partial Gradients Summary", fontsize=12)
+        plt.yticks(np.arange(self.nfeature_num_ + self.cfeature_num_)[::-1], self.feature_list_[::-1])
+        plt.xlabel("Samples")
+        plt.colorbar()
+
+        save_path = folder + name
+        if save_eps:
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            fig.savefig("%s.eps" % save_path, bbox_inches="tight", dpi=100)
+        if save_png:
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            fig.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
 
 
     def _fit_dummy(self, x, y, sample_weight):
