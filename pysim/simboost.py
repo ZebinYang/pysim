@@ -440,7 +440,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             feature_name = self.cfeature_list_[indice]
             feature_indice = self.cfeature_index_list_[indice]
             dummy_num = self.dummy_values_[feature_name]
-            dummy_coef = np.hstack([0.0, dummy_estimator_all["lr"].coef_[idx:(idx + len(dummy_num) - 1)].ravel()])
+            dummy_coef = np.hstack([0.0, dummy_estimator_all["lr"].coef_.ravel()[idx:(idx + len(dummy_num) - 1)]])
 
             dummy_estimator = Pipeline(steps=[(feature_name, FunctionTransformer(lambda data, idx: data[:, [idx]],
                                                 validate=False, kw_args={"idx": feature_indice})),
@@ -515,15 +515,16 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         val_fold = np.ones((n_samples))
         val_fold[self.tr_idx] = -1
         
+        # Initialize the intercept
         z = y.copy()
+        self.intercept_ = np.mean(z)
+        z = z - self.intercept_
+
         # Fit categorical variables
         if self.cfeature_num_ > 0:
             self._fit_dummy(x[self.tr_idx], z[self.tr_idx], sample_weight[self.tr_idx])
-            z = z - np.sum([est.predict(x) for est in self.dummy_estimators_], axis=0) - self.intercept_
-        else:
-            self.intercept_ = np.mean(y)
-            z = z - self.intercept_
-
+            z = y - np.sum([est.predict(x) for est in self.dummy_estimators_], axis=0) - self.intercept_
+        
         # Fit Sim Boosting for numerical variables
         if self.nfeature_num_ == 0:
             return 
@@ -633,18 +634,29 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         val_fold = np.ones((n_samples))
         val_fold[self.tr_idx] = -1
         
-        z = y.copy()
+        # Initialize the intercept
+        z = y.copy() * 4 - 2
+        self.intercept_ = np.mean(z)
+        pred_train = self.intercept_ * np.ones(len(self.tr_idx))
+        pred_val = self.intercept_ * np.ones(len(self.val_idx))
+        proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
+        proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
+
+        sample_weight[self.tr_idx] = proba_train * (1 - proba_train)
+        sample_weight[self.tr_idx] /= np.sum(sample_weight[self.tr_idx])
+        sample_weight[self.tr_idx] = np.maximum(sample_weight[self.tr_idx], 2 * np.finfo(np.float64).eps)
+
+        with np.errstate(divide="ignore", over="ignore"):
+            z = np.where(y.ravel(), 1. / np.hstack([proba_train, proba_val]),
+                            -1. / (1. - np.hstack([proba_train, proba_val]))) 
+            z = np.clip(z, a_min=-8, a_max=8)
+
+        # Fit categorical variables
         if self.cfeature_num_ > 0:
             self._fit_dummy(x[self.tr_idx], z[self.tr_idx], sample_weight[self.tr_idx])
             pred_train = np.sum([est.predict(x[self.tr_idx]) for est in self.dummy_estimators_], axis=0) + self.intercept_
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
             pred_val = np.sum([est.predict(x[self.val_idx]) for est in self.dummy_estimators_], axis=0) + self.intercept_
-            proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
-        else:
-            self.intercept_ = np.mean(y)
-            pred_train = self.intercept_ * np.ones(len(self.tr_idx))
-            pred_val = self.intercept_ * np.ones(len(self.val_idx))
-            proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
             proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
 
         # Fit Sim Boosting for numerical variables
@@ -715,7 +727,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             if item["type"] == "sim":
                 est = self.sim_estimators_[item["indice"]]
-            elif item["type"] == "dummy":
+            elif item["type"] == "dummy_lr":
                 est = self.dummy_estimators_[item["indice"]]
 
             self.estimators_.append(est)
