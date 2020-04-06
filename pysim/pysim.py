@@ -79,9 +79,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         self.inv_cov = np.linalg.pinv(self.cov)
         s1 = np.dot(self.inv_cov, (x - self.mu).T).T
         zbar = np.average(y.reshape(-1, 1) * s1, axis=0, weights=sample_weight)
-        zbar[np.abs(zbar) < self.reg_lambda * np.max(np.abs(zbar))] = 0
         if proj_mat is not None:
             zbar = np.dot(proj_mat, zbar)
+        zbar[np.abs(zbar) < self.reg_lambda * np.max(np.abs(zbar))] = 0
         if np.linalg.norm(zbar) > 0:
             beta = zbar / np.linalg.norm(zbar)
         else:
@@ -152,7 +152,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         return self
     
     def fit_inner_update(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, max_inner_iter=10,
-                  n_inner_iter_no_change=1, max_epoches=100, n_epoch_no_change=5, batch_size=100,
+                  n_inner_iter_no_change=5, max_epoches=100, n_epoch_no_change=5, batch_size=100,
                   learning_rate=1e-3, beta_1=0.9, beta_2=0.999, tol=0.0001, verbose=False):
         
         x, y = self._validate_input(x, y)
@@ -216,8 +216,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     m_t = beta_1 * m_t + (1 - beta_1) * g_t
                     v_t = beta_2 * v_t + (1 - beta_2) * (g_t * g_t)
                     # calculates the bias-corrected estimates
-                    m_cap = m_t / (1 - (beta_1 ** (num_updates + 1)))  
-                    v_cap = v_t / (1 - (beta_2 ** (num_updates + 1)))
+                    m_cap = m_t / (1 - (beta_1 ** (num_updates)))  
+                    v_cap = v_t / (1 - (beta_2 ** (num_updates)))
                     # updates the parameters
                     theta_0 = theta_0 - (learning_rate * m_cap) / (np.sqrt(v_cap) + 1e-8)
 
@@ -243,10 +243,10 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     print("Inner iter:", inner_iter + 1, "epoch:", epoch + 1, "with validation loss:", np.round(val_loss, 5))
   
             ## thresholding and normalization
-            theta_0[np.abs(theta_0) < self.reg_lambda * np.max(np.abs(theta_0))] = 0
             if proj_mat is not None:
                 theta_0 = np.dot(proj_mat, theta_0)
-            
+
+            theta_0[np.abs(theta_0) < self.reg_lambda * np.max(np.abs(theta_0))] = 0
             if np.linalg.norm(theta_0) > 0:
                 theta_0 = theta_0 / np.linalg.norm(theta_0)
                 if (theta_0[np.abs(theta_0) > 0][0] < 0):
