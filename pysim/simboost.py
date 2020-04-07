@@ -361,7 +361,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             fig.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
 
 
-    def get_gradient(self, x):
+    def evaluate_feature_sensitivity(self, x):
         
         gradient = np.zeros((self.nfeature_num_ + self.cfeature_num_, 1))
         for est in self.best_estimators_:
@@ -369,17 +369,18 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 sim = est["sim"]
                 gradient[self.nfeature_index_list_] += sim.beta_ * sim.shape_fit_.diff(np.dot(x[:, self.nfeature_index_list_], sim.beta_), 1)
             elif "dummy_lr" in est.named_steps.keys():
-                gradient[self.cfeature_index_list_] += (np.sum(est["dummy_lr"].coef_) - est.predict(x)) / (len(est["dummy_lr"].coef_) - 1)
+                gradient[self.cfeature_index_list_] += (np.sum(est["dummy_lr"].coef_) - est.predict(x)) \
+                                            / (len(est["dummy_lr"].coef_) - 1) - est.predict(x)
         return gradient.ravel()
 
 
-    def local_gradient_visualize(self, x, folder="./results/", name="local_gradient", save_png=False, save_eps=False):
+    def feature_sensitivity(self, x, folder="./results/", name="feature_sensitivity", save_png=False, save_eps=False):
 
-        gradient = self.get_gradient(x)
+        fs = self.evaluate_feature_sensitivity(x)
         fig = plt.figure(figsize=(6, round((self.nfeature_num_ + self.cfeature_num_ + 1) * 0.45)))
-        plt.barh(np.arange(self.nfeature_num_ + self.cfeature_num_), gradient[::-1])
+        plt.barh(np.arange(self.nfeature_num_ + self.cfeature_num_), fs[::-1])
         plt.yticks(np.arange(self.nfeature_num_ + self.cfeature_num_), self.feature_list_[::-1])
-        plt.title("Partial Gradients", fontsize=12)
+        plt.title("Feature Sensity", fontsize=12)
 
         save_path = folder + name
         if save_eps:
@@ -392,13 +393,13 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             fig.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
 
 
-    def local_gradient_summary(self, x, folder="./results/", name="local_gradient_summary", save_png=False, save_eps=False):
+    def feature_sensitivity_summary(self, x, folder="./results/", name="feature_sensitivity_summary", save_png=False, save_eps=False):
 
         n_samples = x.shape[0]
-        gradients = np.vstack([self.get_gradient(x[[i]]).ravel() for i in range(n_samples)]).T
+        fs = np.vstack([self.evaluate_feature_sensitivity(x[[i]]).ravel() for i in range(n_samples)]).T
         fig = plt.figure(figsize=(12, 0.45 * (self.nfeature_num_ + self.cfeature_num_)))
-        plt.imshow(gradients, aspect="auto", cmap="hot")
-        plt.title("Partial Gradients Summary", fontsize=12)
+        plt.imshow(fs, aspect="auto", cmap="hot")
+        plt.title("Feature Sensity Summary", fontsize=12)
         plt.yticks(np.arange(self.nfeature_num_ + self.cfeature_num_)[::-1], self.feature_list_[::-1])
         plt.xlabel("Samples")
         plt.colorbar()
