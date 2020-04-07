@@ -380,7 +380,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         fig = plt.figure(figsize=(6, round((self.nfeature_num_ + self.cfeature_num_ + 1) * 0.45)))
         plt.barh(np.arange(self.nfeature_num_ + self.cfeature_num_), fs[::-1])
         plt.yticks(np.arange(self.nfeature_num_ + self.cfeature_num_), self.feature_list_[::-1])
-        plt.title("Feature Sensity", fontsize=12)
+        plt.title("Feature Sensitivity", fontsize=12)
 
         save_path = folder + name
         if save_eps:
@@ -399,7 +399,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         fs = np.vstack([self.evaluate_feature_sensitivity(x[[i]]).ravel() for i in range(n_samples)]).T
         fig = plt.figure(figsize=(12, 0.45 * (self.nfeature_num_ + self.cfeature_num_)))
         plt.imshow(fs, aspect="auto", cmap="hot")
-        plt.title("Feature Sensity Summary", fontsize=12)
+        plt.title("Feature Sensitivity Summary", fontsize=12)
         plt.yticks(np.arange(self.nfeature_num_ + self.cfeature_num_)[::-1], self.feature_list_[::-1])
         plt.xlabel("Samples")
         plt.colorbar()
