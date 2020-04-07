@@ -363,15 +363,15 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     def evaluate_feature_sensitivity(self, x):
         
-        gradient = np.zeros((self.nfeature_num_ + self.cfeature_num_, 1))
+        fs = np.zeros((self.nfeature_num_ + self.cfeature_num_, 1))
         for est in self.best_estimators_:
             if "sim" in est.named_steps.keys():
                 sim = est["sim"]
-                gradient[self.nfeature_index_list_] += sim.beta_ * sim.shape_fit_.diff(np.dot(x[:, self.nfeature_index_list_], sim.beta_), 1)
+                fs[self.nfeature_index_list_] += sim.beta_ * sim.shape_fit_.diff(np.dot(x[:, self.nfeature_index_list_], sim.beta_), 1)
             elif "dummy_lr" in est.named_steps.keys():
-                gradient[self.cfeature_index_list_] += (np.sum(est["dummy_lr"].coef_) - est.predict(x)) \
+                fs[est[0].kw_args["idx"]] += (np.sum(est["dummy_lr"].coef_) - est.predict(x)) \
                                             / (len(est["dummy_lr"].coef_) - 1) - est.predict(x)
-        return gradient.ravel()
+        return fs.ravel()
 
 
     def feature_sensitivity(self, x, folder="./results/", name="feature_sensitivity", save_png=False, save_eps=False):
@@ -593,7 +593,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             best_idx = np.argmin(self.val_mse_)
         self.best_estimators_ = self.estimators_[:best_idx]
         self.component_importance_ = dict(sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1][:best_idx])
-    
+        self.activate_cfeature_index_ = [est[0].kw_args["idx"] for est in self.best_estimators_ if "dummy_lr" in est.named_steps.keys()]
+
     def predict(self, x):
 
         pred = self.decision_function(x)
@@ -743,6 +744,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
             best_idx = np.argmax(self.val_auc_)
         self.best_estimators_ = self.estimators_[:best_idx]
         self.component_importance_ = dict(sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1][:best_idx])
+        self.activate_cfeature_index_ = [est[0].kw_args["idx"] for est in self.best_estimators_ if "dummy_lr" in est.named_steps.keys()]
 
     def predict_proba(self, x):
 
