@@ -412,7 +412,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             ax1_density.set_yticklabels([])
             fig.add_subplot(ax1_density)
 
-            ax.set_title(feature_name, fontsize=16)
+            ax1_main.set_title(feature_name, fontsize=16)
             fig.add_subplot(ax)
         plt.show()
         
