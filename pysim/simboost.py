@@ -381,50 +381,51 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     def ale_visualize(self, x, cols_per_row=3, folder="./results/", name="ale_visualize", save_png=False, save_eps=False):
 
-        max_ids = self.nfeature_num_ + self.cfeature_num_
-        fig = plt.figure(figsize=(8 * cols_per_row, 4.6 * int(np.ceil(max_ids / cols_per_row))))
-        outer = gridspec.GridSpec(int(np.ceil(max_ids / cols_per_row)), cols_per_row, wspace=0.15, hspace=0.25)
-        for idx, feature_indice in enumerate(self.nfeature_index_list_):
+        if self.nfeature_num_ > 0:
 
-            feature_name = self.feature_list_[feature_indice]
+            max_ids = self.nfeature_num_
+            fig = plt.figure(figsize=(8 * cols_per_row, 4.6 * int(np.ceil(max_ids / cols_per_row))))
+            outer = gridspec.GridSpec(int(np.ceil(max_ids / cols_per_row)), cols_per_row, wspace=0.15, hspace=0.25)
+            for idx, feature_indice in enumerate(self.nfeature_index_list_):
 
-            ale_ = []
-            xgrid = np.linspace(0, 1, 101)
-            for i in range(len(xgrid) - 1):
-                samples = x[np.where((x[:, [feature_indice]] >= xgrid[i]) & (x[:, [feature_indice]] < xgrid[i + 1]))[0], :]
-                if len(samples) > 0:
-                    gradient = self.feature_gradient(samples)[:, feature_indice]
-                    ale_.append(gradient.mean())
-                else:
-                    ale_.append(0)
-            ale = np.cumsum(ale_)
+                feature_name = self.feature_list_[feature_indice]
 
-            inner = outer[idx].subgridspec(2, 1, wspace=0.15, height_ratios=[6, 1])
-            ax1_main = fig.add_subplot(inner[0, 0])
-            ax1_main.plot([(xgrid[i] + xgrid[i + 1]) / 2 for i in range(len(xgrid) - 1)], ale)
-            fig.add_subplot(ax1_main)
+                ale_ = []
+                xgrid = np.linspace(0, 1, 101)
+                for i in range(len(xgrid) - 1):
+                    samples = x[np.where((x[:, [feature_indice]] >= xgrid[i]) & (x[:, [feature_indice]] < xgrid[i + 1]))[0], :]
+                    if len(samples) > 0:
+                        gradient = self.feature_gradient(samples)[:, feature_indice]
+                        ale_.append(gradient.mean())
+                    else:
+                        ale_.append(0)
+                ale = np.cumsum(ale_)
 
-            ax1_density = fig.add_subplot(inner[1, 0])
-            density_, bins_ = np.histogram(x[:, [feature_indice]], bins=10, density=True)
-            xint = ((np.array(bins_[1:]) + np.array(bins_[:-1])) / 2).reshape([-1, 1]).reshape([-1])
-            ax1_density.bar(xint, density_, width=xint[1] - xint[0])
-            ax1_main.get_shared_x_axes().join(ax1_main, ax1_density)
-            ax1_density.set_yticklabels([])
-            fig.add_subplot(ax1_density)
+                inner = outer[idx].subgridspec(2, 1, wspace=0.15, height_ratios=[6, 1])
+                ax1_main = fig.add_subplot(inner[0, 0])
+                ax1_main.plot([(xgrid[i] + xgrid[i + 1]) / 2 for i in range(len(xgrid) - 1)], ale)
+                ax1_main.set_title(feature_name, fontsize=16)
+                fig.add_subplot(ax1_main)
 
-            ax1_main.set_title(feature_name, fontsize=16)
-            fig.add_subplot(ax)
-        plt.show()
-        
-        save_path = folder + name
-        if save_eps:
-            if not os.path.exists(folder):
-                os.makedirs(folder)
-            fig.savefig("%s.eps" % save_path, bbox_inches="tight", dpi=100)
-        if save_png:
-            if not os.path.exists(folder):
-                os.makedirs(folder)
-            fig.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
+                ax1_density = fig.add_subplot(inner[1, 0])
+                density_, bins_ = np.histogram(x[:, [feature_indice]], bins=10, density=True)
+                xint = ((np.array(bins_[1:]) + np.array(bins_[:-1])) / 2).reshape([-1, 1]).reshape([-1])
+                ax1_density.bar(xint, density_, width=xint[1] - xint[0])
+                ax1_main.get_shared_x_axes().join(ax1_main, ax1_density)
+                ax1_density.set_yticklabels([])
+                fig.add_subplot(ax1_density)
+
+            plt.show()
+
+            save_path = folder + name
+            if save_eps:
+                if not os.path.exists(folder):
+                    os.makedirs(folder)
+                fig.savefig("%s.eps" % save_path, bbox_inches="tight", dpi=100)
+            if save_png:
+                if not os.path.exists(folder):
+                    os.makedirs(folder)
+                fig.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
 
 
     def ice_visualize(self, x, cols_per_row=3, folder="./results/", name="ice_visualize", save_png=False, save_eps=False):
