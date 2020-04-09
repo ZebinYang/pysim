@@ -397,9 +397,9 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                     samples = x[np.where((x[:, [feature_indice]] >= xgrid[i]) & (x[:, [feature_indice]] < xgrid[i + 1]))[0], :]
                     if len(samples) > 0:
                         gradient = self.feature_gradient(samples)[:, feature_indice]
-                        ale.append(gradient.mean())
+                        ale_.append(gradient.mean())
                     else:
-                        ale.append(0)
+                        ale_.append(0)
                 ale = np.cumsum(ale_)
                 ax.plot([(xgrid[i] + xgrid[i + 1]) / 2 for i in range(len(xgrid) - 1)], ale)
             ax.set_title(feature_name, fontsize=16)
