@@ -299,7 +299,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 ax_density.set_yticklabels([])
 
                 input_ticks = (np.arange(len(dummy_values)) if len(dummy_values) <= 6 else 
-                                  np.linspace(0.1 * len(dummy_coef), len(dummy_coef) * 0.9, 4).astype(int))
+                                  np.linspace(0.1 * len(dummy_values), len(dummy_values) * 0.9, 4).astype(int))
                 input_labels = [dummy_values[i] for i in input_ticks]
                 if len("".join(list(map(str, input_labels)))) > 30:
                     input_labels = [str(dummy_values[i])[:4] for i in input_ticks]
@@ -361,27 +361,50 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             fig.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
 
 
-    def evaluate_feature_sensitivity(self, x):
+    def feature_gradient(self, x):
         
-        fs = np.zeros((self.nfeature_num_ + self.cfeature_num_, 1))
+        n_samples = x.shape[0]
+        gradient = np.zeros((n_samples, self.nfeature_num_ + self.cfeature_num_))
         for est in self.best_estimators_:
             if "sim" in est.named_steps.keys():
                 sim = est["sim"]
-                fs[self.nfeature_index_list_] += sim.beta_ * sim.shape_fit_.diff(np.dot(x[:, self.nfeature_index_list_], sim.beta_), 1)
+                beta = sim.beta_
+                shape_gradident = sim.shape_fit_.diff(np.dot(x[:, self.nfeature_index_list_], sim.beta_), 1)
+                gradient[:, self.nfeature_index_list_] += (beta * shape_gradident).T
             elif "dummy_lr" in est.named_steps.keys():
-                fs[est[0].kw_args["idx"]] += (np.sum(est["dummy_lr"].coef_) - est.predict(x)) \
+                # the gradient for categorical features does not exist,
+                # we instead calculate the average difference between the current category and all the other categories.
+                gradient[:, est[0].kw_args["idx"]] += (np.sum(est["dummy_lr"].coef_) - est.predict(x)) \
                                             / (len(est["dummy_lr"].coef_) - 1) - est.predict(x)
-        return fs.ravel()
+        return gradient
 
 
-    def feature_sensitivity(self, x, folder="./results/", name="feature_sensitivity", save_png=False, save_eps=False):
+    def ale_visualize(self, x, folder="./results/", name="ale_visualize", save_png=False, save_eps=False):
 
-        fs = self.evaluate_feature_sensitivity(x)
-        fig = plt.figure(figsize=(6, round((self.nfeature_num_ + self.cfeature_num_ + 1) * 0.45)))
-        plt.barh(np.arange(self.nfeature_num_ + self.cfeature_num_), fs[::-1])
-        plt.yticks(np.arange(self.nfeature_num_ + self.cfeature_num_), self.feature_list_[::-1])
-        plt.title("Feature Sensitivity", fontsize=12)
+        max_ids = self.nfeature_num_ + self.cfeature_num_
+        fig = plt.figure(figsize=(8 * cols_per_row, 4.6 * int(np.ceil(max_ids / cols_per_row))))
+        outer = gridspec.GridSpec(int(np.ceil(max_ids / cols_per_row)), cols_per_row, wspace=0.15, hspace=0.25)
+        for feature_indice in range(self.cfeature_num_ + self.nfeature_num_):
 
+            feature_name = self.feature_list_[feature_indice]
+            ax = fig.add_subplot(outer[feature_indice])
+            ax.scatter(x[:, feature_indice], self.predict(x), color="red", s=50, zorder=10)
+            if feature_indice in self.nfeature_index_list_:
+
+                ale_ = []
+                xgrid = np.linspace(-1, 1, 101)
+                for i in range(len(xgrid) - 1):
+                    samples = x[np.where((x[:, [feature_indice]] >= xgrid[i]) & (x[:, [feature_indice]] < xgrid[i + 1]))[0], :]
+                    if len(samples) > 0:
+                        gradient = self.feature_gradient(samples)[:, feature_indice]
+                        ale.append(gradient.mean())
+                    else:
+                        ale.append(0)
+                ale = np.cumsum(ale_)
+                ax.plot([(xgrid[i] + xgrid[i + 1]) / 2 for i in range(len(xgrid) - 1)], ale)
+            ax.set_title(feature_name, fontsize=16)
+            fig.add_subplot(ax)
+        plt.show()
         save_path = folder + name
         if save_eps:
             if not os.path.exists(folder):
@@ -393,17 +416,44 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             fig.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
 
 
-    def feature_sensitivity_summary(self, x, folder="./results/", name="feature_sensitivity_summary", save_png=False, save_eps=False):
+    def ice_visualize(self, x, cols_per_row=3, folder="./results/", name="ice_visualize", save_png=False, save_eps=False):
 
-        n_samples = x.shape[0]
-        fs = np.vstack([self.evaluate_feature_sensitivity(x[[i]]).ravel() for i in range(n_samples)]).T
-        fig = plt.figure(figsize=(12, 0.45 * (self.nfeature_num_ + self.cfeature_num_)))
-        plt.imshow(fs, aspect="auto", cmap="hot")
-        plt.title("Feature Sensitivity Summary", fontsize=12)
-        plt.yticks(np.arange(self.nfeature_num_ + self.cfeature_num_)[::-1], self.feature_list_[::-1])
-        plt.xlabel("Samples")
-        plt.colorbar()
+        max_ids = self.nfeature_num_ + self.cfeature_num_
+        fig = plt.figure(figsize=(8 * cols_per_row, 4.6 * int(np.ceil(max_ids / cols_per_row))))
+        outer = gridspec.GridSpec(int(np.ceil(max_ids / cols_per_row)), cols_per_row, wspace=0.15, hspace=0.25)
+        for feature_indice in range(self.cfeature_num_ + self.nfeature_num_):
 
+            feature_name = self.feature_list_[feature_indice]
+            ax = fig.add_subplot(outer[feature_indice])
+            ax.scatter(x[:, feature_indice], self.predict(x), color="red", s=50, zorder=10)
+            if feature_indice in self.nfeature_index_list_:
+                
+                xx = np.tile(x, (100, 1))
+                xgrid = np.linspace(-1, 1, 100)
+                xx[:, [feature_indice]] = xgrid.reshape(-1, 1)
+                ygrid = self.predict(xx)
+                ax.plot(xgrid, ygrid)
+                
+            elif feature_indice in self.cfeature_index_list_:
+
+                dummy_values = self.dummy_values_[feature_name]
+                xgrid = np.arange(len(dummy_values))
+                xx = np.tile(x, (len(dummy_values), 1))
+                xx[:, [feature_indice]] = xgrid.reshape(-1, 1)
+                ygrid = self.predict(xx)
+                ax.bar(xgrid, ygrid)
+                input_ticks = (np.arange(len(dummy_values)) if len(dummy_values) <= 6 else 
+                                  np.linspace(0.1 * len(dummy_values), len(dummy_values) * 0.9, 4).astype(int))
+                input_labels = [dummy_values[i] for i in input_ticks]
+                if len("".join(list(map(str, input_labels)))) > 30:
+                    input_labels = [str(dummy_values[i])[:4] for i in input_ticks]
+
+                ax.set_xticks(input_ticks)
+                ax.set_xticklabels(input_labels)
+                ax.set_ylim(0, np.abs(ygrid).max() * 1.2)
+            ax.set_title(feature_name, fontsize=16)
+            fig.add_subplot(ax)
+        plt.show()
         save_path = folder + name
         if save_eps:
             if not os.path.exists(folder):
