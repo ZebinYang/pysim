@@ -387,12 +387,10 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         for feature_indice in range(self.cfeature_num_ + self.nfeature_num_):
 
             feature_name = self.feature_list_[feature_indice]
-            ax = fig.add_subplot(outer[feature_indice])
-            ax.scatter(x[:, feature_indice], self.predict(x), color="red", s=50, zorder=10)
             if feature_indice in self.nfeature_index_list_:
 
                 ale_ = []
-                xgrid = np.linspace(-1, 1, 101)
+                xgrid = np.linspace(0, 1, 101)
                 for i in range(len(xgrid) - 1):
                     samples = x[np.where((x[:, [feature_indice]] >= xgrid[i]) & (x[:, [feature_indice]] < xgrid[i + 1]))[0], :]
                     if len(samples) > 0:
@@ -401,10 +399,52 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                     else:
                         ale_.append(0)
                 ale = np.cumsum(ale_)
-                ax.plot([(xgrid[i] + xgrid[i + 1]) / 2 for i in range(len(xgrid) - 1)], ale)
+                
+                inner = outer[feature_indice].subgridspec(2, 1, wspace=0.15, height_ratios=[6, 1])
+                ax1_main = fig.add_subplot(inner[0, 0])
+                ax1_main.plot([(xgrid[i] + xgrid[i + 1]) / 2 for i in range(len(xgrid) - 1)], ale)
+                fig.add_subplot(ax1_main)
+
+                ax1_density = fig.add_subplot(inner[1, 0])
+                density_, bins_ = np.histogram(x[:, [feature_indice]], bins=10, density=True)
+                xint = ((np.array(bins_[1:]) + np.array(bins_[:-1])) / 2).reshape([-1, 1]).reshape([-1])
+                ax1_density.bar(xint, density_, width=xint[1] - xint[0])
+                ax1_main.get_shared_x_axes().join(ax1_main, ax1_density)
+                ax1_density.set_yticklabels([])
+                fig.add_subplot(ax1_density)
+                
+            elif feature_indice in self.cfeature_index_list_:
+                
+                dummy_values = self.dummy_density_[feature_name]["density"]["values"]
+                dummy_scores = self.dummy_density_[feature_name]["density"]["scores"]
+                dummy_coef = est["dummy_lr"].coef_
+
+                ax_main = fig.add_subplot(outer[subfig_idx])
+                ax_density = ax_main.twinx()
+                ax_density.bar(np.arange(len(dummy_values)), dummy_scores, width=0.6)
+                ax_density.set_ylim(0, dummy_scores.max() * 1.2)
+                ax_density.set_yticklabels([])
+
+                input_ticks = (np.arange(len(dummy_values)) if len(dummy_values) <= 6 else 
+                                  np.linspace(0.1 * len(dummy_values), len(dummy_values) * 0.9, 4).astype(int))
+                input_labels = [dummy_values[i] for i in input_ticks]
+                if len("".join(list(map(str, input_labels)))) > 30:
+                    input_labels = [str(dummy_values[i])[:4] for i in input_ticks]
+
+                ax_main.set_xticks(input_ticks)
+                ax_main.set_xticklabels(input_labels)
+                ax_main.set_ylim(- np.abs(dummy_coef).max() * 1.2, np.abs(dummy_coef).max() * 1.2)
+                ax_main.plot(np.arange(len(dummy_values)), dummy_coef, color="red", marker="o")
+                ax_main.axhline(0, linestyle="dotted", color="black")
+                ax_main.set_title(feature_name +
+                                 " (IR: " + str(np.round(100 * self.importance_ratios_[feature_name]["ir"], 2)) + "%)", fontsize=16)
+                ax_main.set_zorder(ax_density.get_zorder() + 1)
+                ax_main.patch.set_visible(False)
+
             ax.set_title(feature_name, fontsize=16)
             fig.add_subplot(ax)
         plt.show()
+        
         save_path = folder + name
         if save_eps:
             if not os.path.exists(folder):
@@ -429,7 +469,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             if feature_indice in self.nfeature_index_list_:
                 
                 xx = np.tile(x, (100, 1))
-                xgrid = np.linspace(-1, 1, 100)
+                xgrid = np.linspace(0, 1, 100)
                 xx[:, [feature_indice]] = xgrid.reshape(-1, 1)
                 ygrid = self.predict(xx)
                 ax.plot(xgrid, ygrid)
