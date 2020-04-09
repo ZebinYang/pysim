@@ -379,7 +379,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         return gradient
 
 
-    def ale_visualize(self, x, folder="./results/", name="ale_visualize", save_png=False, save_eps=False):
+    def ale_visualize(self, x, cols_per_row=3, folder="./results/", name="ale_visualize", save_png=False, save_eps=False):
 
         max_ids = self.nfeature_num_ + self.cfeature_num_
         fig = plt.figure(figsize=(8 * cols_per_row, 4.6 * int(np.ceil(max_ids / cols_per_row))))
