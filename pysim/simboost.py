@@ -384,7 +384,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         max_ids = self.nfeature_num_ + self.cfeature_num_
         fig = plt.figure(figsize=(8 * cols_per_row, 4.6 * int(np.ceil(max_ids / cols_per_row))))
         outer = gridspec.GridSpec(int(np.ceil(max_ids / cols_per_row)), cols_per_row, wspace=0.15, hspace=0.25)
-        for idx, feature_indice in enumerate(self.nfeature_num_):
+        for idx, feature_indice in enumerate(self.nfeature_list_):
 
             feature_name = self.feature_list_[feature_indice]
 
