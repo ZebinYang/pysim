@@ -47,7 +47,7 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         diss_operator.reverse()
         D = np.zeros((knot_num, knot_num + order + 1), dtype=np.float32)
         for i in range(knot_num):
-            D[i,i:(i+order+2)] = diss_operator
+            D[i,i:(i + order + 2)] = diss_operator
         return D
 
     def _estimate_density(self, x):
@@ -226,15 +226,26 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
         update_w = np.ones([self.knot_num, 1], dtype=np.float32) 
         BWB = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), init_basis, axes=([0], [0]))
         BWY = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), y, axes=([0], [0]))
+        
+        if self.reg_gamma == 0:
+            try:
+                U = cholesky(BWB)
+                M = scipy.linalg.lapack.clapack.dtrtri(U)[0]
+                self.coef_ = np.dot(np.dot(M, M.T.conj()), BWY)
+            except:
+                self.coef_ = np.dot(np.linalg.pinv(BWB, rcond=1e-5), BWY)
+            self.selected_knots_ = knots
+            self.selected_knot_vector_ = knot_vector
+            return self
+        
         for i in range(self.maxiter):
             DwD = np.tensordot(D * update_w.reshape([-1, 1]), D, axes=([0], [0]))
             try:
                 U = cholesky(BWB + self.reg_gamma * DwD)
                 M = scipy.linalg.lapack.clapack.dtrtri(U)[0]
-                update_a_temp = np.dot(np.dot(M, M.T.conj()), BWY)
+                update_a = np.dot(np.dot(M, M.T.conj()), BWY)
             except:
-                update_a_temp = np.dot(np.linalg.pinv(BWB + self.reg_gamma * DwD, rcond=1e-5), BWY)
-            update_a = update_a_temp
+                update_a = np.dot(np.linalg.pinv(BWB + self.reg_gamma * DwD, rcond=1e-5), BWY)
             update_w = 1 / (np.dot(D, update_a) ** 2 + self.epsilon ** 2)
 
         self.selected_knots_ = list(np.array(knots)[np.reshape(update_w * np.dot(D, update_a) ** 2 > self.threshold, [-1])])
@@ -313,6 +324,33 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
         tempy = y.copy().astype(np.float32)
         tempy[tempy==0] = 0.01
         tempy[tempy==1] = 0.99
+
+        if self.reg_gamma == 0:
+            best_loss_irls = np.inf
+            BWB = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), selected_basis, axes=([0], [0]))
+            BWY = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), self._inv_link(tempy), axes=([0], [0]))
+            self.coef_ = np.dot(np.linalg.pinv(seBWB, rcond=1e-3), seBWY)
+            for j in range(self.maxiter_irls):
+                lp = np.dot(init_basis, self.coef_)
+                mu = self._link(lp)
+                omega = mu * (1 - mu)
+                mask = (np.abs(omega) >= self.EPS) * np.isfinite(omega)
+                mask = mask.ravel()
+                if np.sum(mask) == 0:
+                    break
+                BW = selected_basis[mask] * sample_weight[mask].reshape([-1, 1])
+                BWOB = np.tensordot(BW * omega[mask].reshape([-1, 1]), init_basis[mask], axes=([0], [0]))
+                coef_temp = np.dot(np.linalg.pinv(BWOB, rcond=1e-3), BWOB.dot(self.coef_) \
+                        + np.tensordot(BW, y[mask] - mu[mask], axes=([0], [0])))
+                new_loss = self.get_loss(y, self._link(np.dot(init_basis, coef_temp)), sample_weight)
+                if new_loss - best_loss_irls >= 0:
+                    break
+                self.coef_ = coef_temp
+                best_loss_irls = new_loss
+            self.selected_knots_ = knots
+            self.selected_knot_vector_ = knot_vector
+            return self
+        
         D = self._diff_matrix(self.degree, self.knot_num)
         update_w = np.ones([self.knot_num, 1], dtype=np.float32) 
         DwD = np.tensordot(D * update_w.reshape([-1, 1]), D, axes=([0], [0]))
