@@ -17,8 +17,8 @@ from rpy2 import robjects as ro
 from rpy2.robjects import numpy2ri
 from rpy2.robjects.packages import importr
 
-utils = importr("utils")
-utils.install_packages("fps")
+utils = importr("devtools")
+utils.install_github("https://github.com/vqv/fps")
 
 fps = importr("fps")
 numpy2ri.activate()
