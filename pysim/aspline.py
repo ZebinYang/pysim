@@ -329,7 +329,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
             best_loss_irls = np.inf
             BWB = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), init_basis, axes=([0], [0]))
             BWY = np.tensordot(init_basis * sample_weight.reshape([-1, 1]), self._inv_link(tempy), axes=([0], [0]))
-            self.coef_ = np.dot(np.linalg.pinv(BWB, rcond=1e-3), seBWY)
+            self.coef_ = np.dot(np.linalg.pinv(BWB, rcond=1e-3), BWY)
             for j in range(self.maxiter_irls):
                 lp = np.dot(init_basis, self.coef_)
                 mu = self._link(lp)
