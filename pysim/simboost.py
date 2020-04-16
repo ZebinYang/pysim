@@ -606,12 +606,12 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
             # fit Sim estimator
             param_grid = {"method": self.stein_method_list, 
-                          "reg_lambda": self.reg_lambda_list,
-                          "reg_gamma": self.reg_gamma_list}
+                      "reg_lambda": self.reg_lambda_list,
+                      "reg_gamma": self.reg_gamma_list}
             grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
                          scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                          cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
-            grid.fit(x[:, self.nfeature_index_list_], y, sample_weight=sample_weight, proj_mat=proj_mat)
+            grid.fit(x[:, self.nfeature_index_list_], z, sample_weight=sample_weight, proj_mat=proj_mat)
             sim = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
             sim_estimator = Pipeline(steps=[("select", FunctionTransformer(lambda data: data[:, self.nfeature_index_list_], validate=False)),
                                   ("sim", sim)])
