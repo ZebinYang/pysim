@@ -19,9 +19,10 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
      """
 
     @abstractmethod
-    def __init__(self, knot_num=20, reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99, maxiter=10):
+    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99, maxiter=10):
 
         self.knot_num = knot_num
+        self.knot_dist = knot_dist
         self.reg_gamma = reg_gamma
         self.xmin = xmin
         self.xmax = xmax
@@ -64,6 +65,9 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         
         if not isinstance(self.knot_num, int):
             raise ValueError("knot_num must be an integer, got %s." % self.knot_num)
+        
+        if self.knot_dist not in ["uniform", "quantile"]:
+            raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
 
         if self.knot_num <= 0:
             raise ValueError("knot_num must be > 0, got" % self.knot_num)
@@ -191,6 +195,7 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
     def __init__(self, knot_num=20, reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99, maxiter=10):
 
         super(ASplineRegressor, self).__init__(knot_num=knot_num,
+                                  knot_dist=knot_dist,
                                   reg_gamma=reg_gamma,
                                   xmin=xmin,
                                   xmax=xmax,
@@ -218,7 +223,12 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
             sample_weight = np.ones(n_samples)
         else:
             sample_weight = sample_weight * n_samples
-        knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
+            
+        if self.knot_dist == "uniform":
+            knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
+        elif self.knot_dist == "quantile":
+            knots = np.percentile(x, list(np.linspace(0, 1, self.knot_num + 2, dtype=np.float32)[1:-1])).tolist()
+            
         knot_vector = np.array([self.xmin] * (self.degree + 1) + knots + [self.xmax] * (self.degree + 1))
         init_basis = self._create_basis(x, self.degree, knot_vector)
 
@@ -268,6 +278,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
                  maxiter=10, maxiter_irls=10):
 
         super(ASplineClassifier, self).__init__(knot_num=knot_num,
+                                   knot_dist=knot_dist,
                                    reg_gamma=reg_gamma,
                                    xmin=xmin,
                                    xmax=xmax,
