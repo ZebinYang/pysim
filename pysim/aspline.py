@@ -192,7 +192,7 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
 
 class ASplineRegressor(BaseASpline, RegressorMixin):
 
-    def __init__(self, knot_num=20, reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99, maxiter=10):
+    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99, maxiter=10):
 
         super(ASplineRegressor, self).__init__(knot_num=knot_num,
                                   knot_dist=knot_dist,
@@ -274,7 +274,7 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
 
 class ASplineClassifier(BaseASpline, ClassifierMixin):
 
-    def __init__(self, knot_num=20, reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99,
+    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99,
                  maxiter=10, maxiter_irls=10):
 
         super(ASplineClassifier, self).__init__(knot_num=knot_num,
