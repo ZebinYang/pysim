@@ -35,12 +35,13 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=10, 
-                 knot_num=20, degree=2, random_state=0):
+                 knot_num=20, knot_dist="uniform", degree=2, random_state=0):
 
         self.method = method
         self.reg_lambda = reg_lambda
         self.reg_gamma = reg_gamma
         self.knot_num = knot_num
+        self.knot_dist = knot_dist
         self.degree = degree
         
         self.random_state = random_state
@@ -61,6 +62,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
         if self.knot_num <= 0:
             raise ValueError("knot_num must be > 0, got" % self.knot_num)
+
+        if self.knot_dist not in ["uniform", "quantile"]:
+            raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
 
         if (self.reg_lambda < 0) or (self.reg_lambda > 1):
             raise ValueError("reg_lambda must be >= 0 and <=1, got %s." % self.reg_lambda)
@@ -354,6 +358,7 @@ class SimRegressor(BaseSim, RegressorMixin):
                                 reg_lambda=reg_lambda,
                                 reg_gamma=reg_gamma,
                                 knot_num=knot_num,
+                                knot_dist=knot_dist,
                                 degree=degree,
                                 random_state=random_state)
 
@@ -364,7 +369,7 @@ class SimRegressor(BaseSim, RegressorMixin):
 
     def _estimate_shape(self, x, y, sample_weight=None, xmin=-1, xmax=1):
 
-        self.shape_fit_ = ASplineRegressor(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
+        self.shape_fit_ = ASplineRegressor(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
                              xmin=xmin, xmax=xmax, degree=self.degree)
         self.shape_fit_.fit(x, y, sample_weight)
 
@@ -382,6 +387,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
                                 reg_lambda=reg_lambda,
                                 reg_gamma=reg_gamma,
                                 knot_num=knot_num,
+                                knot_dist=knot_dist,
                                 degree=degree,
                                 random_state=random_state)
 
@@ -401,7 +407,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
     def _estimate_shape(self, x, y, sample_weight=None, xmin=-1, xmax=1):
 
         #adaptive spline
-        self.shape_fit_ = ASplineClassifier(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
+        self.shape_fit_ = ASplineClassifier(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
                          xmin=xmin, xmax=xmax, degree=self.degree)
         self.shape_fit_.fit(x, y, sample_weight)
 
