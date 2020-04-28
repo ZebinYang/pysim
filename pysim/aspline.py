@@ -227,7 +227,7 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
         if self.knot_dist == "uniform":
             knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
         elif self.knot_dist == "quantile":
-            knots = np.percentile(x, list(np.linspace(0, 1, self.knot_num + 2, dtype=np.float32)[1:-1])).tolist()
+            knots = np.percentile(x, list(np.linspace(0, 100, self.knot_num + 2, dtype=np.float32)[1:-1])).tolist()
             
         knot_vector = np.array([self.xmin] * (self.degree + 1) + knots + [self.xmax] * (self.degree + 1))
         init_basis = self._create_basis(x, self.degree, knot_vector)
@@ -328,7 +328,10 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
         else:
             sample_weight = sample_weight * n_samples
 
-        knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
+        if self.knot_dist == "uniform":
+            knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
+        elif self.knot_dist == "quantile":
+            knots = np.percentile(x, list(np.linspace(0, 100, self.knot_num + 2, dtype=np.float32)[1:-1])).tolist()
         knot_vector = np.array([self.xmin] * (self.degree + 1) + knots + [self.xmax] * (self.degree + 1))
         init_basis = self._create_basis(x, self.degree, knot_vector)
 
