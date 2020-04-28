@@ -26,7 +26,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
      """
 
     @abstractmethod
-    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, ortho_shrink=1, loss_threshold=0.01, 
+    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, knot_dist="uniform", ortho_shrink=1, loss_threshold=0.01, 
                  reg_lambda=0.1, reg_gamma=10, stein_method="first_order", random_state=0):
 
         self.n_estimators = n_estimators
@@ -37,6 +37,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         
         self.degree = degree
         self.knot_num = knot_num
+        self.knot_dist = knot_dist
         self.reg_lambda = reg_lambda
         self.reg_gamma = reg_gamma
 
@@ -80,6 +81,9 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         if self.knot_num <= 0:
             raise ValueError("knot_num must be > 0, got" % self.knot_num)
+
+        if self.knot_dist not in ["uniform", "quantile"]:
+            raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
 
         if isinstance(self.reg_lambda, list):
             for val in self.reg_lambda:
@@ -511,13 +515,14 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
 class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
-    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, reg_lambda=0.1, reg_gamma=10,
+    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, knot_dist="uniform", reg_lambda=0.1, reg_gamma=10,
                  ortho_shrink=1, loss_threshold=0.01, stein_method="first_order", random_state=0):
 
         super(SimBoostRegressor, self).__init__(n_estimators=n_estimators,
                                    val_ratio=val_ratio,
                                    degree=degree,
                                    knot_num=knot_num,
+                                   knot_dist=knot_dist,
                                    reg_lambda=reg_lambda,
                                    reg_gamma=reg_gamma,
                                    stein_method=stein_method,
@@ -564,7 +569,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             param_grid = {"method": self.stein_method_list, 
                       "reg_lambda": self.reg_lambda_list,
                       "reg_gamma": self.reg_gamma_list}
-            grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
+            grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num,
+                                  knot_num=self.knot_num, random_state=self.random_state), 
                          scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                          cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
             grid.fit(x[:, self.nfeature_index_list_], z, sample_weight=sample_weight, proj_mat=proj_mat)
@@ -623,13 +629,14 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     
 class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
-    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, ortho_shrink=1, loss_threshold=0.01, 
+    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, knot_dist="uniform", ortho_shrink=1, loss_threshold=0.01, 
                  reg_lambda=0.1, reg_gamma=10, stein_method="first_order", random_state=0):
 
         super(SimBoostClassifier, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
                                       degree=degree,
                                       knot_num=knot_num,
+                                      knot_dist=knot_dist,
                                       reg_lambda=reg_lambda,
                                       reg_gamma=reg_gamma,
                                       stein_method=stein_method,
@@ -705,9 +712,10 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             # fit Sim estimator
             param_grid = {"method": self.stein_method_list, 
-                          "reg_lambda": self.reg_lambda_list,
-                          "reg_gamma": self.reg_gamma_list}
-            grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, random_state=self.random_state), 
+                      "reg_lambda": self.reg_lambda_list,
+                      "reg_gamma": self.reg_gamma_list}
+            grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num,
+                                  knot_dist=self.knot_distrandom_state=self.random_state), 
                           scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                           cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
 
