@@ -17,14 +17,14 @@ from rpy2 import robjects as ro
 from rpy2.robjects import numpy2ri
 from rpy2.robjects.packages import importr
 
-utils = importr("utils")
-utils.install_packages("fps")
 
-# Change the following method to install fps if the above one is not working. 
-#utils = importr("devtools")
-#utils.install_github("fps", "vqv")
-
-fps = importr("fps")
+try:
+    fps = importr("fps")
+except:
+    devtools = importr("devtools")
+    devtools.install_github("https://github.com/vqv/fps")
+    fps = importr("fps")
+    
 numpy2ri.activate()
 
 
