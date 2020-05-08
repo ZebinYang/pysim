@@ -149,7 +149,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 ortho_measure = np.linalg.norm(np.dot(self.projection_indices_.T,
                                       self.projection_indices_) - np.eye(self.projection_indices_.shape[1]))
                 if len(self.best_estimators_) > 1:
-                    ortho_measure /= ((self.projection_indices_.shape[1] ** 2 - self.projection_indices_.shape[1]))
+                    ortho_measure /= self.projection_indices_.shape[1]
         return ortho_measure
 
     def _validate_sample_weight(self, n_samples, sample_weight):
@@ -275,7 +275,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                             active_beta.append(beta)
                             active_beta_idx.append(idx)
                     rects = ax2.barh(np.arange(len(active_beta)), [beta for beta in active_beta][::-1])
-                    if len (active_beta) > 10:
+                    if len(active_beta) > 10:
                         input_ticks = np.linspace(0.1 * len(active_beta), len(active_beta) * 0.9, 4).astype(int)
                         input_labels = ["X" + str(self.nfeature_index_list_[active_beta_idx[idx]] + 1) for idx in input_ticks][::-1] 
                         ax2.set_yticks(input_ticks)
