@@ -120,6 +120,7 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
             sample_weight = sample_weight * n_samples
            
         unique_num = len(np.unique(x))
+        self.knot_num = min(unique_num, self.knot_num)
         if unique_num >= 4:
             if self.knot_dist == "uniform":
                 self.sm_ = stats.smooth_spline(x, y, nknots=self.knot_num, spar=self.reg_gamma, w=sample_weight)
@@ -178,6 +179,7 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
             
         y = y.copy() * 4 - 2
         unique_num = len(np.unique(x))
+        self.knot_num = min(unique_num, self.knot_num)
         if unique_num >= 4:
             if self.knot_dist == "uniform":
                 self.sm_ = stats.smooth_spline(x, y, nknots=self.knot_num, spar=self.reg_gamma, w=sample_weight)
