@@ -421,6 +421,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
                                 spline=spline,
                                 degree=degree,
                                 random_state=random_state)
+        self.EPS = 10 **(-8)
 
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
@@ -461,7 +462,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
                 pred1 = np.clip(shape_fit_1_.predict_proba(x), self.EPS, 1. - self.EPS)
                 loss1 = - np.average(y * np.log(pred1) + (1 - y) * np.log(1 - pred1),
                                     axis=0, weights=sample_weight)
-               ` pred2 = np.clip(shape_fit_2_.predict_proba(x), self.EPS, 1. - self.EPS)
+                pred2 = np.clip(shape_fit_2_.predict_proba(x), self.EPS, 1. - self.EPS)
                 loss2 = - np.average(y * np.log(pred2) + (1 - y) * np.log(1 - pred2),
                                     axis=0, weights=sample_weight)
             if loss1 <= loss2:
