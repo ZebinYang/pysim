@@ -151,11 +151,11 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
         return pred
     
 
-class PSplineClassifier(BaseSMSpline, ClassifierMixin):
+class PSplineClassifier(BasePSpline, ClassifierMixin):
 
     def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
 
-        super(BasePSpline, self).__init__(knot_num=knot_num,
+        super(PSplineClassifier, self).__init__(knot_num=knot_num,
                                    knot_dist=knot_dist,
                                    reg_gamma=reg_gamma,
                                    xmin=xmin,
