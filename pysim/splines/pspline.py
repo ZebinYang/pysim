@@ -9,12 +9,7 @@ from sklearn.utils.validation import check_is_fitted
 from sklearn.utils import check_array, check_X_y
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 
-from rpy2 import robjects as ro
-from rpy2.robjects import numpy2ri
-from rpy2.robjects.packages import importr
-
-numpy2ri.activate()
-stats = importr("stats")
+from pygam import LinearGAM, LogisticGAM, s
 
 class BasePSpline(BaseEstimator, metaclass=ABCMeta):
     """

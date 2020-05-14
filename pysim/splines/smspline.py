@@ -130,11 +130,11 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
         unique_num = len(np.unique(x))
         if unique_num >= 4:
             if self.knot_dist == "uniform":
-                knots = list(np.linspace(0, 1, self.knot_num + 2, dtype=np.float32)[1:-1])
+                self.sm_ = stats.smooth_spline(x, y, nknots=self.knot_num, spar=self.reg_gamma, w=sample_weight)
             elif self.knot_dist == "quantile":
-                knots = np.percentile(x, list(np.linspace(0, 100, self.knot_num + 2, dtype=np.float32)[1:-1])).tolist()
+                knots = np.percentile(x, list(np.linspace(0, 100, self.knot_num + 2, dtype=np.float32))).tolist()
                 knots = (knots - xmin) / (xmax - xmin)
-            self.sm_ = stats.smooth_spline(x, y, all_knots=ro.FloatVector(knots), spar=self.reg_gamma, w=sample_weight)
+                self.sm_ = stats.smooth_spline(x, y, all_knots=ro.FloatVector(knots), spar=self.reg_gamma, w=sample_weight)
         else:
             self.sm_ = np.mean(y)
         return self
@@ -189,11 +189,11 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
         unique_num = len(np.unique(x))
         if unique_num >= 4:
             if self.knot_dist == "uniform":
-                knots = list(np.linspace(0, 1, self.knot_num + 2, dtype=np.float32))
+                self.sm_ = stats.smooth_spline(x, y, nknots=self.knot_num, spar=self.reg_gamma, w=sample_weight)
             elif self.knot_dist == "quantile":
                 knots = np.percentile(x, list(np.linspace(0, 100, self.knot_num + 2, dtype=np.float32))).tolist()
                 knots = (knots - xmin) / (xmax - xmin)
-            self.sm_ = stats.smooth_spline(x, y, all_knots=ro.FloatVector(knots), spar=self.reg_gamma, w=sample_weight)
+                self.sm_ = stats.smooth_spline(x, y, all_knots=ro.FloatVector(knots), spar=self.reg_gamma, w=sample_weight)
         else:
             self.sm_ = np.mean(y)
         return self
