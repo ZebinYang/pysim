@@ -115,8 +115,7 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
             sample_weight = sample_weight * n_samples
            
         if self.constraint is None:
-            self.ps_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints='monotonic_inc'))
+            self.ps_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree, lam=self.reg_gamma))
             self.ps_.fit(x, y, sample_weight)
         elif self.constraint == "mono":
             ps1_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
@@ -182,8 +181,7 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
             sample_weight = sample_weight * n_samples
             
         if self.constraint is None:
-            self.ps_ = LogisticGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
-                     lam=self.reg_gamma))
+            self.ps_ = LogisticGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree, lam=self.reg_gamma))
             self.ps_.fit(x, y, sample_weight)
         elif self.constraint == "mono":
             ps1_ = LogisticGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
