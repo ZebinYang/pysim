@@ -91,14 +91,13 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
 
 class SMSplineRegressor(BaseSMSpline, RegressorMixin):
 
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2):
+    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1):
 
         super(SMSplineRegressor, self).__init__(knot_num=knot_num,
                                   knot_dist=knot_dist,
                                   reg_gamma=reg_gamma,
                                   xmin=xmin,
-                                  xmax=xmax,
-                                  degree=degree)
+                                  xmax=xmax)
 
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
@@ -140,14 +139,13 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
 
 class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
 
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2):
+    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1):
 
         super(SMSplineClassifier, self).__init__(knot_num=knot_num,
                                    knot_dist=knot_dist,
                                    reg_gamma=reg_gamma,
                                    xmin=xmin,
-                                   xmax=xmax,
-                                   degree=degree)
+                                   xmax=xmax)
         self.EPS = 10 ** (-8)
 
     def get_loss(self, label, pred, sample_weight=None):
