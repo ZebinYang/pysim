@@ -44,8 +44,8 @@ class BasePSpline(BaseEstimator, metaclass=ABCMeta):
         if self.knot_num <= 0:
             raise ValueError("knot_num must be > 0, got" % self.knot_num)
 
-        if (self.reg_gamma < 0) or (self.reg_gamma > 1):
-            raise ValueError("reg_gamma must be >= 0 and <1, got %s." % self.reg_gamma)
+        if self.reg_gamma < 0:
+            raise ValueError("reg_gamma must be >= 0, got %s." % self.reg_gamma)
 
         if self.xmin > self.xmax:
             raise ValueError("xmin must be <= xmax, got %s and %s." % (self.xmin, self.xmax))
