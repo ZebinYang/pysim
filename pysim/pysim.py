@@ -37,7 +37,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
      """
 
     @abstractmethod
-    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=10, knot_num=20, knot_dist="uniform",
+    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=0.1, knot_num=20, knot_dist="uniform",
                  spline="smoothing_spline", degree=2, random_state=0):
 
         self.method = method
@@ -360,7 +360,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
 class SimRegressor(BaseSim, RegressorMixin):
 
-    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=10, knot_num=20, knot_dist="uniform",
+    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=0.1, knot_num=20, knot_dist="uniform",
                  spline="smoothing_spline", degree=2, random_state=0):
 
         super(SimRegressor, self).__init__(method=method,
@@ -404,7 +404,7 @@ class SimRegressor(BaseSim, RegressorMixin):
 
 class SimClassifier(BaseSim, ClassifierMixin):
 
-    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=10, knot_num=20, knot_dist="uniform",
+    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=0.1, knot_num=20, knot_dist="uniform",
                  spline="smoothing_spline", degree=2, random_state=0):
 
         super(SimClassifier, self).__init__(method=method,

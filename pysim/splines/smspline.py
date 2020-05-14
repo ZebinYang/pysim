@@ -90,9 +90,9 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
 
         check_is_fitted(self, "sm_")
         if isinstance(self.sm_, (int, float)):
-            pred = self.sm_
+            pred = self.sm_.ravel()
         else:
-            pred = np.array(stats.predict(self.sm_, x)[1])
+            pred = np.array(stats.predict(self.sm_, x)[1]).ravel()
         return pred
 
 
