@@ -22,26 +22,19 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
      """
 
     @abstractmethod
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2):
+    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1):
 
         self.knot_num = knot_num
         self.knot_dist = knot_dist
         self.reg_gamma = reg_gamma
         self.xmin = xmin
         self.xmax = xmax
-        self.degree = degree
 
     def _estimate_density(self, x):
         
         self.density_, self.bins_ = np.histogram(x, bins=10, density=True)
 
     def _validate_hyperparameters(self):
-        
-        if not isinstance(self.degree, int):
-            raise ValueError("degree must be an integer, got %s." % self.degree)
-
-        if self.degree < 0:
-            raise ValueError("degree must be >= 0, got" % self.degree)
         
         if not isinstance(self.knot_num, int):
             raise ValueError("knot_num must be an integer, got %s." % self.knot_num)
