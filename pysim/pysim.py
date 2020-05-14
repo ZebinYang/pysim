@@ -11,7 +11,10 @@ from sklearn.metrics import mean_squared_error, roc_auc_score
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin, is_classifier, is_regressor
 
 from abc import ABCMeta, abstractmethod
-from .aspline import ASplineClassifier, ASplineRegressor
+
+from pygam import LinearGAM, LogisticGAM, s
+from splines.aspline import ASplineClassifier, ASplineRegressor
+from splines.smspline import SMSplineClassifier, SMSplineRegressor
 
 from rpy2 import robjects as ro
 from rpy2.robjects import numpy2ri
@@ -34,14 +37,15 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
      """
 
     @abstractmethod
-    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=10, 
-                 knot_num=20, knot_dist="uniform", degree=2, random_state=0):
+    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=10, knot_num=20, knot_dist="uniform",
+                 spline="smoothing_spline", degree=2, random_state=0):
 
         self.method = method
         self.reg_lambda = reg_lambda
         self.reg_gamma = reg_gamma
         self.knot_num = knot_num
         self.knot_dist = knot_dist
+        self.spline = spline
         self.degree = degree
         
         self.random_state = random_state
@@ -65,6 +69,10 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
         if self.knot_dist not in ["uniform", "quantile"]:
             raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
+
+        if self.spline not in ["a_spline", "smoothing_spline", "p_spline", "mono_p_spline"]:
+            raise ValueError("base_method must be an element of [a_spline, smoothing_spline, p_spline, mono_p_spline], got %s." % 
+                         self.base_method)
 
         if (self.reg_lambda < 0) or (self.reg_lambda > 1):
             raise ValueError("reg_lambda must be >= 0 and <=1, got %s." % self.reg_lambda)
@@ -352,13 +360,15 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
 class SimRegressor(BaseSim, RegressorMixin):
 
-    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=10, knot_num=20, knot_dist="uniform", degree=2, random_state=0):
+    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=10, knot_num=20, knot_dist="uniform",
+                 spline="smoothing_spline", degree=2, random_state=0):
 
         super(SimRegressor, self).__init__(method=method,
                                 reg_lambda=reg_lambda,
                                 reg_gamma=reg_gamma,
                                 knot_num=knot_num,
                                 knot_dist=knot_dist,
+                                spline=spline,
                                 degree=degree,
                                 random_state=random_state)
 
@@ -369,9 +379,28 @@ class SimRegressor(BaseSim, RegressorMixin):
 
     def _estimate_shape(self, x, y, sample_weight=None, xmin=-1, xmax=1):
 
-        self.shape_fit_ = ASplineRegressor(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
-                             xmin=xmin, xmax=xmax, degree=self.degree)
-        self.shape_fit_.fit(x, y, sample_weight)
+        if self.spline == "a_spline":
+            self.shape_fit_ = ASplineRegressor(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
+                                 xmin=xmin, xmax=xmax, degree=self.degree)
+            self.shape_fit_.fit(x, y, sample_weight)
+        elif self.spline == "smoothing_spline":
+            self.shape_fit_ = SMSplineRegressor(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
+                                    xmin=xmin, xmax=xmax, degree=self.degree)
+            self.shape_fit_.fit(x, y, sample_weight)
+        elif self.spline == "p_spline":
+            self.shape_fit_ = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+                                 lam=self.reg_gamma))
+            self.shape_fit_.fit(x, y, sample_weight)
+        elif self.spline == "mono_p_spline":
+            #p-spline with monotonic constraint
+            shape_fit_1_ = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+                             lam=self.reg_gamma, constraints='monotonic_inc')).fit(x, y)
+            shape_fit_2_ = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+                             lam=self.reg_gamma, constraints='monotonic_dec')).fit(x, y)
+            if np.linalg.norm(shape_fit_1_.predict(x) - y.ravel()) <= np.linalg.norm(shape_fit_2_.predict(x) - y.ravel()):
+                self.shape_fit_ = shape_fit_1_
+            else:
+                self.shape_fit_ = shape_fit_2_
 
     def predict(self, x):
 
@@ -381,13 +410,15 @@ class SimRegressor(BaseSim, RegressorMixin):
 
 class SimClassifier(BaseSim, ClassifierMixin):
 
-    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=10, knot_num=20, knot_dist="uniform", degree=2, random_state=0):
+    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=10, knot_num=20, knot_dist="uniform",
+                 spline="smoothing_spline", degree=2, random_state=0):
 
         super(SimClassifier, self).__init__(method=method,
                                 reg_lambda=reg_lambda,
                                 reg_gamma=reg_gamma,
                                 knot_num=knot_num,
                                 knot_dist=knot_dist,
+                                spline=spline,
                                 degree=degree,
                                 random_state=random_state)
 
@@ -407,9 +438,36 @@ class SimClassifier(BaseSim, ClassifierMixin):
     def _estimate_shape(self, x, y, sample_weight=None, xmin=-1, xmax=1):
 
         #adaptive spline
-        self.shape_fit_ = ASplineClassifier(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
-                         xmin=xmin, xmax=xmax, degree=self.degree)
-        self.shape_fit_.fit(x, y, sample_weight)
+        if self.spline == "a_spline":
+            self.shape_fit_ = ASplineClassifier(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
+                             xmin=xmin, xmax=xmax, degree=self.degree)
+            self.shape_fit_.fit(x, y, sample_weight)
+        elif self.spline == "smoothing_spline":
+            self.shape_fit_ = SMSplineClassifier(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
+                                    xmin=xmin, xmax=xmax, degree=self.degree)
+            self.shape_fit_.fit(x, y, sample_weight)
+        elif self.spline == "p_spline":
+            self.shape_fit_ = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+                                 lam=self.reg_gamma))
+            self.shape_fit_.fit(x, y)
+        elif self.spline == "mono_p_spline":
+            #p-spline with monotonic constraint
+            shape_fit_1_ = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+                             lam=self.reg_gamma, constraints='monotonic_inc')).fit(x, y)
+            shape_fit_2_ = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+                             lam=self.reg_gamma, constraints='monotonic_dec')).fit(x, y)
+            
+            with np.errstate(divide="ignore", over="ignore"):
+                pred1 = np.clip(shape_fit_1_.predict_proba(x), self.EPS, 1. - self.EPS)
+                loss1 = - np.average(y * np.log(pred1) + (1 - y) * np.log(1 - pred1),
+                                    axis=0, weights=sample_weight)
+               ` pred2 = np.clip(shape_fit_2_.predict_proba(x), self.EPS, 1. - self.EPS)
+                loss2 = - np.average(y * np.log(pred2) + (1 - y) * np.log(1 - pred2),
+                                    axis=0, weights=sample_weight)
+            if loss1 <= loss2:
+                self.shape_fit_ = shape_fit_1_
+            else:
+                self.shape_fit_ = shape_fit_2_
 
     def predict_proba(self, x):
 
