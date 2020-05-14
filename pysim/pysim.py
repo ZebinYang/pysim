@@ -15,6 +15,7 @@ from abc import ABCMeta, abstractmethod
 from pygam import LinearGAM, LogisticGAM, s
 from .splines.aspline import ASplineClassifier, ASplineRegressor
 from .splines.smspline import SMSplineClassifier, SMSplineRegressor
+from .splines.pspline import PSplineClassifier, PSplineRegressor
 
 from rpy2 import robjects as ro
 from rpy2.robjects import numpy2ri
@@ -388,19 +389,13 @@ class SimRegressor(BaseSim, RegressorMixin):
                                     xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
         elif self.spline == "p_spline":
-            self.shape_fit_ = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
-                                 lam=self.reg_gamma))
+            self.shape_fit_ = PSplineRegressor(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
+                                    xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
         elif self.spline == "mono_p_spline":
-            #p-spline with monotonic constraint
-            shape_fit_1_ = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints='monotonic_inc')).fit(x, y)
-            shape_fit_2_ = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints='monotonic_dec')).fit(x, y)
-            if np.linalg.norm(shape_fit_1_.predict(x) - y.ravel()) <= np.linalg.norm(shape_fit_2_.predict(x) - y.ravel()):
-                self.shape_fit_ = shape_fit_1_
-            else:
-                self.shape_fit_ = shape_fit_2_
+            self.shape_fit_ = PSplineRegressor(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
+                                    xmin=xmin, xmax=xmax, degree=self.degree, constraint="mono")
+            self.shape_fit_.fit(x, y, sample_weight)
 
     def predict(self, x):
 
@@ -447,28 +442,15 @@ class SimClassifier(BaseSim, ClassifierMixin):
             self.shape_fit_ = SMSplineClassifier(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
                                     xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
-        elif self.spline == "p_spline":
-            self.shape_fit_ = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
-                                 lam=self.reg_gamma))
-            self.shape_fit_.fit(x, y)
-        elif self.spline == "mono_p_spline":
-            #p-spline with monotonic constraint
-            shape_fit_1_ = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints='monotonic_inc')).fit(x, y)
-            shape_fit_2_ = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints='monotonic_dec')).fit(x, y)
             
-            with np.errstate(divide="ignore", over="ignore"):
-                pred1 = np.clip(shape_fit_1_.predict_proba(x), self.EPS, 1. - self.EPS)
-                loss1 = - np.average(y * np.log(pred1) + (1 - y) * np.log(1 - pred1),
-                                    axis=0, weights=sample_weight)
-                pred2 = np.clip(shape_fit_2_.predict_proba(x), self.EPS, 1. - self.EPS)
-                loss2 = - np.average(y * np.log(pred2) + (1 - y) * np.log(1 - pred2),
-                                    axis=0, weights=sample_weight)
-            if loss1 <= loss2:
-                self.shape_fit_ = shape_fit_1_
-            else:
-                self.shape_fit_ = shape_fit_2_
+        elif self.spline == "p_spline":
+            self.shape_fit_ = PSplineClassifier(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
+                                    xmin=xmin, xmax=xmax, degree=self.degree)
+            self.shape_fit_.fit(x, y, sample_weight)
+        elif self.spline == "mono_p_spline":
+            self.shape_fit_ = PSplineClassifier(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
+                                    xmin=xmin, xmax=xmax, degree=self.degree, constraint="mono")
+            self.shape_fit_.fit(x, y, sample_weight)
 
     def predict_proba(self, x):
 

@@ -16,13 +16,13 @@ from rpy2.robjects.packages import importr
 numpy2ri.activate()
 stats = importr("stats")
 
-class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
+class BasePSpline(BaseEstimator, metaclass=ABCMeta):
     """
         Base class for Smoothing Spline classification and regression.
      """
 
     @abstractmethod
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2):
+    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
 
         self.knot_num = knot_num
         self.knot_dist = knot_dist
@@ -30,7 +30,8 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         self.xmin = xmin
         self.xmax = xmax
         self.degree = degree
-
+        self.constraint = constraint
+        
     def _estimate_density(self, x):
         
         self.density_, self.bins_ = np.histogram(x, bins=10, density=True)
@@ -58,6 +59,10 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         if self.xmin > self.xmax:
             raise ValueError("xmin must be <= xmax, got %s and %s." % (self.xmin, self.xmax))
 
+        if self.constraint is not None:
+            if self.constraint not in ["mono"]:
+                raise ValueError("constraint must be None or mono, got %s." % (self.constraint))
+
     def diff(self, x, order=1):
         
         derivative = np.array(stats.predict(self.sm_, x, deriv=order)[1])
@@ -65,7 +70,7 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
 
     def visualize(self):
 
-        check_is_fitted(self, "sm_")
+        check_is_fitted(self, "ps_")
 
         fig = plt.figure(figsize=(6, 4))
         inner = gridspec.GridSpec(2, 1, hspace=0.1, height_ratios=[6, 1])
@@ -86,26 +91,18 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         fig.add_subplot(ax1_density)
         plt.show()
 
-    def decision_function(self, x):
 
-        check_is_fitted(self, "sm_")
-        if isinstance(self.sm_, (int, float)):
-            pred = self.sm_
-        else:
-            pred = np.array(stats.predict(self.sm_, x)[1])
-        return pred
+class PSplineRegressor(BasePSpline, RegressorMixin):
 
+    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
 
-class SMSplineRegressor(BaseSMSpline, RegressorMixin):
-
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2):
-
-        super(SMSplineRegressor, self).__init__(knot_num=knot_num,
+        super(PSplineRegressor, self).__init__(knot_num=knot_num,
                                   knot_dist=knot_dist,
                                   reg_gamma=reg_gamma,
                                   xmin=xmin,
                                   xmax=xmax,
-                                  degree=degree)
+                                  degree=degree,
+                                  constraint=constraint)
 
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
@@ -127,17 +124,26 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
         else:
             sample_weight = sample_weight * n_samples
            
-        unique_num = len(np.unique(x))
-        if unique_num >= 4:
-            if self.knot_dist == "uniform":
-                knots = list(np.linspace(0, 1, self.knot_num + 2, dtype=np.float32)[1:-1])
-            elif self.knot_dist == "quantile":
-                knots = np.percentile(x, list(np.linspace(0, 100, self.knot_num + 2, dtype=np.float32)[1:-1])).tolist()
-                knots = (knots - xmin) / (xmax - xmin)
-            self.sm_ = stats.smooth_spline(x, y, all_knots=ro.FloatVector(knots), spar=self.reg_gamma, w=sample_weight)
-        else:
-            self.sm_ = np.mean(y)
+        if self.constraint is None:
+            self.ps_ = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+                             lam=self.reg_gamma, constraints='monotonic_inc'))
+            self.ps_.fit(x, y, sample_weight)
+        elif self.constraint == "mono":
+            ps1_ = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+                             lam=self.reg_gamma, constraints='monotonic_inc')).fit(x, y)
+            ps2_ = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+                             lam=self.reg_gamma, constraints='monotonic_dec')).fit(x, y)
+            if ps1_.loglikelihood(x, y) >= ps2_.loglikelihood(x, y):
+                self.ps_ = ps1_
+            else:
+                self.ps_ = ps2_
         return self
+
+    def decision_function(self, x):
+
+        check_is_fitted(self, "ps_")
+        pred = self.ps_.predict_mu(x)
+        return pred
 
     def predict(self, x):
 
@@ -145,18 +151,19 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
         return pred
     
 
-class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
+class PSplineClassifier(BaseSMSpline, ClassifierMixin):
 
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2):
+    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
 
-        super(SMSplineClassifier, self).__init__(knot_num=knot_num,
+        super(BasePSpline, self).__init__(knot_num=knot_num,
                                    knot_dist=knot_dist,
                                    reg_gamma=reg_gamma,
                                    xmin=xmin,
                                    xmax=xmax,
-                                   degree=degree)
+                                   degree=degree,
+                                   constraint=constraint)
         self.EPS = 10 ** (-8)
-
+        
     def get_loss(self, label, pred, sample_weight=None):
         with np.errstate(divide="ignore", over="ignore"):
             pred = np.clip(pred, self.EPS, 1. - self.EPS)
@@ -185,23 +192,33 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
         else:
             sample_weight = sample_weight * n_samples
             
-        y = y.copy() * 4 - 2
-        unique_num = len(np.unique(x))
-        if unique_num >= 4:
-            if self.knot_dist == "uniform":
-                knots = list(np.linspace(0, 1, self.knot_num + 2, dtype=np.float32))
-            elif self.knot_dist == "quantile":
-                knots = np.percentile(x, list(np.linspace(0, 100, self.knot_num + 2, dtype=np.float32))).tolist()
-                knots = (knots - xmin) / (xmax - xmin)
-            self.sm_ = stats.smooth_spline(x, y, all_knots=ro.FloatVector(knots), spar=self.reg_gamma, w=sample_weight)
-        else:
-            self.sm_ = np.mean(y)
+        if self.constraint is None:
+            self.ps_ = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+                     lam=self.reg_gamma))
+            self.ps_.fit(x, y, sample_weight)
+        elif self.constraint == "mono":
+            ps1_ = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+                             lam=self.reg_gamma, constraints='monotonic_inc')).fit(x, y)
+            ps2_ = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+                             lam=self.reg_gamma, constraints='monotonic_dec')).fit(x, y)
+            if ps1_.loglikelihood(x, y) >= ps2_.loglikelihood(x, y):
+                self.ps_ = ps1_
+            else:
+                self.ps_ = ps2_
+
         return self
     
+    def decision_function(self, x):
+
+        check_is_fitted(self, "ps_")
+        pred_proba = self.ps_.predict_mu(x)
+        pred_proba = np.clip(pred_proba, self.EPS, 1. - self.EPS)
+        pred = np.log(pred_proba / (1 - pred_proba))
+        return pred
+
     def predict_proba(self, x):
 
-        pred = self.decision_function(x)
-        pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False)[:, 1]
+        pred_proba = self.ps_.predict_mu(x)
         return pred_proba
 
     def predict(self, x):
