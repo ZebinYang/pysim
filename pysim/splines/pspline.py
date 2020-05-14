@@ -17,10 +17,9 @@ class BasePSpline(BaseEstimator, metaclass=ABCMeta):
      """
 
     @abstractmethod
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
+    def __init__(self, knot_num=20, reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
 
         self.knot_num = knot_num
-        self.knot_dist = knot_dist
         self.reg_gamma = reg_gamma
         self.xmin = xmin
         self.xmax = xmax
@@ -41,9 +40,6 @@ class BasePSpline(BaseEstimator, metaclass=ABCMeta):
         
         if not isinstance(self.knot_num, int):
             raise ValueError("knot_num must be an integer, got %s." % self.knot_num)
-        
-        if self.knot_dist not in ["uniform", "quantile"]:
-            raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
 
         if self.knot_num <= 0:
             raise ValueError("knot_num must be > 0, got" % self.knot_num)
@@ -89,10 +85,9 @@ class BasePSpline(BaseEstimator, metaclass=ABCMeta):
 
 class PSplineRegressor(BasePSpline, RegressorMixin):
 
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
+    def __init__(self, knot_num=20,  reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
 
         super(PSplineRegressor, self).__init__(knot_num=knot_num,
-                                  knot_dist=knot_dist,
                                   reg_gamma=reg_gamma,
                                   xmin=xmin,
                                   xmax=xmax,
@@ -120,13 +115,13 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
             sample_weight = sample_weight * n_samples
            
         if self.constraint is None:
-            self.ps_ = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+            self.ps_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
                              lam=self.reg_gamma, constraints='monotonic_inc'))
             self.ps_.fit(x, y, sample_weight)
         elif self.constraint == "mono":
-            ps1_ = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+            ps1_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
                              lam=self.reg_gamma, constraints='monotonic_inc')).fit(x, y)
-            ps2_ = LinearGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+            ps2_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
                              lam=self.reg_gamma, constraints='monotonic_dec')).fit(x, y)
             if ps1_.loglikelihood(x, y) >= ps2_.loglikelihood(x, y):
                 self.ps_ = ps1_
@@ -148,10 +143,9 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
 
 class PSplineClassifier(BasePSpline, ClassifierMixin):
 
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
+    def __init__(self, knot_num=20, reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
 
         super(PSplineClassifier, self).__init__(knot_num=knot_num,
-                                   knot_dist=knot_dist,
                                    reg_gamma=reg_gamma,
                                    xmin=xmin,
                                    xmax=xmax,
@@ -188,13 +182,13 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
             sample_weight = sample_weight * n_samples
             
         if self.constraint is None:
-            self.ps_ = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+            self.ps_ = LogisticGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
                      lam=self.reg_gamma))
             self.ps_.fit(x, y, sample_weight)
         elif self.constraint == "mono":
-            ps1_ = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+            ps1_ = LogisticGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
                              lam=self.reg_gamma, constraints='monotonic_inc')).fit(x, y)
-            ps2_ = LogisticGAM(s(0, n_splines=self.knot_num, spline_order=self.degree,
+            ps2_ = LogisticGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
                              lam=self.reg_gamma, constraints='monotonic_dec')).fit(x, y)
             if ps1_.loglikelihood(x, y) >= ps2_.loglikelihood(x, y):
                 self.ps_ = ps1_

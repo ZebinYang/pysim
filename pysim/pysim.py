@@ -12,7 +12,6 @@ from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin, is_clas
 
 from abc import ABCMeta, abstractmethod
 
-from pygam import LinearGAM, LogisticGAM, s
 from .splines.aspline import ASplineClassifier, ASplineRegressor
 from .splines.smspline import SMSplineClassifier, SMSplineRegressor
 from .splines.pspline import PSplineClassifier, PSplineRegressor
@@ -389,11 +388,11 @@ class SimRegressor(BaseSim, RegressorMixin):
                                     xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
         elif self.spline == "p_spline":
-            self.shape_fit_ = PSplineRegressor(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
+            self.shape_fit_ = PSplineRegressor(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
                                     xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
         elif self.spline == "mono_p_spline":
-            self.shape_fit_ = PSplineRegressor(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
+            self.shape_fit_ = PSplineRegressor(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
                                     xmin=xmin, xmax=xmax, degree=self.degree, constraint="mono")
             self.shape_fit_.fit(x, y, sample_weight)
 
@@ -444,11 +443,11 @@ class SimClassifier(BaseSim, ClassifierMixin):
             self.shape_fit_.fit(x, y, sample_weight)
             
         elif self.spline == "p_spline":
-            self.shape_fit_ = PSplineClassifier(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
+            self.shape_fit_ = PSplineClassifier(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
                                     xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
         elif self.spline == "mono_p_spline":
-            self.shape_fit_ = PSplineClassifier(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
+            self.shape_fit_ = PSplineClassifier(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
                                     xmin=xmin, xmax=xmax, degree=self.degree, constraint="mono")
             self.shape_fit_.fit(x, y, sample_weight)
 

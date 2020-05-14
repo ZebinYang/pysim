@@ -133,7 +133,7 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
                 self.sm_ = stats.smooth_spline(x, y, nknots=self.knot_num, spar=self.reg_gamma, w=sample_weight)
             elif self.knot_dist == "quantile":
                 knots = np.percentile(x, list(np.linspace(0, 100, self.knot_num + 2, dtype=np.float32))).tolist()
-                knots = (knots - xmin) / (xmax - xmin)
+                knots = (knots - self.xmin) / (self.xmax - self.xmin)
                 self.sm_ = stats.smooth_spline(x, y, all_knots=ro.FloatVector(knots), spar=self.reg_gamma, w=sample_weight)
         else:
             self.sm_ = np.mean(y)
@@ -192,7 +192,7 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
                 self.sm_ = stats.smooth_spline(x, y, nknots=self.knot_num, spar=self.reg_gamma, w=sample_weight)
             elif self.knot_dist == "quantile":
                 knots = np.percentile(x, list(np.linspace(0, 100, self.knot_num + 2, dtype=np.float32))).tolist()
-                knots = (knots - xmin) / (xmax - xmin)
+                knots = (knots - self.xmin) / (self.xmax - self.xmin)
                 self.sm_ = stats.smooth_spline(x, y, all_knots=ro.FloatVector(knots), spar=self.reg_gamma, w=sample_weight)
         else:
             self.sm_ = np.mean(y)
