@@ -7,7 +7,7 @@ setup(name='pysim',
       author='Zebin Yang',
       author_email='yangzb2010@hku.hk',
       license='GPL',
-      packages=['pysim'],
+      packages=['pysim', 'pysim.splines'],
       install_requires=[
           'matplotlib', 'numpy', 'sklearn', 'rpy2'],
       zip_safe=False)
