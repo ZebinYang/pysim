@@ -60,7 +60,7 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
 
     def diff(self, x, order=1):
         
-        derivative = np.array(stats.predict(self.sm_, x, deriv=order)[1])
+        derivative = np.array(stats.predict(self.sm_, x, deriv=order)[1]).ravel()
         return derivative
 
     def visualize(self):
