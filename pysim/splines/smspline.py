@@ -96,11 +96,11 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         return pred
 
 
-class SMplineRegressor(BaseSMSpline, RegressorMixin):
+class SMSplineRegressor(BaseSMSpline, RegressorMixin):
 
     def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2):
 
-        super(SMplineRegressor, self).__init__(knot_num=knot_num,
+        super(SMSplineRegressor, self).__init__(knot_num=knot_num,
                                   knot_dist=knot_dist,
                                   reg_gamma=reg_gamma,
                                   xmin=xmin,
@@ -145,11 +145,11 @@ class SMplineRegressor(BaseSMSpline, RegressorMixin):
         return pred
     
 
-class SMplineClassifier(BaseSMSpline, ClassifierMixin):
+class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
 
     def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2):
 
-        super(SMplineClassifier, self).__init__(knot_num=knot_num,
+        super(SMSplineClassifier, self).__init__(knot_num=knot_num,
                                    knot_dist=knot_dist,
                                    reg_gamma=reg_gamma,
                                    xmin=xmin,
