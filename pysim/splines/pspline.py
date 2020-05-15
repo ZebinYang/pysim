@@ -120,7 +120,7 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
             while exit:
                 try:
                     self.ps_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num,
-                                    spline_order=self.degree + 0.1 * i, lam=self.reg_gamma))
+                                    spline_order=self.degree, lam=self.reg_gamma + 0.1 * i))
                     self.ps_.fit(x, y, sample_weight)
                     exit = False
                 except ValueError:
@@ -215,7 +215,7 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
             while exit:
                 try:
                     self.ps_ = LogisticGAM(s(0, basis="ps", n_splines=self.knot_num,
-                                    spline_order=self.degree + 0.1 * i, lam=self.reg_gamma))
+                                    spline_order=self.degree, lam=self.reg_gamma + 0.1 * i))
                     self.ps_.fit(x, y, sample_weight)
                     exit = False
                 except ValueError:
