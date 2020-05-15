@@ -115,13 +115,38 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
             sample_weight = sample_weight * n_samples
            
         if self.constraint is None:
-            self.ps_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree, lam=self.reg_gamma))
-            self.ps_.fit(x, y, sample_weight)
+            i = 0
+            exit = True
+            while exit:
+                try:
+                    self.ps_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num,
+                                    spline_order=self.degree + 0.1 * i, lam=self.reg_gamma))
+                    self.ps_.fit(x, y, sample_weight)
+                    exit = False
+                except ValueError:
+                    i += 1
+
         elif self.constraint == "mono":
-            ps1_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints='monotonic_inc')).fit(x, y)
-            ps2_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints='monotonic_dec')).fit(x, y)
+            i = 0
+            exit = True
+            while exit:
+                try:
+                    ps1_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
+                                  lam=self.reg_gamma + 0.1 * i, constraints='monotonic_inc')).fit(x, y)
+                    exit = False
+                except ValueError:
+                    i += 1
+
+            i = 0
+            exit = True
+            while exit:
+                try:
+                    ps2_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
+                                  lam=self.reg_gamma + 0.1 * i, constraints='monotonic_dec')).fit(x, y)
+                    exit = False
+                except ValueError:
+                    i += 1
+
             if ps1_.loglikelihood(x, y) >= ps2_.loglikelihood(x, y):
                 self.ps_ = ps1_
             else:
@@ -185,13 +210,38 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
             sample_weight = sample_weight * n_samples
             
         if self.constraint is None:
-            self.ps_ = LogisticGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree, lam=self.reg_gamma))
-            self.ps_.fit(x, y, sample_weight)
+            i = 0
+            exit = True
+            while exit:
+                try:
+                    self.ps_ = LogisticGAM(s(0, basis="ps", n_splines=self.knot_num,
+                                    spline_order=self.degree + 0.1 * i, lam=self.reg_gamma))
+                    self.ps_.fit(x, y, sample_weight)
+                    exit = False
+                except ValueError:
+                    i += 1
+
         elif self.constraint == "mono":
-            ps1_ = LogisticGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints='monotonic_inc')).fit(x, y)
-            ps2_ = LogisticGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
-                             lam=self.reg_gamma, constraints='monotonic_dec')).fit(x, y)
+            i = 0
+            exit = True
+            while exit:
+                try:
+                    ps1_ = LogisticGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
+                                  lam=self.reg_gamma + 0.1 * i, constraints='monotonic_inc')).fit(x, y)
+                    exit = False
+                except ValueError:
+                    i += 1
+
+            i = 0
+            exit = True
+            while exit:
+                try:
+                    ps2_ = LogisticGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
+                                  lam=self.reg_gamma + 0.1 * i, constraints='monotonic_dec')).fit(x, y)
+                    exit = False
+                except ValueError:
+                    i += 1
+
             if ps1_.loglikelihood(x, y) >= ps2_.loglikelihood(x, y):
                 self.ps_ = ps1_
             else:
