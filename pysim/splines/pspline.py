@@ -257,6 +257,7 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
         x[x < self.xmin] = self.xmin
         x[x > self.xmax] = self.xmax
         pred_proba = self.ps_.predict_mu(x)
+        pred_proba[np.isnan(pred_proba)] = 0.5
         pred_proba = np.clip(pred_proba, self.EPS, 1. - self.EPS)
         pred = np.log(pred_proba / (1 - pred_proba))
         return pred
