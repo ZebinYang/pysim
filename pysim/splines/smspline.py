@@ -85,6 +85,9 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         if isinstance(self.sm_, (int, float)):
             pred = self.sm_.ravel()
         else:
+            x = x.copy()
+            x[x < self.xmin] = self.xmin
+            x[x > self.xmax] = self.xmax
             pred = np.array(stats.predict(self.sm_, x)[1]).ravel()
         return pred
 

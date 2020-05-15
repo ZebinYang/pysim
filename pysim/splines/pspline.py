@@ -131,6 +131,10 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
     def decision_function(self, x):
 
         check_is_fitted(self, "ps_")
+        
+        x = x.copy()
+        x[x < self.xmin] = self.xmin
+        x[x > self.xmax] = self.xmax
         pred = self.ps_.predict_mu(x)
         return pred
 
@@ -198,6 +202,10 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
     def decision_function(self, x):
 
         check_is_fitted(self, "ps_")
+                
+        x = x.copy()
+        x[x < self.xmin] = self.xmin
+        x[x > self.xmax] = self.xmax
         pred_proba = self.ps_.predict_mu(x)
         pred_proba = np.clip(pred_proba, self.EPS, 1. - self.EPS)
         pred = np.log(pred_proba / (1 - pred_proba))
