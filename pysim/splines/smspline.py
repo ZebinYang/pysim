@@ -83,7 +83,7 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
 
         check_is_fitted(self, "sm_")
         if isinstance(self.sm_, (int, float)):
-            pred = self.sm_.ravel()
+            pred = np.ones(x.shape[0]) * self.sm_.ravel()
         else:
             x = x.copy()
             x[x < self.xmin] = self.xmin
