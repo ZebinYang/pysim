@@ -122,7 +122,7 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
         else:
             sample_weight = sample_weight * n_samples
            
-        unique_num = len(np.unique(x))
+        unique_num = len(np.unique(x.round(decimals=6)))
         self.knot_num = min(unique_num, self.knot_num)
         if unique_num >= 4:
             if self.knot_dist == "uniform":
@@ -183,7 +183,7 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
             sample_weight = sample_weight * n_samples
             
         y = y.copy() * 4 - 2
-        unique_num = len(np.unique(x))
+        unique_num = len(np.unique(x.round(decimals=6)))
         self.knot_num = min(unique_num, self.knot_num)
         if unique_num >= 4:
             if self.knot_dist == "uniform":
