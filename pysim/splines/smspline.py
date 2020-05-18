@@ -10,11 +10,12 @@ from sklearn.utils import check_array, check_X_y
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 
 from rpy2 import robjects as ro
+from rpy2.robjects import Formula
 from rpy2.robjects import numpy2ri
 from rpy2.robjects.packages import importr
 
 numpy2ri.activate()
-stats = importr("stats")
+gam = importr("gam")
 
 class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
     """
@@ -22,10 +23,8 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
      """
 
     @abstractmethod
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1):
+    def __init__(self, reg_gamma=0.1, xmin=-1, xmax=1):
 
-        self.knot_num = knot_num
-        self.knot_dist = knot_dist
         self.reg_gamma = reg_gamma
         self.xmin = xmin
         self.xmax = xmax
@@ -35,26 +34,12 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         self.density_, self.bins_ = np.histogram(x, bins=10, density=True)
 
     def _validate_hyperparameters(self):
-        
-        if not isinstance(self.knot_num, int):
-            raise ValueError("knot_num must be an integer, got %s." % self.knot_num)
-        
-        if self.knot_dist not in ["uniform", "quantile"]:
-            raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
-
-        if self.knot_num <= 0:
-            raise ValueError("knot_num must be > 0, got" % self.knot_num)
 
         if (self.reg_gamma < 0) or (self.reg_gamma > 1):
             raise ValueError("reg_gamma must be >= 0 and <1, got %s." % self.reg_gamma)
 
         if self.xmin > self.xmax:
             raise ValueError("xmin must be <= xmax, got %s and %s." % (self.xmin, self.xmax))
-
-    def diff(self, x, order=1):
-        
-        derivative = np.array(stats.predict(self.sm_, x, deriv=order)[1]).ravel()
-        return derivative
 
     def visualize(self):
 
@@ -82,23 +67,18 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
     def decision_function(self, x):
 
         check_is_fitted(self, "sm_")
-        if isinstance(self.sm_, (int, float)):
-            pred = np.ones(x.shape[0]) * self.sm_.ravel()
-        else:
-            x = x.copy()
-            x[x < self.xmin] = self.xmin
-            x[x > self.xmax] = self.xmax
-            pred = np.array(stats.predict(self.sm_, x)[1]).ravel()
+        x = x.copy()
+        x[x < self.xmin] = self.xmin
+        x[x > self.xmax] = self.xmax
+        pred = gam.predict_Gam(self.sm_, ro.r("data.frame")(x = x), type="link")
         return pred
 
 
 class SMSplineRegressor(BaseSMSpline, RegressorMixin):
 
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1):
+    def __init__(self, reg_gamma=0.1, xmin=-1, xmax=1):
 
-        super(SMSplineRegressor, self).__init__(knot_num=knot_num,
-                                  knot_dist=knot_dist,
-                                  reg_gamma=reg_gamma,
+        super(SMSplineRegressor, self).__init__(reg_gamma=reg_gamma,
                                   xmin=xmin,
                                   xmax=xmax)
 
@@ -123,18 +103,14 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
             sample_weight = sample_weight * n_samples
            
         unique_num = len(np.unique(x.round(decimals=6)))
-        self.knot_num = min(unique_num, self.knot_num)
         if unique_num >= 4:
-            if self.knot_dist == "uniform":
-                self.sm_ = stats.smooth_spline(x, y, nknots=self.knot_num,
-                                     spar=self.reg_gamma, w=sample_weight, tol=1e-6 * (np.max(x) - np.min(x)))
-            elif self.knot_dist == "quantile":
-                knots = np.percentile(x, list(np.linspace(0, 100, self.knot_num + 2, dtype=np.float32))).tolist()
-                knots = (knots - self.xmin) / (self.xmax - self.xmin)
-                self.sm_ = stats.smooth_spline(x, y, all_knots=ro.FloatVector(knots),
-                                     spar=self.reg_gamma, w=sample_weight, tol=1e-6 * (np.max(x) - np.min(x)))
+            self.sm_ = gam.gam(Formula('y ~ s(x, spar=%f)'% (self.reg_gamma)), family="gaussian",
+                         data=ro.r("data.frame")(x=x, y=y),
+                         weights=ro.r("data.frame")(w=sample_weight)["w"])
         else:
-            self.sm_ = np.mean(y)
+            self.sm_ = gam.gam(Formula('y ~ x'), family="gaussian",
+                         data=ro.r("data.frame")(x=x, y=y), 
+                         weights=ro.r("data.frame")(w=sample_weight)["w"])
         return self
 
     def predict(self, x):
@@ -145,11 +121,9 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
 
 class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
 
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1):
+    def __init__(self, reg_gamma=0.1, xmin=-1, xmax=1):
 
-        super(SMSplineClassifier, self).__init__(knot_num=knot_num,
-                                   knot_dist=knot_dist,
-                                   reg_gamma=reg_gamma,
+        super(SMSplineClassifier, self).__init__(reg_gamma=reg_gamma,
                                    xmin=xmin,
                                    xmax=xmax)
         self.EPS = 10 ** (-8)
@@ -182,20 +156,15 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
         else:
             sample_weight = sample_weight * n_samples
             
-        y = y.copy() * 4 - 2
         unique_num = len(np.unique(x.round(decimals=6)))
-        self.knot_num = min(unique_num, self.knot_num)
         if unique_num >= 4:
-            if self.knot_dist == "uniform":
-                self.sm_ = stats.smooth_spline(x, y, nknots=self.knot_num,
-                                     spar=self.reg_gamma, w=sample_weight, tol=1e-6 * (np.max(x) - np.min(x)))
-            elif self.knot_dist == "quantile":
-                knots = np.percentile(x, list(np.linspace(0, 100, self.knot_num + 2, dtype=np.float32))).tolist()
-                knots = (knots - self.xmin) / (self.xmax - self.xmin)
-                self.sm_ = stats.smooth_spline(x, y, all_knots=ro.FloatVector(knots),
-                                     spar=self.reg_gamma, w=sample_weight, tol=1e-6 * (np.max(x) - np.min(x)))
+            self.sm_ = gam.gam(Formula('y ~ s(x, spar=%f)'% (self.reg_gamma)), family="binomial",
+                         data=ro.r("data.frame")(x=x, y=y),
+                         weights=ro.r("data.frame")(w=sample_weight)["w"])
         else:
-            self.sm_ = np.mean(y)
+            self.sm_ = gam.gam(Formula('y ~ x'), family="binomial",
+                         data=ro.r("data.frame")(x=x, y=y), 
+                         weights=ro.r("data.frame")(w=sample_weight)["w"])
         return self
     
     def predict_proba(self, x):
