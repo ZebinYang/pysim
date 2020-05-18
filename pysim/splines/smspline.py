@@ -17,7 +17,13 @@ from rpy2.robjects import numpy2ri, pandas2ri
 
 numpy2ri.activate()
 pandas2ri.activate()
-gam = importr("gam")
+
+try:
+    gam = importr("gam")
+except:
+    utils = importr('utils')
+    utils.install_packages('gam', repos='http://cran.us.r-project.org')
+    gam = importr("gam")
 
 class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
     """
