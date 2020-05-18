@@ -108,11 +108,11 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
         if unique_num >= 4:
             self.sm_ = gam.gam(Formula('y ~ s(x, spar=%f)'% (self.reg_gamma)), family="gaussian",
                          data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
-                         weights=sample_weight.reshape(-1, 1))
+                         weights=pd.DataFrame({"w":sample_weight})["w"])
         else:
             self.sm_ = gam.gam(Formula('y ~ x'), family="gaussian",
                          data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
-                         weights=sample_weight.reshape(-1, 1))
+                         weights=pd.DataFrame({"w":sample_weight})["w"])
         return self
 
     def predict(self, x):
@@ -162,11 +162,11 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
         if unique_num >= 4:
             self.sm_ = gam.gam(Formula('y ~ s(x, spar=%f)'% (self.reg_gamma)), family="binomial",
                          data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
-                         weights=sample_weight.reshape(-1, 1))
+                         weights=pd.DataFrame({"w":sample_weight})["w"])
         else:
             self.sm_ = gam.gam(Formula('y ~ x'), family="binomial",
                          data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
-                         weights=sample_weight.reshape(-1, 1))
+                         weights=pd.DataFrame({"w":sample_weight})["w"])
         return self
     
     def predict_proba(self, x):
