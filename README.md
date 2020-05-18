@@ -12,7 +12,7 @@ Note pysim will call the R package fps (https://github.com/vqv/fps) using rpy2 i
 
 ```python
 from pysim import SimClassifier
-clf = SimClassifier(method="first_order", reg_lambda=0.1, reg_gamma=10, knot_num=20, knot_dist="uniform", spline="smoothing_spline", degree=2, random_state=0)
+clf = SimClassifier(method="first_order", reg_lambda=0.1, spline="smoothing_spline", reg_gamma=10, knot_num=20, knot_dist="uniform", degree=2, random_state=0)
 ## clf.fit(x, y)
 ```
 
@@ -44,11 +44,11 @@ clf = SimClassifier(method="first_order", reg_lambda=0.1, reg_gamma=10, knot_num
         
         For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to $+\infty$.
 
-- degree: The order of the spline basis. default=2
+- degree: The order of the spline basis, , not used in "smoothing_spline". default=2
 
-- knot_num: The number of knots. default=20
+- knot_num: The number of knots, not used in "smoothing_spline". default=20
 
-- knot_dist: The method of specifying the knots. default="uniform"
+- knot_dist: The method of specifying the knots, only used in "a_spline". default="uniform"
 
         "uniform": uniformly over the domain
         

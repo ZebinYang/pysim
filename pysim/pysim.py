@@ -37,15 +37,15 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
      """
 
     @abstractmethod
-    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=0.1, knot_num=20, knot_dist="uniform",
-                 spline="smoothing_spline", degree=2, random_state=0):
+    def __init__(self, method="first_order", reg_lambda=0.1, spline="smoothing_spline", reg_gamma=0.1,
+                 knot_num=20, knot_dist="uniform", degree=2, random_state=0):
 
         self.method = method
         self.reg_lambda = reg_lambda
+        self.spline = spline
         self.reg_gamma = reg_gamma
         self.knot_num = knot_num
         self.knot_dist = knot_dist
-        self.spline = spline
         self.degree = degree
         
         self.random_state = random_state
@@ -360,15 +360,15 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
 class SimRegressor(BaseSim, RegressorMixin):
 
-    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=0.1, knot_num=20, knot_dist="uniform",
-                 spline="smoothing_spline", degree=2, random_state=0):
+    def __init__(self, method="first_order", reg_lambda=0.1, spline="smoothing_spline", reg_gamma=0.1,
+                 knot_num=20, knot_dist="uniform", degree=2, random_state=0):
 
         super(SimRegressor, self).__init__(method=method,
                                 reg_lambda=reg_lambda,
+                                spline=spline,
                                 reg_gamma=reg_gamma,
                                 knot_num=knot_num,
                                 knot_dist=knot_dist,
-                                spline=spline,
                                 degree=degree,
                                 random_state=random_state)
 
@@ -403,15 +403,15 @@ class SimRegressor(BaseSim, RegressorMixin):
 
 class SimClassifier(BaseSim, ClassifierMixin):
 
-    def __init__(self, method="first_order", reg_lambda=0.1, reg_gamma=0.1, knot_num=20, knot_dist="uniform",
-                 spline="smoothing_spline", degree=2, random_state=0):
+    def __init__(self, method="first_order", reg_lambda=0.1, spline="smoothing_spline", reg_gamma=0.1,
+                 knot_num=20, knot_dist="uniform", degree=2, random_state=0):
 
         super(SimClassifier, self).__init__(method=method,
                                 reg_lambda=reg_lambda,
+                                spline=spline,
                                 reg_gamma=reg_gamma,
                                 knot_num=knot_num,
                                 knot_dist=knot_dist,
-                                spline=spline,
                                 degree=degree,
                                 random_state=random_state)
         self.EPS = 10 **(-8)
