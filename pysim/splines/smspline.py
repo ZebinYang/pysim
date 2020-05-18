@@ -107,11 +107,11 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
         unique_num = len(np.unique(x.round(decimals=6)))
         if unique_num >= 4:
             self.sm_ = gam.gam(Formula('y ~ s(x, spar=%f)'% (self.reg_gamma)), family="gaussian",
-                         data=pd.DataFrame({"x":x, "y":y}),
+                         data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
                          weights=sample_weight.reshape(-1, 1))
         else:
             self.sm_ = gam.gam(Formula('y ~ x'), family="gaussian",
-                         data=pd.DataFrame({"x":x, "y":y}),
+                         data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
                          weights=sample_weight.reshape(-1, 1))
         return self
 
@@ -161,11 +161,11 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
         unique_num = len(np.unique(x.round(decimals=6)))
         if unique_num >= 4:
             self.sm_ = gam.gam(Formula('y ~ s(x, spar=%f)'% (self.reg_gamma)), family="binomial",
-                         data=pd.DataFrame({"x":x, "y":y}),
+                         data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
                          weights=sample_weight.reshape(-1, 1))
         else:
             self.sm_ = gam.gam(Formula('y ~ x'), family="binomial",
-                         data=pd.DataFrame({"x":x, "y":y}),
+                         data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
                          weights=sample_weight.reshape(-1, 1))
         return self
     
