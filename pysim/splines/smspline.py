@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from matplotlib import gridspec
 from matplotlib import pyplot as plt
 from abc import ABCMeta, abstractmethod
@@ -11,10 +12,11 @@ from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 
 from rpy2 import robjects as ro
 from rpy2.robjects import Formula
-from rpy2.robjects import numpy2ri
 from rpy2.robjects.packages import importr
+from rpy2.robjects import numpy2ri, pandas2ri
 
 numpy2ri.activate()
+pandas2ri.activate()
 gam = importr("gam")
 
 class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
@@ -70,7 +72,7 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         x = x.copy()
         x[x < self.xmin] = self.xmin
         x[x > self.xmax] = self.xmax
-        pred = gam.predict_Gam(self.sm_, ro.r("data.frame")(x = x), type="link")
+        pred = gam.predict_Gam(self.sm_, ro.r("data.frame")(x=x), type="link")
         return pred
 
 
@@ -105,12 +107,12 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
         unique_num = len(np.unique(x.round(decimals=6)))
         if unique_num >= 4:
             self.sm_ = gam.gam(Formula('y ~ s(x, spar=%f)'% (self.reg_gamma)), family="gaussian",
-                         data=ro.r("data.frame")(x=x, y=y),
-                         weights=ro.r("data.frame")(w=sample_weight)["w"])
+                         data=pd.DataFrame({"x":x, "y":y}),
+                         weights=sample_weight.reshape(-1, 1))
         else:
             self.sm_ = gam.gam(Formula('y ~ x'), family="gaussian",
-                         data=ro.r("data.frame")(x=x, y=y), 
-                         weights=ro.r("data.frame")(w=sample_weight)["w"])
+                         data=pd.DataFrame({"x":x, "y":y}),
+                         weights=sample_weight.reshape(-1, 1))
         return self
 
     def predict(self, x):
@@ -159,12 +161,12 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
         unique_num = len(np.unique(x.round(decimals=6)))
         if unique_num >= 4:
             self.sm_ = gam.gam(Formula('y ~ s(x, spar=%f)'% (self.reg_gamma)), family="binomial",
-                         data=ro.r("data.frame")(x=x, y=y),
-                         weights=ro.r("data.frame")(w=sample_weight)["w"])
+                         data=pd.DataFrame({"x":x, "y":y}),
+                         weights=sample_weight.reshape(-1, 1))
         else:
             self.sm_ = gam.gam(Formula('y ~ x'), family="binomial",
-                         data=ro.r("data.frame")(x=x, y=y), 
-                         weights=ro.r("data.frame")(w=sample_weight)["w"])
+                         data=pd.DataFrame({"x":x, "y":y}),
+                         weights=sample_weight.reshape(-1, 1))
         return self
     
     def predict_proba(self, x):
