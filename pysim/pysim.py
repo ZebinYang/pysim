@@ -384,7 +384,7 @@ class SimRegressor(BaseSim, RegressorMixin):
                                  xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
         elif self.spline == "smoothing_spline":
-            self.shape_fit_ = SMSplineRegressor(reg_gamma=self.reg_gamma, xmin=xmin, xmax=xmax)
+            self.shape_fit_ = SMSplineRegressor(knot_num=self.knot_num, reg_gamma=self.reg_gamma, xmin=xmin, xmax=xmax)
             self.shape_fit_.fit(x, y, sample_weight)
         elif self.spline == "p_spline":
             self.shape_fit_ = PSplineRegressor(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
@@ -437,7 +437,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
                              xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
         elif self.spline == "smoothing_spline":
-            self.shape_fit_ = SMSplineClassifier(reg_gamma=self.reg_gamma, xmin=xmin, xmax=xmax)
+            self.shape_fit_ = SMSplineClassifier(knot_num=self.knot_num, reg_gamma=self.reg_gamma, xmin=xmin, xmax=xmax)
             self.shape_fit_.fit(x, y, sample_weight)
             
         elif self.spline == "p_spline":

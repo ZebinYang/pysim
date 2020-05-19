@@ -39,8 +39,9 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
      """
 
     @abstractmethod
-    def __init__(self, reg_gamma=0.1, xmin=-1, xmax=1):
+    def __init__(self, knot_num=20, reg_gamma=0.1, xmin=-1, xmax=1):
 
+        self.knot_num = knot_num
         self.reg_gamma = reg_gamma
         self.xmin = xmin
         self.xmax = xmax
@@ -50,6 +51,12 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         self.density_, self.bins_ = np.histogram(x, bins=10, density=True)
 
     def _validate_hyperparameters(self):
+
+        if not isinstance(self.knot_num, int):
+            raise ValueError("knot_num must be an integer, got %s." % self.knot_num)
+
+        if self.knot_num <= 0:
+            raise ValueError("knot_num must be > 0, got" % self.knot_num)
 
         if (self.reg_gamma < 0) or (self.reg_gamma > 1):
             raise ValueError("reg_gamma must be >= 0 and <1, got %s." % self.reg_gamma)
@@ -98,9 +105,10 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
 
 class SMSplineRegressor(BaseSMSpline, RegressorMixin):
 
-    def __init__(self, reg_gamma=0.1, xmin=-1, xmax=1):
+    def __init__(self, knot_num=20, reg_gamma=0.1, xmin=-1, xmax=1):
 
-        super(SMSplineRegressor, self).__init__(reg_gamma=reg_gamma,
+        super(SMSplineRegressor, self).__init__(knot_num=knot_num,
+                                  reg_gamma=reg_gamma,
                                   xmin=xmin,
                                   xmax=xmax)
 
@@ -144,11 +152,12 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
 
 class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
 
-    def __init__(self, reg_gamma=0.1, xmin=-1, xmax=1):
+    def __init__(self, knot_num=20, reg_gamma=0.1, xmin=-1, xmax=1):
 
-        super(SMSplineClassifier, self).__init__(reg_gamma=reg_gamma,
-                                   xmin=xmin,
-                                   xmax=xmax)
+        super(SMSplineClassifier, self).__init__(knot_num=knot_num,
+                                  reg_gamma=reg_gamma,
+                                  xmin=xmin,
+                                  xmax=xmax)
         self.EPS = 10 ** (-8)
 
     def get_loss(self, label, pred, sample_weight=None):
