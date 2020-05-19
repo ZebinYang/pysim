@@ -175,11 +175,11 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
         while exit:
             try:
                 self.sm_ = bigsplines.bigssg(Formula('y ~ x'), family="binomial",
-                    nknots=self.knot_num, lambdas=self.reg_gamma + 0.00000001 * i, rparm=1e-4,
+                    nknots=self.knot_num, lambdas=self.reg_gamma + i * 10 ** (-9), rparm=1e-4,
                     data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
                     weights=pd.DataFrame({"w":sample_weight})["w"])
                 exit = False
-            except ValueError:
+            except rpy2.rinterface_lib.embedded.RRuntimeError:
                 i += 1
         return self
     
