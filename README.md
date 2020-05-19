@@ -44,9 +44,9 @@ clf = SimClassifier(method="first_order", reg_lambda=0.1, spline="smoothing_spli
         
         For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to $+\infty$.
 
-- degree: The order of the spline basis, , not used in "smoothing_spline". default=2
+- degree: The order of the spline basis, not used in "smoothing_spline". default=2
 
-- knot_num: The number of knots, not used in "smoothing_spline". default=20
+- knot_num: The number of knots. default=20
 
 - knot_dist: The method of specifying the knots, only used in "a_spline". default="uniform"
 
