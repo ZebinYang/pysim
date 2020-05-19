@@ -170,10 +170,17 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
         else:
             sample_weight = np.round(sample_weight / np.sum(sample_weight) * n_samples, 4)
 
-        self.sm_ = bigsplines.bigssg(Formula('y ~ x'), family="binomial",
-                    nknots=self.knot_num, lambdas=self.reg_gamma, rparm=1e-4,
+        i = 0
+        exit = True
+        while exit:
+            try:
+                self.sm_ = bigsplines.bigssg(Formula('y ~ x'), family="binomial",
+                    nknots=self.knot_num, lambdas=self.reg_gamma + 0.00000001 * i, rparm=1e-4,
                     data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
                     weights=pd.DataFrame({"w":sample_weight})["w"])
+                exit = False
+            except ValueError:
+                i += 1
         return self
     
     def predict_proba(self, x):
