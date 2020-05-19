@@ -19,11 +19,19 @@ numpy2ri.activate()
 pandas2ri.activate()
 
 try:
-    gam = importr("gam")
+    bigsplines = importr("bigsplines")
 except:
     utils = importr('utils')
-    utils.install_packages('gam', repos='http://cran.us.r-project.org')
-    gam = importr("gam")
+    utils.install_packages('bigsplines', repos='http://cran.us.r-project.org')
+    bigsplines = importr("bigsplines")
+
+try:
+    stats = importr("stats")
+except:
+    utils = importr('utils')
+    utils.install_packages('stats', repos='http://cran.us.r-project.org')
+    stats = importr("stats")
+
 
 class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
     """
@@ -75,10 +83,16 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
     def decision_function(self, x):
 
         check_is_fitted(self, "sm_")
-        x = x.copy()
-        x[x < self.xmin] = self.xmin
-        x[x > self.xmax] = self.xmax
-        pred = gam.predict_Gam(self.sm_, ro.r("data.frame")(x=x), type="link")
+        if "coefficients" not in self.sm_.names:
+            if "family" in self.sm_.names:
+                pred = bigsplines.predict_bigssg(self.sm_, ro.r("data.frame")(x=x))[0]
+            if "family" not in self.sm_.names:
+                pred = bigsplines.predict_bigssa(self.sm_, ro.r("data.frame")(x=x))
+        else:
+            x = x.copy()
+            x[x < self.xmin] = self.xmin
+            x[x > self.xmax] = self.xmax
+            pred = stats.predict_glm(self.sm_, ro.r("data.frame")(x=x))
         return pred
 
 
@@ -110,13 +124,14 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
         else:
             sample_weight = sample_weight * n_samples
            
-        unique_num = len(np.unique(x.round(decimals=6)))
-        if unique_num >= 4:
-            self.sm_ = gam.gam(Formula('y ~ s(x, spar=%f)'% (self.reg_gamma)), family="gaussian",
+        unique_num = len(np.unique(x.round(decimals=4)))
+        self.knot_num = min(unique_num, self.knot_num)
+        if unique_num >= 4:          
+            self.sm_ = bigsplines.bigssa(Formula('y ~ x'), nknots=self.knot_num, lambdas=self.reg_gamma, rparm=1e-4,
                          data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
                          weights=pd.DataFrame({"w":sample_weight})["w"])
         else:
-            self.sm_ = gam.gam(Formula('y ~ x'), family="gaussian",
+            self.sm_ = stats.glm(Formula('y ~ x'), family="gaussian",
                          data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
                          weights=pd.DataFrame({"w":sample_weight})["w"])
         return self
@@ -164,15 +179,19 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
         else:
             sample_weight = sample_weight * n_samples
             
-        unique_num = len(np.unique(x.round(decimals=6)))
-        if unique_num >= 4:
-            self.sm_ = gam.gam(Formula('y ~ s(x, spar=%f)'% (self.reg_gamma)), family="binomial",
-                         data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
-                         weights=pd.DataFrame({"w":sample_weight})["w"])
+        unique_num = len(np.unique(x.round(decimals=4)))
+        if unique_num >= 4:          
+            self.sm_ = bigsplines.bigssg(Formula('y ~ x'), family="binomial",
+                                nknots=self.knot_num, lambdas=self.reg_gamma, rparm=1e-4,
+                                data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
+                                weights=pd.DataFrame({"w":sample_weight})["w"])
+
         else:
-            self.sm_ = gam.gam(Formula('y ~ x'), family="binomial",
+            self.sm_ = stats.glm(Formula('y ~ x'), family="binomial",
                          data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
                          weights=pd.DataFrame({"w":sample_weight})["w"])
+        return self
+
         return self
     
     def predict_proba(self, x):
