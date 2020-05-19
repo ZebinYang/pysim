@@ -222,7 +222,7 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
         if sample_weight is None:
             sample_weight = np.ones(n_samples)
         else:
-            sample_weight = sample_weight * n_samples
+            sample_weight = np.round(sample_weight / np.sum(sample_weight) * n_samples, 4)
             
         if self.knot_dist == "uniform":
             knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
@@ -326,7 +326,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
         if sample_weight is None:
             sample_weight = np.ones(n_samples)
         else:
-            sample_weight = sample_weight * n_samples
+            sample_weight = np.round(sample_weight / np.sum(sample_weight) * n_samples, 4)
 
         if self.knot_dist == "uniform":
             knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32)[1:-1])
