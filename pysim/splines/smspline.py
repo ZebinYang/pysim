@@ -10,6 +10,7 @@ from sklearn.utils.validation import check_is_fitted
 from sklearn.utils import check_array, check_X_y
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 
+import rpy2
 from rpy2 import robjects as ro
 from rpy2.robjects import Formula
 from rpy2.robjects.packages import importr
