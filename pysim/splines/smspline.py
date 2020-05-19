@@ -187,20 +187,23 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
             sample_weight = np.ones(n_samples)
         else:
             sample_weight = sample_weight * n_samples
-            
-        unique_num = len(np.unique(x.round(decimals=4)))
-        if unique_num >= 4:          
-            self.sm_ = bigsplines.bigssg(Formula('y ~ x'), family="binomial",
-                                nknots=self.knot_num, lambdas=self.reg_gamma, rparm=1e-4,
-                                data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
-                                weights=pd.DataFrame({"w":sample_weight})["w"])
 
-        else:
-            self.sm_ = stats.glm(Formula('y ~ x'), family="binomial",
-                         data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
-                         weights=pd.DataFrame({"w":sample_weight})["w"])
-        return self
+        self.sm_ = bigsplines.bigssg(Formula('y ~ x'), family="binomial",
+                    nknots=self.knot_num, lambdas=self.reg_gamma, rparm=1e-4,
+                    data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
+                    weights=pd.DataFrame({"w":sample_weight})["w"])
 
+#         unique_num = len(np.unique(x.round(decimals=4)))
+#         if unique_num >= 4:          
+#             self.sm_ = bigsplines.bigssg(Formula('y ~ x'), family="binomial",
+#                                 nknots=self.knot_num, lambdas=self.reg_gamma, rparm=1e-4,
+#                                 data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
+#                                 weights=pd.DataFrame({"w":sample_weight})["w"])
+
+#         else:
+#             self.sm_ = stats.glm(Formula('y ~ x'), family="binomial",
+#                          data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
+#                          weights=pd.DataFrame({"w":sample_weight})["w"])
         return self
     
     def predict_proba(self, x):
