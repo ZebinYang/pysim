@@ -92,7 +92,7 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         check_is_fitted(self, "sm_")
         if "coefficients" not in self.sm_.names:
             if "family" in self.sm_.names:
-                pred = bigsplines.predict_bigssg(self.sm_, ro.r("data.frame")(x=x))[0]
+                pred = bigsplines.predict_bigssg(self.sm_, ro.r("data.frame")(x=x))[1]
             if "family" not in self.sm_.names:
                 pred = bigsplines.predict_bigssa(self.sm_, ro.r("data.frame")(x=x))
         else:
