@@ -97,7 +97,7 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         x[x < self.xmin] = self.xmin
         x[x > self.xmax] = self.xmax
         if "coefficients" in self.sm_.names:
-            pred = np.array(stats.predict_glm(sm_, ro.r("data.frame")(x=x))).ravel()
+            pred = np.array(stats.predict_glm(self.sm_, ro.r("data.frame")(x=x))).ravel()
         elif "spar" in self.sm_.names:
             pred = np.array(stats.predict_smooth_spline(self.sm_, x, deriv=0)[1]).ravel()
         return pred
