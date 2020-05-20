@@ -26,11 +26,12 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
      """
 
     @abstractmethod
-    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, knot_dist="uniform", ortho_shrink=1, loss_threshold=0.01, 
-                 reg_lambda=0.1, reg_gamma=10, stein_method="first_order", random_state=0):
+    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, knot_dist="uniform", learning_rate=0.1, ortho_shrink=1,
+                 loss_threshold=0.01, reg_lambda=0.1, reg_gamma=10, stein_method="first_order", random_state=0):
 
         self.n_estimators = n_estimators
         self.val_ratio = val_ratio
+        self.learning_rate = learning_rate
         self.ortho_shrink = ortho_shrink
         self.loss_threshold = loss_threshold
         self.stein_method = stein_method
@@ -105,6 +106,9 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 raise ValueError("all the elements in reg_gamma must be >= 0, got %s." % self.reg_gamma)
             self.reg_gamma_list = [self.reg_gamma]
 
+        if self.learning_rate <= 0:
+            raise ValueError("learning_rate must be > 0, got" % self.learning_rate)
+            
     @property
     def importance_ratios_(self):
         """Return the estimator importance ratios (the higher, the more important the feature).
@@ -516,7 +520,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
     def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, knot_dist="uniform", reg_lambda=0.1, reg_gamma=10,
-                 ortho_shrink=1, loss_threshold=0.01, stein_method="first_order", random_state=0):
+                 learning_rate=0.1, ortho_shrink=1, loss_threshold=0.01, stein_method="first_order", random_state=0):
 
         super(SimBoostRegressor, self).__init__(n_estimators=n_estimators,
                                    val_ratio=val_ratio,
@@ -526,6 +530,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                                    reg_lambda=reg_lambda,
                                    reg_gamma=reg_gamma,
                                    stein_method=stein_method,
+                                   learning_rate=learning_rate,
                                    ortho_shrink=ortho_shrink,
                                    loss_threshold=loss_threshold,
                                    random_state=random_state)
@@ -583,7 +588,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                 sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z,
                         sample_weight=sample_weight, proj_mat=proj_mat, val_ratio=self.val_ratio)
             # update    
-            z = z - sim_estimator.predict(x)
+            z = z - self.learning_rate * sim_estimator.predict(x)
             self.sim_estimators_.append(sim_estimator)
 
     def _pruning(self, x, y):
@@ -629,8 +634,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     
 class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
-    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, knot_dist="uniform", ortho_shrink=1, loss_threshold=0.01, 
-                 reg_lambda=0.1, reg_gamma=10, stein_method="first_order", random_state=0):
+    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, knot_dist="uniform", learning_rate=0.1, ortho_shrink=1,
+                 loss_threshold=0.01, reg_lambda=0.1, reg_gamma=10, stein_method="first_order", random_state=0):
 
         super(SimBoostClassifier, self).__init__(n_estimators=n_estimators,
                                       val_ratio=val_ratio,
@@ -640,6 +645,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                                       reg_lambda=reg_lambda,
                                       reg_gamma=reg_gamma,
                                       stein_method=stein_method,
+                                      learning_rate=learning_rate,
                                       ortho_shrink=ortho_shrink,
                                       loss_threshold=loss_threshold,
                                       random_state=random_state)
@@ -731,9 +737,9 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
             if inner_update:
                 sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z,
                         sample_weight=sample_weight, proj_mat=proj_mat, val_ratio=self.val_ratio)
-            pred_train += sim_estimator.predict(x[self.tr_idx])
+            pred_train += self.learning_rate * sim_estimator.predict(x[self.tr_idx])
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
-            pred_val += sim_estimator.predict(x[self.val_idx])
+            pred_val += self.learning_rate * sim_estimator.predict(x[self.val_idx])
             proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
             self.sim_estimators_.append(sim_estimator)
      
