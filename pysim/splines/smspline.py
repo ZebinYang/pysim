@@ -99,7 +99,7 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         if "coefficients" in self.sm_.names:
             pred = np.array(stats.predict_glm(sm_, ro.r("data.frame")(x=x))).ravel()
         elif "spar" in self.sm_.names:
-            pred = np.array(stats.predict_smooth_spline(self.sm_, x)[1]).ravel()
+            pred = np.array(stats.predict_smooth_spline(self.sm_, x, deriv=0)[1]).ravel()
         return pred
 
 
@@ -135,7 +135,6 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
 
         unique_num = len(np.unique(x.round(decimals=6)))
         if unique_num >= 4:
-            y = y.copy() * 4 - 2
             self.knot_num = min(unique_num, self.knot_num)
             if self.knot_dist == "uniform":
                 self.sm_ = stats.smooth_spline(x, y, nknots=self.knot_num,
