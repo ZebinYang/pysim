@@ -513,7 +513,12 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
     def decision_function(self, x):
 
         check_is_fitted(self, "best_estimators_")
-        pred = np.sum([est.predict(x) for est in self.best_estimators_], axis=0) + self.intercept_ * np.ones(x.shape[0])
+        pred = self.intercept_ * np.ones(x.shape[0])
+        for est in self.best_estimators_:
+            if "sim" in est.named_steps.keys():
+                pred += self.learning_rate * est.predict(x)
+            elif "dummy_lr" in est.named_steps.keys():
+                pred += est.predict(x)
         return pred
 
 
@@ -596,12 +601,12 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         component_importance = {}
         for indice, est in enumerate(self.sim_estimators_):
             component_importance.update({"sim " + str(indice + 1): {"type": "sim", "indice": indice,
-                                                     "importance": np.std(est.predict(x[self.tr_idx, :]))}})
+                                 "importance": np.std(self.learning_rate * est.predict(x[self.tr_idx, :]))}})
 
         for indice, est in enumerate(self.dummy_estimators_):
             feature_name = list(est.named_steps.keys())[0]
             component_importance.update({feature_name: {"type": "dummy_lr", "indice": indice,
-                                             "importance": np.std(est.predict(x[self.tr_idx, :]))}})
+                                 "importance": np.std(est.predict(x[self.tr_idx, :]))}})
         
         self.estimators_ = []
         pred_val = self.intercept_ * np.ones(len(self.val_idx))
@@ -610,11 +615,12 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
             if item["type"] == "sim":
                 est = self.sim_estimators_[item["indice"]]
+                pred_val += self.learning_rate * est.predict(x[self.val_idx])
             elif item["type"] == "dummy_lr":
                 est = self.dummy_estimators_[item["indice"]]
+                pred_val += est.predict(x[self.val_idx])
 
             self.estimators_.append(est)
-            pred_val += est.predict(x[self.val_idx])
             self.val_mse_.append(mean_squared_error(y[self.val_idx], pred_val))
 
         best_loss = np.min(self.val_mse_)
