@@ -572,12 +572,15 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         for i in range(self.n_estimators):
 
             # projection matrix
-            if (i == 0) or (i >= self.nfeature_num_) or (self.ortho_shrink == 0):
-                proj_mat = np.eye(self.nfeature_num_)
+            if self.learning_rate == 1:
+                if (i == 0) or (i >= self.nfeature_num_) or (self.ortho_shrink == 0):
+                    proj_mat = np.eye(self.nfeature_num_)
+                else:
+                    projection_indices_ = np.array([est["sim"].beta_.flatten() for est in self.sim_estimators_]).T
+                    u, _, _ = np.linalg.svd(projection_indices_, full_matrices=False)
+                    proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
             else:
-                projection_indices_ = np.array([est["sim"].beta_.flatten() for est in self.sim_estimators_]).T
-                u, _, _ = np.linalg.svd(projection_indices_, full_matrices=False)
-                proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
+                proj_mat = None
 
             # fit Sim estimator
             param_grid = {"method": self.stein_method_list, 
@@ -591,6 +594,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             sim = grid.estimator.set_params(**grid.cv_results_["params"][np.where((grid.cv_results_["rank_test_mse"] == 1))[0][0]])
             sim_estimator = Pipeline(steps=[("select", FunctionTransformer(lambda data: data[:, self.nfeature_index_list_], validate=False)),
                                   ("sim", sim)])
+            
             sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
                        sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
             if inner_update:
@@ -720,12 +724,15 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                 z = np.clip(z, a_min=-8, a_max=8)
 
             # projection matrix
-            if (i == 0) or (i >= self.nfeature_num_) or (self.ortho_shrink == 0):
-                proj_mat = np.eye(self.nfeature_num_)
+            if self.learning_rate == 1:
+                if (i == 0) or (i >= self.nfeature_num_) or (self.ortho_shrink == 0):
+                    proj_mat = np.eye(self.nfeature_num_)
+                else:
+                    projection_indices_ = np.array([est["sim"].beta_.flatten() for est in self.sim_estimators_]).T
+                    u, _, _ = np.linalg.svd(projection_indices_, full_matrices=False)
+                    proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
             else:
-                projection_indices_ = np.array([est["sim"].beta_.flatten() for est in self.sim_estimators_]).T
-                u, _, _ = np.linalg.svd(projection_indices_, full_matrices=False)
-                proj_mat = np.eye(u.shape[0]) - self.ortho_shrink * np.dot(u, u.T)
+                proj_mat = None
 
             # fit Sim estimator
             param_grid = {"method": self.stein_method_list, 
@@ -759,12 +766,12 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         component_importance = {}
         for indice, est in enumerate(self.sim_estimators_):
             component_importance.update({"sim " + str(indice + 1): {"type": "sim", "indice": indice,
-                                                  "importance": np.std(est.predict(x[self.tr_idx, :]))}})
+                                "importance": np.std(clf.learning_rate * est.predict(x[self.tr_idx, :]))}})
 
         for indice, est in enumerate(self.dummy_estimators_):
             feature_name = list(est.named_steps.keys())[0]
             component_importance.update({feature_name: {"type": "dummy_lr", "indice": indice,
-                                              "importance": np.std(est.predict(x[self.tr_idx, :]))}})
+                                "importance": np.std(clf.learning_rate * est.predict(x[self.tr_idx, :]))}})
     
         self.estimators_ = []
         pred_val = self.intercept_ + np.zeros(len(self.val_idx))
@@ -774,9 +781,11 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             if item["type"] == "sim":
                 est = self.sim_estimators_[item["indice"]]
+                pred_val += self.learning_rate * est.predict(x[self.val_idx])
             elif item["type"] == "dummy_lr":
                 est = self.dummy_estimators_[item["indice"]]
-
+                pred_val += est.predict(x[self.val_idx])
+                
             self.estimators_.append(est)
             pred_val += est.predict(x[self.val_idx])
             proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
