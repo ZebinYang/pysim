@@ -26,29 +26,31 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
      """
 
     @abstractmethod
-    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, knot_dist="uniform", learning_rate=0.1, ortho_shrink=1,
-                 loss_threshold=0.01, reg_lambda=0.1, reg_gamma=10, stein_method="first_order", random_state=0):
+    def __init__(self, n_estimators, stein_method="first_order", spline="a_spline", learning_rate=0.1, reg_lambda=0.1, reg_gamma=0.1, 
+                 knot_dist="uniform", degree=2, knot_num=20, ortho_shrink=1, loss_threshold=0.01, val_ratio=0.2, random_state=0):
 
         self.n_estimators = n_estimators
-        self.val_ratio = val_ratio
-        self.learning_rate = learning_rate
-        self.ortho_shrink = ortho_shrink
-        self.loss_threshold = loss_threshold
         self.stein_method = stein_method
-        
-        self.degree = degree
-        self.knot_num = knot_num
-        self.knot_dist = knot_dist
+        self.spline = spline
+        self.learning_rate = learning_rate
         self.reg_lambda = reg_lambda
         self.reg_gamma = reg_gamma
+        self.knot_dist = knot_dist
+        self.degree = degree
+        self.knot_num = knot_num
 
-        self.random_state = random_state
-        
+        self.ortho_shrink = ortho_shrink
+        self.loss_threshold = loss_threshold
+        self.val_ratio = val_ratio
+        self.random_state = random_state        
 
     def _validate_hyperparameters(self):
 
         if not isinstance(self.n_estimators, int):
             raise ValueError("n_estimators must be an integer, got %s." % self.n_estimators)
+
+        if self.n_estimators < 0:
+            raise ValueError("n_estimators must be >= 0, got" % self.n_estimators)
 
         if isinstance(self.stein_method, list):
             for val in self.stein_method:
@@ -62,29 +64,12 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                                  self.stein_method)
             self.stein_method_list = [self.stein_method]
 
-        if self.n_estimators < 0:
-            raise ValueError("n_estimators must be >= 0, got" % self.n_estimators)
-
-        if self.val_ratio <= 0:
-            raise ValueError("val_ratio must be > 0, got" % self.val_ratio)
-
-        if self.val_ratio >= 1:
-            raise ValueError("val_ratio must be < 1, got %s." % self.val_ratio)
-
-        if not isinstance(self.degree, int):
-            raise ValueError("degree must be an integer, got %s." % self.degree)
-
-        if self.degree < 0:
-            raise ValueError("degree must be >= 0, got" % self.degree)
+        if self.spline not in ["a_spline", "smoothing_spline", "p_spline", "mono_p_spline"]:
+            raise ValueError("spline must be an element of [a_spline, smoothing_spline, p_spline, mono_p_spline], got %s." % 
+                         self.spline)
         
-        if not isinstance(self.knot_num, int):
-            raise ValueError("knot_num must be an integer, got %s." % self.knot_num)
-
-        if self.knot_num <= 0:
-            raise ValueError("knot_num must be > 0, got" % self.knot_num)
-
-        if self.knot_dist not in ["uniform", "quantile"]:
-            raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
+        if self.learning_rate <= 0:
+            raise ValueError("learning_rate must be > 0, got" % self.learning_rate)
 
         if isinstance(self.reg_lambda, list):
             for val in self.reg_lambda:
@@ -106,9 +91,27 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 raise ValueError("all the elements in reg_gamma must be >= 0, got %s." % self.reg_gamma)
             self.reg_gamma_list = [self.reg_gamma]
 
-        if self.learning_rate <= 0:
-            raise ValueError("learning_rate must be > 0, got" % self.learning_rate)
-            
+        if not isinstance(self.degree, int):
+            raise ValueError("degree must be an integer, got %s." % self.degree)
+
+        if self.degree < 0:
+            raise ValueError("degree must be >= 0, got" % self.degree)
+        
+        if not isinstance(self.knot_num, int):
+            raise ValueError("knot_num must be an integer, got %s." % self.knot_num)
+
+        if self.knot_dist not in ["uniform", "quantile"]:
+            raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
+
+        if self.knot_num <= 0:
+            raise ValueError("knot_num must be > 0, got" % self.knot_num)
+
+        if self.val_ratio <= 0:
+            raise ValueError("val_ratio must be > 0, got" % self.val_ratio)
+
+        if self.val_ratio >= 1:
+            raise ValueError("val_ratio must be < 1, got %s." % self.val_ratio)
+  
     @property
     def importance_ratios_(self):
         """Return the estimator importance ratios (the higher, the more important the feature).
@@ -524,20 +527,21 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
 class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
-    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, knot_dist="uniform", reg_lambda=0.1, reg_gamma=10,
-                 learning_rate=0.1, ortho_shrink=1, loss_threshold=0.01, stein_method="first_order", random_state=0):
+    def __init__(self, n_estimators, stein_method="first_order", spline="a_spline", learning_rate=0.1, reg_lambda=0.1, reg_gamma=0.1, 
+                 knot_dist="uniform", degree=2, knot_num=20, ortho_shrink=1, loss_threshold=0.01, val_ratio=0.2, random_state=0):
 
         super(SimBoostRegressor, self).__init__(n_estimators=n_estimators,
-                                   val_ratio=val_ratio,
-                                   degree=degree,
-                                   knot_num=knot_num,
-                                   knot_dist=knot_dist,
+                                   stein_method=stein_method,
+                                   spline=spline,
+                                   learning_rate=learning_rate,
                                    reg_lambda=reg_lambda,
                                    reg_gamma=reg_gamma,
-                                   stein_method=stein_method,
-                                   learning_rate=learning_rate,
+                                   knot_dist=knot_dist,
+                                   degree=degree,
+                                   knot_num=knot_num,
                                    ortho_shrink=ortho_shrink,
                                    loss_threshold=loss_threshold,
+                                   val_ratio=val_ratio,
                                    random_state=random_state)
 
     def _validate_input(self, x, y):
@@ -579,7 +583,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             param_grid = {"method": self.stein_method_list, 
                       "reg_lambda": self.reg_lambda_list,
                       "reg_gamma": self.reg_gamma_list}
-            grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num,
+            grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, spline=self.spline,
                                   knot_dist=self.knot_dist, random_state=self.random_state), 
                          scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                          cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)
@@ -640,21 +644,22 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     
 class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
-    def __init__(self, n_estimators, val_ratio=0.2, degree=2, knot_num=20, knot_dist="uniform", learning_rate=0.1, ortho_shrink=1,
-                 loss_threshold=0.01, reg_lambda=0.1, reg_gamma=10, stein_method="first_order", random_state=0):
+    def __init__(self, n_estimators, stein_method="first_order", spline="a_spline", learning_rate=0.1, reg_lambda=0.1, reg_gamma=0.1, 
+                 knot_dist="uniform", degree=2, knot_num=20, ortho_shrink=1, loss_threshold=0.01, val_ratio=0.2, random_state=0):
 
         super(SimBoostClassifier, self).__init__(n_estimators=n_estimators,
-                                      val_ratio=val_ratio,
-                                      degree=degree,
-                                      knot_num=knot_num,
-                                      knot_dist=knot_dist,
-                                      reg_lambda=reg_lambda,
-                                      reg_gamma=reg_gamma,
-                                      stein_method=stein_method,
-                                      learning_rate=learning_rate,
-                                      ortho_shrink=ortho_shrink,
-                                      loss_threshold=loss_threshold,
-                                      random_state=random_state)
+                                   stein_method=stein_method,
+                                   spline=spline,
+                                   learning_rate=learning_rate,
+                                   reg_lambda=reg_lambda,
+                                   reg_gamma=reg_gamma,
+                                   knot_dist=knot_dist,
+                                   degree=degree,
+                                   knot_num=knot_num,
+                                   ortho_shrink=ortho_shrink,
+                                   loss_threshold=loss_threshold,
+                                   val_ratio=val_ratio,
+                                   random_state=random_state)
 
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
@@ -726,7 +731,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
             param_grid = {"method": self.stein_method_list, 
                       "reg_lambda": self.reg_lambda_list,
                       "reg_gamma": self.reg_gamma_list}
-            grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num,
+            grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, spline=self.spline,
                                   knot_dist=self.knot_dist, random_state=self.random_state), 
                           scoring={"mse": make_scorer(mean_squared_error, greater_is_better=False)}, refit=False,
                           cv=PredefinedSplit(val_fold), param_grid=param_grid, verbose=0, error_score=np.nan)

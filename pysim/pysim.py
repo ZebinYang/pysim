@@ -71,8 +71,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
 
         if self.spline not in ["a_spline", "smoothing_spline", "p_spline", "mono_p_spline"]:
-            raise ValueError("base_method must be an element of [a_spline, smoothing_spline, p_spline, mono_p_spline], got %s." % 
-                         self.base_method)
+            raise ValueError("spline must be an element of [a_spline, smoothing_spline, p_spline, mono_p_spline], got %s." % 
+                         self.spline)
 
         if (self.reg_lambda < 0) or (self.reg_lambda > 1):
             raise ValueError("reg_lambda must be >= 0 and <=1, got %s." % self.reg_lambda)
