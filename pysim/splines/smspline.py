@@ -98,7 +98,7 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         x[x > self.xmax] = self.xmax
         if "coefficients" in self.sm_.names:
             pred = np.array(stats.predict_glm(sm_, ro.r("data.frame")(x=x))).ravel()
-        if "spar" not in self.sm_.names:
+        elif "spar" in self.sm_.names:
             pred = np.array(stats.predict_smooth_spline(self.sm_, x)[1]).ravel()
         return pred
 
@@ -146,7 +146,9 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
                 self.sm_ = stats.smooth_spline(x, y, all_knots=ro.FloatVector(knots),
                                      spar=self.reg_gamma, w=sample_weight, tol=1e-6 * (np.max(x) - np.min(x)))
         else:
-            self.sm_ = stats.glm
+            self.sm_ = stats.glm(Formula('y ~ x'), family="gaussian",
+                    data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
+                    weights=sample_weight)
         return self
 
     def predict(self, x):
