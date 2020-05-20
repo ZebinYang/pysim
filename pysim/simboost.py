@@ -766,12 +766,12 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         component_importance = {}
         for indice, est in enumerate(self.sim_estimators_):
             component_importance.update({"sim " + str(indice + 1): {"type": "sim", "indice": indice,
-                                "importance": np.std(clf.learning_rate * est.predict(x[self.tr_idx, :]))}})
+                                "importance": np.std(self.learning_rate * est.predict(x[self.tr_idx, :]))}})
 
         for indice, est in enumerate(self.dummy_estimators_):
             feature_name = list(est.named_steps.keys())[0]
             component_importance.update({feature_name: {"type": "dummy_lr", "indice": indice,
-                                "importance": np.std(clf.learning_rate * est.predict(x[self.tr_idx, :]))}})
+                                "importance": np.std(self.learning_rate * est.predict(x[self.tr_idx, :]))}})
     
         self.estimators_ = []
         pred_val = self.intercept_ + np.zeros(len(self.val_idx))

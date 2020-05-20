@@ -48,7 +48,7 @@ clf = SimClassifier(method="first_order", reg_lambda=0.1, spline="smoothing_spli
 
 - knot_num: The number of knots. default=20
 
-- knot_dist: The method of specifying the knots, only used in "a_spline". default="uniform"
+- knot_dist: The method of specifying the knots. default="uniform"
 
         "uniform": uniformly over the domain
         
