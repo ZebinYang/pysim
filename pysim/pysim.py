@@ -1,3 +1,4 @@
+import scipy
 import numpy as np
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
@@ -215,7 +216,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     offset = (iterations * batch_size) % train_size
                     batch_xx = tr_x[offset:(offset + batch_size), :]
                     batch_yy = tr_y[offset:(offset + batch_size)]
-                    batch_sample_weight = sample_weight[offset:(offset + batch_size)]
+                    batch_sample_weight = sample_weight[idx1][offset:(offset + batch_size)]
 
                     xb = np.dot(batch_xx, theta_0)
                     if is_regressor(self):
@@ -271,6 +272,82 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             # ridge update
             self.beta_ = theta_0
             tr_xb = np.dot(tr_x, self.beta_)
+            self._estimate_shape(tr_xb, tr_y, sample_weight[idx1], xmin=np.min(tr_xb), xmax=np.max(tr_xb))
+            
+            val_xb = np.dot(val_x, self.beta_)
+            if is_regressor(self):
+                val_pred = self.shape_fit_.predict(val_xb)
+                val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
+            elif is_classifier(self):
+                val_pred = self.shape_fit_.predict_proba(val_xb)
+                val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
+
+            if val_loss > val_loss_inner_iter_best - tol:
+                no_inner_iter_change += 1
+            else:
+                no_inner_iter_change = 0
+            if val_loss < val_loss_inner_iter_best:
+                val_loss_inner_iter_best = val_loss
+            if no_inner_iter_change >= n_inner_iter_no_change:
+                break
+
+    def fit_inner_update_bfgs(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, max_inner_iter=10,
+                      max_epoches=100, n_inner_iter_no_change=5, tol=0.0001, verbose=False):
+
+        x, y = self._validate_input(x, y)
+        n_samples = x.shape[0]
+        sample_weight = self._validate_sample_weight(n_samples, sample_weight)
+
+        if is_regressor(self):
+            idx1, idx2 = train_test_split(np.arange(n_samples),test_size=val_ratio, random_state=self.random_state)
+            tr_x, tr_y, val_x, val_y = x[idx1], y[idx1], x[idx2], y[idx2]
+        elif is_classifier(self):
+            idx1, idx2 = train_test_split(np.arange(n_samples),test_size=val_ratio, stratify=y, random_state=self.random_state)
+            tr_x, tr_y, val_x, val_y = x[idx1], y[idx1], x[idx2], y[idx2]
+
+        val_xb = np.dot(val_x, self.beta_)
+        if is_regressor(self):
+            val_pred = self.shape_fit_.predict(val_xb)
+            val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
+        elif is_classifier(self):
+            val_pred = self.shape_fit_.predict_proba(val_xb)
+            val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
+
+        no_inner_iter_change = 0
+        val_loss_inner_iter_best = val_loss
+        for inner_iter in range(max_inner_iter):
+            
+            theta_0 = self.beta_ 
+            def loss_func(beta):
+                pred = self.shape_fit_.predict(np.dot(tr_x, beta))
+                return self.shape_fit_.get_loss(tr_y, pred, sample_weight[idx1])
+
+            def grad(beta):
+                xb = np.dot(tr_x, beta)
+                if is_regressor(self):
+                    r = tr_y - self.shape_fit_.predict(xb)
+                elif is_classifier(self):
+                    r = tr_y - self.shape_fit_.predict_proba(xb)
+                dfxb = self.shape_fit_.diff(xb, order=1)
+                g_t = np.average((- dfxb * r).reshape(-1, 1) * tr_x, axis=0,
+                            weights=sample_weight[idx1])
+                return g_t
+
+            theta_0 = scipy.optimize.minimize(loss_func, x0=theta_0, jac=grad, method='BFGS', options={'maxiter':max_epoches}).x
+            
+            ## thresholding and normalization
+            if proj_mat is not None:
+                theta_0 = np.dot(proj_mat, theta_0)
+
+            theta_0[np.abs(theta_0) < self.reg_lambda * np.max(np.abs(theta_0))] = 0
+            if np.linalg.norm(theta_0) > 0:
+                theta_0 = theta_0 / np.linalg.norm(theta_0)
+                if (theta_0[np.abs(theta_0) > 0][0] < 0):
+                    theta_0 = - theta_0
+
+            # ridge update
+            self.beta_ = theta_0
+            tr_xb = np.dot(tr_x, self.beta_).reshape(-1, 1)
             self._estimate_shape(tr_xb, tr_y, sample_weight[idx1], xmin=np.min(tr_xb), xmax=np.max(tr_xb))
             
             val_xb = np.dot(val_x, self.beta_)
