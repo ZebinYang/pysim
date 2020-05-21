@@ -182,7 +182,7 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
     def decision_function(self, x):
 
         check_is_fitted(self, "coef_")
-        x = x.copy()
+        x = x.copy().reshape(-1, 1)
         x[x < self.xmin] = self.xmin
         x[x > self.xmax] = self.xmax
         selected_basis = self._create_basis(x, self.degree, self.selected_knot_vector_)
