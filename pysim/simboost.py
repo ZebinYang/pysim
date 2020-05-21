@@ -54,13 +54,13 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         if isinstance(self.stein_method, list):
             for val in self.stein_method:
-                if val not in ["first_order", "second_order", "first_order_thres"]:
-                    raise ValueError("method must be an element of [first_order, second_order, first_order_thres], got %s." % 
+                if val not in ["first_order", "second_order", "first_order_thres", "ols"]:
+                    raise ValueError("method must be an element of [first_order, second_order, first_order_thres, ols], got %s." % 
                                  self.stein_method)
             self.stein_method_list = self.stein_method  
         elif isinstance(self.stein_method, str):
             if self.stein_method not in ["first_order", "second_order", "first_order_thres"]:
-                raise ValueError("method must be an element of [first_order, second_order, first_order_thres], got %s." % 
+                raise ValueError("method must be an element of [first_order, second_order, first_order_thres, ols], got %s." % 
                                  self.stein_method)
             self.stein_method_list = [self.stein_method]
 
@@ -598,8 +598,9 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
                        sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
             if inner_update:
-                sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z,
-                        sample_weight=sample_weight, proj_mat=proj_mat, val_ratio=self.val_ratio)
+                sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z, 
+                        sample_weight=sample_weight, proj_mat=proj_mat, method="adam",
+                        n_inner_iter_no_change=1, batch_size=min(200, int(0.2 * n_samples)), val_ratio=self.val_ratio)
             # update    
             z = z - self.learning_rate * sim_estimator.predict(x)
             self.sim_estimators_.append(sim_estimator)
@@ -753,8 +754,9 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             # update
             if inner_update:
-                sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z,
-                        sample_weight=sample_weight, proj_mat=proj_mat, val_ratio=self.val_ratio)
+                sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z, 
+                        sample_weight=sample_weight, proj_mat=proj_mat, method="adam",
+                        n_inner_iter_no_change=1, batch_size=min(200, int(0.2 * n_samples)), val_ratio=self.val_ratio)
             pred_train += self.learning_rate * sim_estimator.predict(x[self.tr_idx])
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
             pred_val += self.learning_rate * sim_estimator.predict(x[self.val_idx])
