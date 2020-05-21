@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 
 from sklearn.utils.extmath import softmax
 from sklearn.preprocessing import LabelBinarizer
-from sklearn.linear_model import LinearRegression
 from sklearn.utils import check_X_y, column_or_1d
 from sklearn.model_selection import train_test_split
 from sklearn.utils.validation import check_is_fitted
 from sklearn.metrics import mean_squared_error, roc_auc_score
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin, is_classifier, is_regressor
 
 from abc import ABCMeta, abstractmethod
@@ -143,20 +143,6 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * reg_lambda_max))
         return beta
     
-    def _ols(self, x, y, sample_weight=None, proj_mat=None):
-        
-        ls = LinearRegression()
-        ls.fit(x, y, sample_weight=sample_weight)
-        zbar = ls.coef_
-        if proj_mat is not None:
-            zbar = np.dot(proj_mat, zbar)
-        zbar[np.abs(zbar) < self.reg_lambda * np.max(np.abs(zbar))] = 0
-        if np.linalg.norm(zbar) > 0:
-            beta = zbar / np.linalg.norm(zbar)
-        else:
-            beta = zbar
-        return beta
-
     def fit(self, x, y, sample_weight=None, proj_mat=None):
 
         np.random.seed(self.random_state)
@@ -191,9 +177,12 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                       n_epoch_no_change=5, batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, verbose=False):
         
         if method == "adam":                
-            self.fit_inner_update_adam(x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, max_inner_iter=10)
+            self.fit_inner_update_adam(x, y, sample_weight, proj_mat, val_ratio, tol,
+                      max_inner_iter, n_inner_iter_no_change, max_epoches,
+                      n_epoch_no_change, batch_size, learning_rate, beta_1, beta_2, verbose)
         elif method == "bfgs":
-            self.fit_inner_update_bfgs(x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, max_inner_iter=10)
+            self.fit_inner_update_bfgs(x, y, sample_weight, proj_mat, val_ratio, tol, 
+                      max_inner_iter, n_inner_iter_no_change, max_epoches, verbose)
 
 
     def fit_inner_update_adam(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001,
@@ -479,6 +468,20 @@ class SimRegressor(BaseSim, RegressorMixin):
                                 degree=degree,
                                 random_state=random_state)
 
+    def _ols(self, x, y, sample_weight=None, proj_mat=None):
+        
+        ls = LinearRegression()
+        ls.fit(x, y, sample_weight=sample_weight)
+        zbar = ls.coef_
+        if proj_mat is not None:
+            zbar = np.dot(proj_mat, zbar)
+        zbar[np.abs(zbar) < self.reg_lambda * np.max(np.abs(zbar))] = 0
+        if np.linalg.norm(zbar) > 0:
+            beta = zbar / np.linalg.norm(zbar)
+        else:
+            beta = zbar
+        return beta
+
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True, y_numeric=True)
@@ -523,6 +526,20 @@ class SimClassifier(BaseSim, ClassifierMixin):
                                 degree=degree,
                                 random_state=random_state)
         self.EPS = 10 **(-8)
+
+    def _ols(self, x, y, sample_weight=None, proj_mat=None):
+        
+        ls = LogisticRegression()
+        ls.fit(x, y, sample_weight=sample_weight)
+        zbar = ls.coef_
+        if proj_mat is not None:
+            zbar = np.dot(proj_mat, zbar)
+        zbar[np.abs(zbar) < self.reg_lambda * np.max(np.abs(zbar))] = 0
+        if np.linalg.norm(zbar) > 0:
+            beta = zbar / np.linalg.norm(zbar)
+        else:
+            beta = zbar
+        return beta
 
     def _validate_input(self, x, y):
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
