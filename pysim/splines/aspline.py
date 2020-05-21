@@ -123,7 +123,7 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         
         # This function evaluates the derivative of the fitted ASpline w.r.t. the inputs, 
         # which is adopted from https://github.com/johntfoster/bspline/blob/master/bspline/bspline.py.
-
+        
         def diff_inner(inputs, t, p):
 
             numer1 = +p
@@ -139,7 +139,7 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
             Bi2 = self._create_basis(inputs, p - 1, t[1:])
             return ((ci1, Bi1, t[:-1], p - 1), (ci2, Bi2, t[1:], p - 1))
 
-        x = x.copy()
+        x = x.copy().reshape(-1, 1)
         x = check_array(x, accept_sparse=["csr", "csc", "coo"])
         if order > self.degree: 
             return np.zeros(x.shape[0], dtype=np.float32)
