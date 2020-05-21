@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 from sklearn.utils.extmath import softmax
 from sklearn.preprocessing import LabelBinarizer
+from sklearn.linear_model import LinearRegression
 from sklearn.utils import check_X_y, column_or_1d
 from sklearn.model_selection import train_test_split
 from sklearn.utils.validation import check_is_fitted
@@ -53,8 +54,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
     def _validate_hyperparameters(self):
         
-        if self.method not in ["first_order", "second_order", "first_order_thres"]:
-            raise ValueError("method must be an element of [first_order, second_order, first_order_thres], got %s." % self.method)
+        if self.method not in ["first_order", "second_order", "first_order_thres", "ols"]:
+            raise ValueError("method must be an element of [first_order, second_order, first_order_thres, ols], got %s." % self.method)
                 
         if not isinstance(self.degree, int):
             raise ValueError("degree must be an integer, got %s." % self.degree)
@@ -141,6 +142,20 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * reg_lambda_max))
         beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * reg_lambda_max))
         return beta
+    
+    def _ols(self, x, y, sample_weight=None, proj_mat=None):
+        
+        ls = LinearRegression()
+        ls.fit(x, y, sample_weight=sample_weight)
+        zbar = ls.coef_
+        if proj_mat is not None:
+            zbar = np.dot(proj_mat, zbar)
+        zbar[np.abs(zbar) < self.reg_lambda * np.max(np.abs(zbar))] = 0
+        if np.linalg.norm(zbar) > 0:
+            beta = zbar / np.linalg.norm(zbar)
+        else:
+            beta = zbar
+        return beta
 
     def fit(self, x, y, sample_weight=None, proj_mat=None):
 
@@ -160,6 +175,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             self.beta_ = self._first_order_thres(x, y, sample_weight, proj_mat)
         elif self.method == "second_order":
             self.beta_ = self._second_order(x, y, sample_weight, proj_mat)
+        elif self.method == "ols":
+            self.beta_ = self._ols(x, y, sample_weight, proj_mat)
 
         if len(self.beta_[np.abs(self.beta_) > 0]) > 0:
             if (self.beta_[np.abs(self.beta_) > 0][0] < 0):
@@ -168,9 +185,20 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         self._estimate_shape(xb, y, sample_weight, xmin=np.min(xb), xmax=np.max(xb))
         return self
     
-    def fit_inner_update(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, max_inner_iter=10,
-                  n_inner_iter_no_change=5, max_epoches=100, n_epoch_no_change=5, batch_size=100,
-                  learning_rate=1e-3, beta_1=0.9, beta_2=0.999, tol=0.0001, verbose=False):
+    
+    def fit_inner_update(self, x, y, sample_weight=None, proj_mat=None, method="adam", val_ratio=0.2, tol=0.0001,
+                      max_inner_iter=10, n_inner_iter_no_change=5, max_epoches=100,
+                      n_epoch_no_change=5, batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, verbose=False):
+        
+        if method == "adam":                
+            self.fit_inner_update_adam(x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, max_inner_iter=10)
+        elif method == "bfgs":
+            self.fit_inner_update_bfgs(x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, max_inner_iter=10)
+
+
+    def fit_inner_update_adam(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001,
+                      max_inner_iter=10, n_inner_iter_no_change=5, max_epoches=100,
+                      n_epoch_no_change=5, batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, verbose=False):
         
         x, y = self._validate_input(x, y)
         n_samples = x.shape[0]
@@ -246,6 +274,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 elif is_classifier(self):
                     val_pred = self.shape_fit_.predict_proba(val_xb)
                     val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
+                if verbose:
+                    print("Inner iter:", inner_iter + 1, "epoch:", epoch + 1, "with validation loss:", np.round(val_loss, 5))
                 # stop criterion
                 if val_loss > val_loss_epoch_best - tol:
                     no_epoch_change += 1
@@ -256,8 +286,6 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 
                 if no_epoch_change >= n_epoch_no_change:
                     break
-                if verbose:
-                    print("Inner iter:", inner_iter + 1, "epoch:", epoch + 1, "with validation loss:", np.round(val_loss, 5))
   
             ## thresholding and normalization
             if proj_mat is not None:
@@ -291,8 +319,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             if no_inner_iter_change >= n_inner_iter_no_change:
                 break
 
-    def fit_inner_update_bfgs(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, max_inner_iter=10,
-                      max_epoches=100, n_inner_iter_no_change=5, tol=0.0001, verbose=False):
+    def fit_inner_update_bfgs(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001, 
+                      max_inner_iter=10, n_inner_iter_no_change=5, max_epoches=100, verbose=False):
 
         x, y = self._validate_input(x, y)
         n_samples = x.shape[0]
@@ -357,6 +385,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             elif is_classifier(self):
                 val_pred = self.shape_fit_.predict_proba(val_xb)
                 val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
+            if verbose:
+                print("Inner iter:", inner_iter + 1, "with validation loss:", np.round(val_loss, 5))
 
             if val_loss > val_loss_inner_iter_best - tol:
                 no_inner_iter_change += 1
@@ -366,7 +396,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 val_loss_inner_iter_best = val_loss
             if no_inner_iter_change >= n_inner_iter_no_change:
                 break
-            
+
     def decision_function(self, x):
 
         check_is_fitted(self, "beta_")
