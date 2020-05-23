@@ -64,7 +64,11 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
 
     def diff(self, x, order=1):
         
-        derivative = np.array(stats.predict(self.sm_, x, deriv=order)[1]).ravel()
+        if "coefficients" in self.sm_.names:
+            derivative = 0 if np.isnan(np.array(self.sm_[0][1])) else np.array(self.sm_[0][1])
+        elif "spar" in self.sm_.names:
+            derivative = np.array(stats.predict(self.sm_, x, deriv=order)[1]).ravel()
+        
         return derivative
 
     def visualize(self):
