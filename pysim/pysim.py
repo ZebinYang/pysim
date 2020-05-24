@@ -504,7 +504,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             # ridge update
             self.beta_ = theta_0
             tr_xb = np.dot(tr_x, self.beta_)
-            self._estimate_shape(tr_xb, tr_y, sample_weight[idx1], xmin=np.min(tr_xb), xmax=np.max(tr_xb))
+            self._estimate_shape(tr_xb, tr_y, np.min(tr_xb), np.max(tr_xb), sample_weight[idx1])
             
             val_xb = np.dot(val_x, self.beta_)
             if is_regressor(self):
@@ -609,7 +609,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             # ridge update
             self.beta_ = theta_0
             tr_xb = np.dot(tr_x, self.beta_).reshape(-1, 1)
-            self._estimate_shape(tr_xb, tr_y, sample_weight[idx1], xmin=np.min(tr_xb), xmax=np.max(tr_xb))
+            self._estimate_shape(tr_xb, tr_y, np.min(tr_xb), np.max(tr_xb), sample_weight[idx1])
             
             val_xb = np.dot(val_x, self.beta_)
             if is_regressor(self):
