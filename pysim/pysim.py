@@ -188,18 +188,14 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
     def fit_inner_update_adam(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001,
                       max_inner_iter=10, n_inner_iter_no_change=5, max_epoches=100,
                       n_epoch_no_change=5, batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, verbose=False):
-        
+
         x, y = self._validate_input(x, y)
         n_samples = x.shape[0]
         batch_size = min(batch_size, n_samples)
         sample_weight = self._validate_sample_weight(n_samples, sample_weight)
 
-        if is_regressor(self):
-            idx1, idx2 = train_test_split(np.arange(n_samples),test_size=val_ratio, random_state=self.random_state)
-            tr_x, tr_y, val_x, val_y = x[idx1], y[idx1], x[idx2], y[idx2]
-        elif is_classifier(self):
-            idx1, idx2 = train_test_split(np.arange(n_samples),test_size=val_ratio, stratify=y, random_state=self.random_state)
-            tr_x, tr_y, val_x, val_y = x[idx1], y[idx1], x[idx2], y[idx2]
+        idx1, idx2 = train_test_split(np.arange(n_samples),test_size=val_ratio, random_state=self.random_state)
+        tr_x, tr_y, val_x, val_y = x[idx1], y[idx1], x[idx2], y[idx2]
 
         val_xb = np.dot(val_x, self.beta_)
         if is_regressor(self):

@@ -22,12 +22,13 @@ from pysim import SimRegressor, SimClassifier
 
 class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
     """
-        Base class for sim classification and regression.
+        Base class for sim boosting classification and regression.
      """
 
     @abstractmethod
-    def __init__(self, n_estimators, stein_method="first_order", spline="a_spline", learning_rate=0.1, reg_lambda=0.1, reg_gamma=0.1, 
-                 knot_dist="uniform", degree=2, knot_num=20, ortho_shrink=1, loss_threshold=0.01, val_ratio=0.2, random_state=0):
+    def __init__(self, n_estimators, stein_method="first_order", spline="a_spline", knot_dist="uniform",
+                 learning_rate=0.1, reg_lambda=0.1, reg_gamma=0.1, degree=2, knot_num=20,
+                 ortho_shrink=1, loss_threshold=0.01, inner_update=True, meta_info=None, val_ratio=0.2, random_state=0):
 
         self.n_estimators = n_estimators
         self.stein_method = stein_method
@@ -41,6 +42,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         self.ortho_shrink = ortho_shrink
         self.loss_threshold = loss_threshold
+        self.inner_update = inner_update
+        self.meta_info = meta_info
         self.val_ratio = val_ratio
         self.random_state = random_state        
 
@@ -48,8 +51,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         if not isinstance(self.n_estimators, int):
             raise ValueError("n_estimators must be an integer, got %s." % self.n_estimators)
-
-        if self.n_estimators < 0:
+        elif self.n_estimators < 0:
             raise ValueError("n_estimators must be >= 0, got" % self.n_estimators)
 
         if isinstance(self.stein_method, list):
@@ -93,23 +95,27 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         if not isinstance(self.degree, int):
             raise ValueError("degree must be an integer, got %s." % self.degree)
-
-        if self.degree < 0:
+        elif self.degree < 0:
             raise ValueError("degree must be >= 0, got" % self.degree)
         
         if not isinstance(self.knot_num, int):
             raise ValueError("knot_num must be an integer, got %s." % self.knot_num)
+        elif self.knot_num <= 0:
+            raise ValueError("knot_num must be > 0, got" % self.knot_num)
 
         if self.knot_dist not in ["uniform", "quantile"]:
             raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
 
-        if self.knot_num <= 0:
-            raise ValueError("knot_num must be > 0, got" % self.knot_num)
+        if not isinstance(self.inner_update, bool):
+            raise ValueError("inner_update must be an integer, got %s." % self.inner_update)
+
+        if self.meta_info is not None:
+            if not isinstance(self.meta_info, dict):
+                raise ValueError("meta_info must be a dict, got %s." % self.meta_info)
 
         if self.val_ratio <= 0:
             raise ValueError("val_ratio must be > 0, got" % self.val_ratio)
-
-        if self.val_ratio >= 1:
+        elif self.val_ratio >= 1:
             raise ValueError("val_ratio must be < 1, got %s." % self.val_ratio)
   
     @property
@@ -167,16 +173,16 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             sample_weight = sample_weight.ravel() / np.sum(sample_weight)
         return sample_weight
     
-    def _preprocess_meta_info(self, n_features, meta_info):
+    def _preprocess_meta_info(self, n_features):
         
-        if meta_info is None:
-            meta_info = {}
+        if self.meta_info is None:
+            self.meta_info = {}
             for i in range(n_features):
-                meta_info.update({"X" + str(i + 1):{"type":"continuous"}})
-            meta_info.update({"Y":{"type":"target"}})
+                self.meta_info.update({"X" + str(i + 1):{"type":"continuous"}})
+            self.meta_info.update({"Y":{"type":"target"}})
         
-        if not isinstance(meta_info, dict):
-            raise ValueError("meta_info must be None or a dict, got" % meta_info)
+        if not isinstance(self.meta_info, dict):
+            raise ValueError("meta_info must be None or a dict, got" % self.meta_info)
         else:
             self.dummy_values_ = {}  
             self.cfeature_num_ = 0
@@ -186,14 +192,14 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             self.nfeature_list_ = []
             self.cfeature_index_list_ = []
             self.nfeature_index_list_ = []
-            for idx, (feature_name, feature_info) in enumerate(meta_info.items()):
+            for idx, (feature_name, feature_info) in enumerate(self.meta_info.items()):
                 if feature_info["type"] == "target":
                     continue
                 if feature_info["type"] == "categorical":
                     self.cfeature_num_ += 1
                     self.cfeature_list_.append(feature_name)
                     self.cfeature_index_list_.append(idx)
-                    self.dummy_values_.update({feature_name:meta_info[feature_name]["values"]})
+                    self.dummy_values_.update({feature_name:self.meta_info[feature_name]["values"]})
                 else:
                     self.nfeature_num_ +=1
                     self.nfeature_list_.append(feature_name)
@@ -487,13 +493,13 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         self.intercept_ += dummy_estimator_all["lr"].intercept_
 
-    def fit(self, x, y, sample_weight=None, meta_info=None, inner_update=True):
+    def fit(self, x, y, sample_weight=None):
 
         start = time.time()
         x, y = self._validate_input(x, y)
         n_samples, n_features = x.shape
         self._validate_hyperparameters()
-        self._preprocess_meta_info(n_features, meta_info)
+        self._preprocess_meta_info(n_features)
         sample_weight = self._validate_sample_weight(n_samples, sample_weight)
 
         self.intercept_ = 0
@@ -508,7 +514,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             self.tr_idx, self.val_idx = train_test_split(np.arange(n_samples), test_size=self.val_ratio,
                                           stratify=y, random_state=self.random_state)
 
-        self._fit(x, y, sample_weight, inner_update)
+        self._fit(x, y, sample_weight)
         self._pruning(x, y)
         self.time_cost_ = time.time() - start
         return self
@@ -527,8 +533,9 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
 class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
-    def __init__(self, n_estimators, stein_method="first_order", spline="a_spline", learning_rate=0.1, reg_lambda=0.1, reg_gamma=0.1, 
-                 knot_dist="uniform", degree=2, knot_num=20, ortho_shrink=1, loss_threshold=0.01, val_ratio=0.2, random_state=0):
+    def __init__(self, n_estimators, stein_method="first_order", spline="a_spline", knot_dist="uniform",
+                 learning_rate=0.1, reg_lambda=0.1, reg_gamma=0.1, degree=2, knot_num=20,
+                 ortho_shrink=1, loss_threshold=0.01, inner_update=True, meta_info=None, val_ratio=0.2, random_state=0):
 
         super(SimBoostRegressor, self).__init__(n_estimators=n_estimators,
                                    stein_method=stein_method,
@@ -541,6 +548,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                                    knot_num=knot_num,
                                    ortho_shrink=ortho_shrink,
                                    loss_threshold=loss_threshold,
+                                   inner_update=inner_update,
+                                   meta_info=meta_info,
                                    val_ratio=val_ratio,
                                    random_state=random_state)
 
@@ -549,7 +558,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                          multi_output=True, y_numeric=True)
         return x, y.ravel()
 
-    def _fit(self, x, y, sample_weight=None, inner_update=True):
+    def _fit(self, x, y, sample_weight=None):
    
         n_samples = x.shape[0]
         val_fold = np.ones((n_samples))
@@ -597,7 +606,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             
             sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
                        sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
-            if inner_update:
+            if self.inner_update:
                 sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z, 
                         sample_weight=sample_weight, proj_mat=proj_mat, method="adam",
                         n_inner_iter_no_change=1, batch_size=min(200, int(0.2 * n_samples)), val_ratio=self.val_ratio)
@@ -649,8 +658,9 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     
 class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
-    def __init__(self, n_estimators, stein_method="first_order", spline="a_spline", learning_rate=0.1, reg_lambda=0.1, reg_gamma=0.1, 
-                 knot_dist="uniform", degree=2, knot_num=20, ortho_shrink=1, loss_threshold=0.01, val_ratio=0.2, random_state=0):
+    def __init__(self, n_estimators, stein_method="first_order", spline="a_spline",
+                 learning_rate=0.1, reg_lambda=0.1, reg_gamma=0.1, knot_dist="uniform", degree=2, knot_num=20, ortho_shrink=1,
+                 loss_threshold=0.01, val_ratio=0.2, inner_update=True, meta_info=None, random_state=0):
 
         super(SimBoostClassifier, self).__init__(n_estimators=n_estimators,
                                    stein_method=stein_method,
@@ -663,6 +673,8 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                                    knot_num=knot_num,
                                    ortho_shrink=ortho_shrink,
                                    loss_threshold=loss_threshold,
+                                   inner_update=inner_update,
+                                   meta_info=meta_info,
                                    val_ratio=val_ratio,
                                    random_state=random_state)
 
@@ -679,7 +691,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         y = self._label_binarizer.transform(y) * 1.0
         return x, y.ravel()
 
-    def _fit(self, x, y, sample_weight=None, inner_update=True):
+    def _fit(self, x, y, sample_weight=None):
 
         n_samples = x.shape[0]
         val_fold = np.ones((n_samples))
@@ -753,7 +765,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                         sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
 
             # update
-            if inner_update:
+            if self.inner_update:
                 sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z, 
                         sample_weight=sample_weight, proj_mat=proj_mat, method="adam",
                         n_inner_iter_no_change=1, batch_size=min(200, int(0.2 * n_samples)), val_ratio=self.val_ratio)
