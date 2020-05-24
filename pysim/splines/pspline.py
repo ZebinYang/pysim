@@ -179,9 +179,10 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
         loss : float,
             the MSE value
         """
-
-        return np.average((label - pred) ** 2, axis=0, weights=sample_weight)
-
+        
+        loss = np.average((label - pred) ** 2, axis=0, weights=sample_weight)
+        return loss
+    
     def fit(self, x, y, sample_weight=None):
 
         """fit the p-spline

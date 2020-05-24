@@ -235,10 +235,7 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
             the cross entropy value
         """
 
-        with np.errstate(divide="ignore", over="ignore"):
-            pred = np.clip(pred, self.EPS, 1. - self.EPS)
-            loss = - np.average(label * np.log(pred) + (1 - label) * np.log(1 - pred),
-                                axis=0, weights=sample_weight)
+        loss = np.average((label - pred) ** 2, axis=0, weights=sample_weight)
         return loss
 
     def fit(self, x, y, sample_weight=None):
