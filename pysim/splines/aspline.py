@@ -14,10 +14,51 @@ from scipy.linalg import cholesky
 
 
 class BaseASpline(BaseEstimator, metaclass=ABCMeta):
-    """
-        Base class for ASpline classification and regression.
-     """
+    
+    """Base class for ASpline classification and regression.
 
+    Parameters
+    ----------
+
+    :type  knot_num: int, optional. default=20
+    :param knot_num: The number of knots
+
+    :type  knot_dist: str, optional. default="uniform"
+    :param knot_dist: The distribution of knots
+      
+        "uniform": uniformly over the domain
+
+        "quantile": uniform quantiles of the given input data (not available when spline="p_spline" or "mono_p_spline")
+
+    :type  reg_gamma: float, optional. default=0.1
+    :param reg_gamma: The roughness penalty strength of the spline algorithm
+    
+        For spline="smoothing_spline", it ranges from 0 to 1 
+
+        For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to $+\infty$.
+    
+    :type  degree: int, optional. default=2
+    :param degree: The order of the spline
+    
+    :type  xmin: float, optional. default=-1
+    :param xmin: The min boundary of the input
+    
+    :type  xmax: float, optional. default=1
+    :param xmax: The max boundary of the input
+    
+    :type  epsilon: float, optional. default=0.00001
+    :param epsilon: The epsilon for fitting ASpline
+
+    :type  threshold: float, optional. default=0.99
+    :param threshold: The threshold for fitting ASpline
+
+    :type  maxiter: float, optional. default=0.99
+    :param maxiter: The max iteration for fitting ASpline
+
+    :type  random_state: int, optional. default=0
+    :param random_state: The random seed
+    """
+    
     @abstractmethod
     def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99, maxiter=10):
 
@@ -32,6 +73,19 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         self.maxiter = maxiter
 
     def _diff_matrix(self, order, knot_num):
+
+        """method to calculate the diff matrix
+        Parameters
+        ---------
+        order : int,
+            the order of diff
+        knot_num : int,
+            the number of knots
+        Returns
+        -------
+        None
+        """
+        
         results = [] # a container to collect the rows
         n_rows = order + 2
         for _ in range(n_rows): 
@@ -52,25 +106,42 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         return D
 
     def _estimate_density(self, x):
-        
+           
+        """method to estimate the density of input data
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        Returns
+        -------
+        None
+        """
+
         self.density_, self.bins_ = np.histogram(x, bins=10, density=True)
 
     def _validate_hyperparameters(self):
         
+        """method to validate model parameters
+        Parameters
+        ---------
+        None
+        Returns
+        -------
+        None
+        """
+
         if not isinstance(self.degree, int):
             raise ValueError("degree must be an integer, got %s." % self.degree)
-
-        if self.degree < 0:
+        elif self.degree < 0:
             raise ValueError("degree must be >= 0, got" % self.degree)
         
         if not isinstance(self.knot_num, int):
             raise ValueError("knot_num must be an integer, got %s." % self.knot_num)
-        
+        elif self.knot_num <= 0:
+            raise ValueError("knot_num must be > 0, got" % self.knot_num)
+
         if self.knot_dist not in ["uniform", "quantile"]:
             raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
-
-        if self.knot_num <= 0:
-            raise ValueError("knot_num must be > 0, got" % self.knot_num)
 
         if self.reg_gamma < 0:
             raise ValueError("reg_gamma must be >= 0, got %s." % self.reg_gamma)
@@ -92,6 +163,20 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
 
     def _create_basis(self, inputs, p, knot_vector):
 
+        """method to create b-spline basis
+        Parameters
+        ---------
+        inputs : array-like of shape (n_samples, 1),
+            containing the input dataset
+        p : int,
+            order of basis
+        knot_vector : list,
+            the list of knots
+        Returns
+        -------
+        None
+        """
+        
         if p == 0:
             basis = np.where(np.all([knot_vector[:-1] <= inputs,
                                    inputs < knot_vector[1:]], axis=0), 1.0, 0.0)
@@ -121,8 +206,21 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
 
     def diff(self, x, order=1):
         
-        # This function evaluates the derivative of the fitted ASpline w.r.t. the inputs, 
-        # which is adopted from https://github.com/johntfoster/bspline/blob/master/bspline/bspline.py.
+        """method to calculate derivatives of the fitted adaptive spline to the input
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, 1),
+            containing the input dataset
+        order : int,
+            order of derivative
+        Returns
+        -------
+        None
+        Reference
+        -------
+        This function evaluates the derivative of the fitted ASpline w.r.t. the inputs, 
+        which is adopted from https://github.com/johntfoster/bspline/blob/master/bspline/bspline.py.
+        """
         
         def diff_inner(inputs, t, p):
 
@@ -158,6 +256,15 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
 
     def visualize(self):
 
+        """draw the fitted shape function
+        Parameters
+        ---------
+        None
+        Returns
+        -------
+        None
+        """
+        
         check_is_fitted(self, "coef_")
 
         fig = plt.figure(figsize=(6, 4))
@@ -180,6 +287,17 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         plt.show()
 
     def decision_function(self, x):
+
+        """output f(x) for given samples
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, 1),
+            containing the input dataset
+        Returns
+        -------
+        pred : np.array of shape (n_samples,),
+            containing f(x) 
+        """
 
         check_is_fitted(self, "coef_")
         x = x.copy().reshape(-1, 1)
@@ -205,14 +323,59 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
                                   maxiter=maxiter)
 
     def _validate_input(self, x, y):
+        
+        """method to validate data
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, 1),
+            containing the input dataset
+        y : array-like of shape (n_samples,),
+            containing the output dataset
+        Returns
+        -------
+        None
+        """
+
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True, y_numeric=True)
         return x, y.ravel()
 
     def get_loss(self, label, pred, sample_weight=None):
-        return np.average((label - pred) ** 2, axis=0, weights=sample_weight)
+          
+        """method to calculate the MSE loss
+        Parameters
+        ---------
+        label : array-like of shape (n_samples,),
+            containing the input dataset
+        pred : array-like of shape (n_samples,),
+            containing the output dataset
+        sample_weight : array-like of shape (n_samples,), optional,
+            containing sample weights
+        Returns
+        -------
+        loss : float,
+            the MSE value
+        """
+        loss = np.average((label - pred) ** 2, axis=0, weights=sample_weight)
+        return loss
 
     def fit(self, x, y, sample_weight=None):
+
+        """fit the adaptive spline
+
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        y : array-like of shape (n_samples,),
+            containing target values
+        sample_weight : array-like of shape (n_samples,), optional,
+            containing sample weights
+        Returns
+        -------
+        self : object,
+            Returns fitted adaptive spline object
+        """
 
         self._validate_hyperparameters()
         x, y = self._validate_input(x, y)
@@ -268,6 +431,17 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
 
     def predict(self, x):
 
+        """output f(x) for given samples
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, 1),
+            containing the input dataset
+        Returns
+        -------
+        pred : np.array of shape (n_samples,),
+            containing f(x) 
+        """
+
         pred = self.decision_function(x)
         return pred
     
@@ -292,21 +466,73 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
 
     @staticmethod
     def _link(x):
+        """method to evaluate the link function of given input
+        Parameters
+        ---------
+        x : array-like of shape (n_samples,),
+            containing the input dataset
+        Returns
+        -------
+        loss : array-like of shape (n_samples,),
+            containing the value after link transformation
+        """
+
         with np.errstate(divide="ignore", over="ignore"):
             return 1 / (1 + np.exp(-x))
 
     @staticmethod
     def _inv_link(x):
+        """method to evaluate the inverse link function of given input
+        Parameters
+        ---------
+        x : array-like of shape (n_samples,),
+            containing the input dataset
+        Returns
+        -------
+        loss : array-like of shape (n_samples,),
+            containing the value after inverse link transformation
+        """
+
         with np.errstate(divide="ignore", over="ignore"):
             return np.log(x) - np.log(1 - x)
     
     def get_loss(self, label, pred, sample_weight=None):
+        
+        """method to calculate the cross entropy loss
+        Parameters
+        ---------
+        label : array-like of shape (n_samples,),
+            containing the input dataset
+        pred : array-like of shape (n_samples,),
+            containing the output dataset
+        sample_weight : array-like of shape (n_samples,), optional,
+            containing sample weights
+        Returns
+        -------
+        loss : float
+            the cross entropy value
+        """
+
         with np.errstate(divide="ignore", over="ignore"):
             pred = np.clip(pred, self.EPS, 1. - self.EPS)
-            return - np.average(label * np.log(pred) + (1 - label) * np.log(1 - pred),
+            loss = - np.average(label * np.log(pred) + (1 - label) * np.log(1 - pred),
                                 axis=0, weights=sample_weight)
-       
+        return loss
+
     def _validate_input(self, x, y):
+        
+        """method to validate data
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, 1),
+            containing the input dataset
+        y : array-like of shape (n_samples,),
+            containing the output dataset
+        Returns
+        -------
+        None
+        """
+
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True)
 
@@ -318,6 +544,22 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
         return x, y.ravel()
 
     def fit(self, x, y, sample_weight=None):
+
+        """fit the adaptive spline
+
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        sample_weight : array-like of shape (n_samples,), optional,
+            containing sample weights
+        Returns
+        -------
+        self : object,
+            Returns fitted adaptive spline object
+        """
 
         self._validate_hyperparameters()
         x, y = self._validate_input(x, y)
@@ -424,11 +666,33 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
     
     def predict_proba(self, x):
 
+        """output probability prediction for given samples
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        Returns
+        -------
+        pred : np.array of shape (n_samples,),
+            containing probability prediction
+        """
+
         pred = self.decision_function(x)
         pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False)[:, 1]
         return pred_proba
 
     def predict(self, x):
+
+        """output binary prediction for given samples
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        Returns
+        -------
+        pred : np.array of shape (n_samples,),
+            containing binary prediction
+        """
 
         pred_proba = self.predict_proba(x)
         return self._label_binarizer.inverse_transform(pred_proba)

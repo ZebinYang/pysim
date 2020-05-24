@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='pysim',
-      version='0.1',
+      version='1.0',
       description='Single index model based on first and second order Stein method',
       url='https://github.com/ZebinYang/pysim',
       author='Zebin Yang',

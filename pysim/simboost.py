@@ -79,7 +79,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
     :param knot_num: The number of knots
     
     :type  ortho_shrink: float, optional. default=1
-    :param ortho_shrink: The shrinkage strength for orthogonal enhancement, ranges from 0 to 1
+    :param ortho_shrink: The shrinkage strength for orthogonal enhancement, ranges from 0 to 1, valid when learning_rage=1.0
 
     :type  loss_threshold: float, optional. default=0.01
     :param loss_threshold: This parameter is used for post-hoc pruning, ranges from 0 to 1
@@ -161,6 +161,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         
         if self.learning_rate <= 0:
             raise ValueError("learning_rate must be > 0, got" % self.learning_rate)
+        elif self.learning_rate > 1:
+            raise ValueError("learning_rate must be <= 1, got" % self.learning_rate)
 
         if isinstance(self.reg_lambda, list):
             for val in self.reg_lambda:
@@ -209,7 +211,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
   
     @property
     def importance_ratios_(self):
-        """return the estimator importance ratios (the higher, the more important the feature).
+        """return the estimator importance ratios (the higher, the more important the feature)
         Parameters
         ---------
         None
@@ -229,7 +231,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     @property
     def projection_indices_(self):
-        """return the projection indices.
+        """return the projection indices
         Parameters
         ---------
         None
@@ -246,7 +248,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         
     @property
     def orthogonality_measure_(self):
-        """return the orthogonality measure (the lower, the better).
+        """return the orthogonality measure (the lower, the better)
         Parameters
         ---------
         None
@@ -268,9 +270,9 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         """method to validate sample weight
         Parameters
         ---------
-        n_samples : int
+        n_samples : int,
             the number of samples
-        sample_weight : array-like of shape (n_samples,), optional
+        sample_weight : array-like of shape (n_samples,), optional,
             containing sample weights
         Returns
         -------
@@ -288,7 +290,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         """preprocess the meta info of the dataset
         Parameters
         ---------
-        n_features : int
+        n_features : int,
             the number of features
         Returns
         -------
@@ -330,7 +332,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     def validation_performance(self):
 
-        """draw the validation accuracy (regression and AUC for binary classification) against the number of base learners.
+        """draw the validation accuracy (regression and AUC for binary classification) against the number of base learners
         Parameters
         ---------
         None
@@ -370,15 +372,15 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         """draw the global interpretation of the fitted model
         Parameters
         ---------
-        cols_per_row : int, optional, default=3
+        cols_per_row : int, optional, default=3,
             the number of sim models visualized on each row
-        folder : str, optional, defalut="./results/"
+        folder : str, optional, defalut="./results/",
             the folder of the file to be saved
-        name : str, optional, default="global_plot"
+        name : str, optional, default="global_plot",
             the name of the file to be saved
-        save_png : bool, optional, default=False
+        save_png : bool, optional, default=False,
             whether to save the figure in png form
-        save_eps : bool, optional, default=False
+        save_eps : bool, optional, default=False,
             whether to save the figure in eps form
         Returns
         -------
@@ -499,15 +501,15 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         """draw the local interpretation of the fitted model
         Parameters
         ---------
-        cols_per_row : int, optional, default=3
+        cols_per_row : int, optional, default=3,
             the number of sim models visualized on each row
-        folder : str, optional, defalut="./results/"
+        folder : str, optional, defalut="./results/",
             the folder of the file to be saved
-        name : str, optional, default="global_plot"
+        name : str, optional, default="global_plot",
             the name of the file to be saved
-        save_png : bool, optional, default=False
+        save_png : bool, optional, default=False,
             whether to save the figure in png form
-        save_eps : bool, optional, default=False
+        save_eps : bool, optional, default=False,
             whether to save the figure in eps form
         Returns
         -------
@@ -555,11 +557,11 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         """calculate gradients of the fitted model to the input data
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features)
+        x : array-like of shape (n_samples, n_features),
             containing the input dataset
         Returns
         -------
-        gradient : array-like of shape (n_samples, n_features)
+        gradient : array-like of shape (n_samples, n_features),
             containing the gradient of the input dataset
         """
 
@@ -642,11 +644,11 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features)
+        x : array-like of shape (n_samples, n_features),
             containing the input dataset
-        y : array-like of shape (n_samples,)
+        y : array-like of shape (n_samples,),
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional
+        sample_weight : array-like of shape (n_samples,), optional,
             containing sample weights
         Returns
         -------
@@ -698,15 +700,15 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features)
+        x : array-like of shape (n_samples, n_features),
             containing the input dataset
-        y : array-like of shape (n_samples,)
+        y : array-like of shape (n_samples,),
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional
+        sample_weight : array-like of shape (n_samples,), optional,
             containing sample weights
         Returns
         -------
-        self : object
+        self : object,
             Returns fitted SimBoost object
         """
         
@@ -743,7 +745,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,)
+        pred : np.array of shape (n_samples,),
             containing f1(beta1^T x) + f2(beta2^T x) + ...
         """
 
@@ -800,11 +802,11 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features)
+        x : array-like of shape (n_samples, n_features),
             containing the input dataset
-        y : array-like of shape (n_samples,)
+        y : array-like of shape (n_samples,),
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional
+        sample_weight : array-like of shape (n_samples,), optional,
             containing sample weights
         Returns
         -------
@@ -922,7 +924,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,)
+        pred : np.array of shape (n_samples,),
             containing prediction
         """  
 
@@ -957,9 +959,9 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         """method to validate data
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features)
+        x : array-like of shape (n_samples, n_features),
             containing the input dataset
-        y : array-like of shape (n_samples,)
+        y : array-like of shape (n_samples,),
             containing target values
         Returns
         -------
@@ -983,11 +985,11 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features)
+        x : array-like of shape (n_samples, n_features),
             containing the input dataset
-        y : array-like of shape (n_samples,)
+        y : array-like of shape (n_samples,),
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional
+        sample_weight : array-like of shape (n_samples,), optional,
             containing sample weights
         Returns
         -------
@@ -1136,7 +1138,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,)
+        pred : np.array of shape (n_samples,),
             containing probability prediction
         """
 
@@ -1153,7 +1155,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,)
+        pred : np.array of shape (n_samples,),
             containing binary prediction
         """  
 
