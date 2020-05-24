@@ -330,7 +330,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     def validation_performance(self):
 
-       """draw the validation accuracy (regression and AUC for binary classification) against the number of base learners.
+        """draw the validation accuracy (regression and AUC for binary classification) against the number of base learners.
         Parameters
         ---------
         None
