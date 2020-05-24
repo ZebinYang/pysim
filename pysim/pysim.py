@@ -35,8 +35,59 @@ numpy2ri.activate()
 
 class BaseSim(BaseEstimator, metaclass=ABCMeta):
     """
-        Base class for sim classification and regression.
-     """
+    Base class for sim boosting classification and regression.
+
+    Parameters
+    ----------
+
+    :type stein_method: str, optional. default="first_order"
+    :param stein_method: the base method for estimating the projection coefficients in sparse SIM. 
+        
+        "first_order": First-order Stein's Identity via sparse PCA solver
+
+        "second_order": Second-order Stein's Identity via sparse PCA solver
+
+        "first_order_thres": First-order Stein's Identity via hard thresholding (A simplified verison)     
+
+        "ols": Least squares estimation subject to hard thresholding.
+
+    :type  spline: str, optional. default="smoothing_spline"
+    :param spline: The type of spline for fitting the curve
+      
+        "smoothing_spline": Smoothing spline
+
+        "p_spline": P-spline
+
+        "mono_p_spline": P-spline with monotonic constraint
+
+        "a_spline": Adaptive B-spline
+
+    :type  knot_dist: str, optional. default="uniform"
+    :param knot_dist: The distribution of knots
+      
+        "uniform": uniformly over the domain
+
+        "quantile": uniform quantiles of the given input data (not available when spline="p_spline" or "mono_p_spline")
+
+    :type  reg_lambda: float, optional. default=0.1
+    :param reg_lambda: The regularization strength of sparsity of beta, ranges from 0 to 1 
+
+    :type  reg_gamma: float, optional. default=0.1
+    :param reg_gamma: The roughness penalty strength of the spline algorithm
+    
+        For spline="smoothing_spline", it ranges from 0 to 1 
+
+        For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to $+\infty$.
+    
+    :type  degree: int, optional. default=2
+    :param degree: The order of the spline, not used for spline="smoothing_spline"
+    
+    :type  knot_num: int, optional. default=20
+    :param knot_num: The number of knots
+    
+    :type  random_state: int, optional. default=0
+    :param random_state: The random seed
+    """
 
     @abstractmethod
     def __init__(self, method="first_order", reg_lambda=0.1, spline="smoothing_spline", reg_gamma=0.1,
@@ -54,19 +105,26 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
     def _validate_hyperparameters(self):
         
+        """method to validate model parameters
+        Parameters
+        ---------
+        None
+        Returns
+        -------
+        None
+        """
+
         if self.method not in ["first_order", "second_order", "first_order_thres", "ols"]:
             raise ValueError("method must be an element of [first_order, second_order, first_order_thres, ols], got %s." % self.method)
                 
         if not isinstance(self.degree, int):
             raise ValueError("degree must be an integer, got %s." % self.degree)
-
-        if self.degree < 0:
+        elif self.degree < 0:
             raise ValueError("degree must be >= 0, got" % self.degree)
         
         if not isinstance(self.knot_num, int):
             raise ValueError("knot_num must be an integer, got %s." % self.knot_num)
-
-        if self.knot_num <= 0:
+        elif self.knot_num <= 0:
             raise ValueError("knot_num must be > 0, got" % self.knot_num)
 
         if self.knot_dist not in ["uniform", "quantile"]:
@@ -78,12 +136,23 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
         if (self.reg_lambda < 0) or (self.reg_lambda > 1):
             raise ValueError("reg_lambda must be >= 0 and <=1, got %s." % self.reg_lambda)
-
-        if self.reg_gamma < 0:
+        elif self.reg_gamma < 0:
             raise ValueError("reg_gamma must be >= 0, got %s." % self.reg_gamma)
 
     def _validate_sample_weight(self, n_samples, sample_weight):
         
+        """method to validate sample weight 
+        Parameters
+        ---------
+        n_samples : int
+            the number of samples
+        sample_weight : array-like of shape (n_samples,), optional
+            containing sample weights
+        Returns
+        -------
+        None
+        """
+
         if sample_weight is None:
             sample_weight = np.ones(n_samples) / n_samples
         else:
@@ -92,6 +161,24 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
     def _first_order_thres(self, x, y, sample_weight=None, proj_mat=None):
 
+        """calculate the projection indice using the first order stein's identity subject to hard thresholding
+
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        sample_weight : array-like of shape (n_samples,), optional
+            containing sample weights
+        proj_mat : array-like of shape (n_features, n_features), optional
+            to project the projection indice for enhancing orthogonality
+        Returns
+        -------
+        beta : np.array of shape (n_features, 1)
+            the normalized projection inidce
+        """
+        
         self.mu = np.average(x, axis=0, weights=sample_weight) 
         self.cov = np.cov(x.T, aweights=sample_weight)
         self.inv_cov = np.linalg.pinv(self.cov)
@@ -107,6 +194,24 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         return beta.reshape([-1, 1])
 
     def _first_order(self, x, y, sample_weight=None, proj_mat=None):
+
+        """calculate the projection indice using the first order stein's identity using Sparse PCA solver via fps package in R
+
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        sample_weight : array-like of shape (n_samples,), optional
+            containing sample weights
+        proj_mat : array-like of shape (n_features, n_features), optional
+            to project the projection indice for enhancing orthogonality
+        Returns
+        -------
+        beta : np.array of shape (n_features, 1)
+            the normalized projection inidce
+        """
 
         self.mu = np.average(x, axis=0, weights=sample_weight) 
         self.cov = np.cov(x.T, aweights=sample_weight)
@@ -126,6 +231,24 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
     def _second_order(self, x, y, sample_weight=None, proj_mat=None):
 
+        """calculate the projection indice using the second order stein's identity using Sparse PCA solver via fps package in R
+
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        sample_weight : array-like of shape (n_samples,), optional
+            containing sample weights
+        proj_mat : array-like of shape (n_features, n_features), optional
+            to project the projection indice for enhancing orthogonality
+        Returns
+        -------
+        beta : np.array of shape (n_features, 1)
+            the normalized projection inidce
+        """
+
         n_samples, n_features = x.shape
         self.mu = np.average(x, axis=0, weights=sample_weight) 
         self.cov = np.cov(x.T, aweights=sample_weight)
@@ -144,6 +267,24 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         return beta
     
     def fit(self, x, y, sample_weight=None, proj_mat=None):
+
+        """fit the Sim model
+
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        sample_weight : array-like of shape (n_samples,), optional
+            containing sample weights
+        proj_mat : array-like of shape (n_features, n_features), optional
+            to project the projection indice for enhancing orthogonality
+        Returns
+        -------
+        self : object
+            Returns fitted Sim object
+        """
 
         np.random.seed(self.random_state)
         
@@ -168,14 +309,54 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             if (self.beta_[np.abs(self.beta_) > 0][0] < 0):
                 self.beta_ = - self.beta_
         xb = np.dot(x, self.beta_)
-        self._estimate_shape(xb, y, sample_weight, xmin=np.min(xb), xmax=np.max(xb))
+        self._estimate_shape(xb, y, xmin=np.min(xb), xmax=np.max(xb), sample_weight)
         return self
     
     
     def fit_inner_update(self, x, y, sample_weight=None, proj_mat=None, method="adam", val_ratio=0.2, tol=0.0001,
-                      max_inner_iter=10, n_inner_iter_no_change=5, max_epoches=100,
+                      max_inner_iter=10, n_inner_iter_no_change=1, max_epoches=100,
                       n_epoch_no_change=5, batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, verbose=False):
-        
+        """fine tune the fitted Sim model using inner update method
+
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        sample_weight : array-like of shape (n_samples,), optional
+            containing sample weights
+        proj_mat : array-like of shape (n_features, n_features), optional
+            to project the projection indice for enhancing orthogonality
+        method : std, optional, default="adam"
+            the inner update method, including "adam" and "bfgs"
+        val_ratio : float, optional, default=0.2
+            the split ratio for validation set
+        tol : float, optional, default=0.0001
+            the tolerance for early stopping
+        max_inner_iter : int, optional, default=10
+            the maximal number of inner update iteration
+        n_inner_iter_no_change : int, optional, default=1
+            the tolerance of non-improving inner iterations
+        max_epoches : int, optional, default=100
+            the maximal number of epoches for "adam" optimizer
+        n_epoch_no_change : int, optional, default=5
+            the tolerance of non-improving epoches for adam optimizer
+        batch_size : int, optional, default=100
+            the batch_size for adam optimizer
+        learning_rate : float, optional, default=1e-3
+            the learning rate for adam optimizer
+        beta_1 : float, optional, default=0.9
+            the beta_1 parameter for adam optimizer
+        beta_2 : float, optional, default=0.999
+            the beta_1 parameter for adam optimizer
+        verbose : bool, optional, default=False
+            whether to show the training history
+        Returns
+        -------
+        None
+        """
+
         if method == "adam":                
             self.fit_inner_update_adam(x, y, sample_weight, proj_mat, val_ratio, tol,
                       max_inner_iter, n_inner_iter_no_change, max_epoches,
@@ -184,11 +365,49 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             self.fit_inner_update_bfgs(x, y, sample_weight, proj_mat, val_ratio, tol, 
                       max_inner_iter, n_inner_iter_no_change, max_epoches, verbose)
 
-
     def fit_inner_update_adam(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001,
-                      max_inner_iter=10, n_inner_iter_no_change=5, max_epoches=100,
+                      max_inner_iter=10, n_inner_iter_no_change=1, max_epoches=100,
                       n_epoch_no_change=5, batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, verbose=False):
 
+        """fine tune the fitted Sim model using inner update method (adam)
+
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        sample_weight : array-like of shape (n_samples,), optional
+            containing sample weights
+        proj_mat : array-like of shape (n_features, n_features), optional
+            to project the projection indice for enhancing orthogonality
+        val_ratio : float, optional, default=0.2
+            the split ratio for validation set
+        tol : float, optional, default=0.0001
+            the tolerance for early stopping
+        max_inner_iter : int, optional, default=10
+            the maximal number of inner update iteration
+        n_inner_iter_no_change : int, optional, default=1
+            the tolerance of non-improving inner iterations
+        max_epoches : int, optional, default=100
+            the maximal number of epoches for "adam" optimizer
+        n_epoch_no_change : int, optional, default=5
+            the tolerance of non-improving epoches for adam optimizer
+        batch_size : int, optional, default=100
+            the batch_size for adam optimizer
+        learning_rate : float, optional, default=1e-3
+            the learning rate for adam optimizer
+        beta_1 : float, optional, default=0.9
+            the beta_1 parameter for adam optimizer
+        beta_2 : float, optional, default=0.999
+            the beta_1 parameter for adam optimizer
+        verbose : bool, optional, default=False
+            whether to show the training history
+        Returns
+        -------
+        None
+        """
+            
         x, y = self._validate_input(x, y)
         n_samples = x.shape[0]
         batch_size = min(batch_size, n_samples)
@@ -305,7 +524,36 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 break
 
     def fit_inner_update_bfgs(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001, 
-                      max_inner_iter=10, n_inner_iter_no_change=5, max_epoches=100, verbose=False):
+                      max_inner_iter=10, n_inner_iter_no_change=1, max_epoches=100, verbose=False):
+
+        """fine tune the fitted Sim model using inner update method (bfgs)
+
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        sample_weight : array-like of shape (n_samples,), optional
+            containing sample weights
+        proj_mat : array-like of shape (n_features, n_features), optional
+            to project the projection indice for enhancing orthogonality
+        val_ratio : float, optional, default=0.2
+            the split ratio for validation set
+        tol : float, optional, default=0.0001
+            the tolerance for early stopping
+        max_inner_iter : int, optional, default=10
+            the maximal number of inner update iteration
+        n_inner_iter_no_change : int, optional, default=1
+            the tolerance of non-improving inner iterations
+        max_epoches : int, optional, default=100
+            the maximal number of epoches for "adam" optimizer
+        verbose : bool, optional, default=False
+            whether to show the training history
+        Returns
+        -------
+        None
+        """
 
         x, y = self._validate_input(x, y)
         n_samples = x.shape[0]
@@ -384,6 +632,17 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
     def decision_function(self, x):
 
+        """output f(beta^T x) for given samples
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        Returns
+        -------
+        pred : np.array of shape (n_samples,)
+            containing f(beta^T x) 
+        """
+
         check_is_fitted(self, "beta_")
         check_is_fitted(self, "shape_fit_")
         xb = np.dot(x, self.beta_)
@@ -392,6 +651,15 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
     def visualize(self):
 
+        """draw the fitted projection indices and ridge function
+        Parameters
+        ---------
+        None
+        Returns
+        -------
+        None
+        """
+        
         check_is_fitted(self, "beta_")
         check_is_fitted(self, "shape_fit_")
 
@@ -466,6 +734,24 @@ class SimRegressor(BaseSim, RegressorMixin):
 
     def _ols(self, x, y, sample_weight=None, proj_mat=None):
         
+        """calculate the least squares estimation for the projection indices subject to hard thresholding
+
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        sample_weight : array-like of shape (n_samples,), optional
+            containing sample weights
+        proj_mat : array-like of shape (n_features, n_features), optional
+            to project the projection indice for enhancing orthogonality
+        Returns
+        -------
+        beta : np.array of shape (n_features, 1)
+            the normalized projection inidce
+        """
+        
         ls = LinearRegression()
         ls.fit(x, y, sample_weight=sample_weight)
         zbar = ls.coef_
@@ -479,11 +765,39 @@ class SimRegressor(BaseSim, RegressorMixin):
         return beta
 
     def _validate_input(self, x, y):
+                
+        """method to validate data
+        Parameters
+        ---------
+        None
+        Returns
+        -------
+        None
+        """
+
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True, y_numeric=True)
         return x, y.ravel()
 
-    def _estimate_shape(self, x, y, sample_weight=None, xmin=-1, xmax=1):
+    def _estimate_shape(self, x, y, xmin, xmax, sample_weight=None):
+       
+        """estimate the ridge function
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        y : array-like of shape (n_samples,),
+            containing the output dataset
+        xmin : float, 
+            the minimum value of beta ^ x
+        xmax : float, 
+            the maximum value of beta ^ x
+        sample_weight : array-like of shape (n_samples,), optional, default=None,
+            containing sample weights
+        Returns
+        -------
+        None
+        """
 
         if self.spline == "a_spline":
             self.shape_fit_ = ASplineRegressor(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
@@ -504,6 +818,16 @@ class SimRegressor(BaseSim, RegressorMixin):
 
     def predict(self, x):
 
+        """output f(beta^T x) for given samples
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        Returns
+        -------
+        pred : np.array of shape (n_samples,)
+            containing f(beta^T x) 
+        """
         pred = self.decision_function(x)
         return pred
 
@@ -524,7 +848,25 @@ class SimClassifier(BaseSim, ClassifierMixin):
         self.EPS = 10 **(-8)
 
     def _ols(self, x, y, sample_weight=None, proj_mat=None):
-        
+                
+        """calculate the logistic regression estimation for the projection indices subject to hard thresholding
+
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        sample_weight : array-like of shape (n_samples,), optional
+            containing sample weights
+        proj_mat : array-like of shape (n_features, n_features), optional
+            to project the projection indice for enhancing orthogonality
+        Returns
+        -------
+        beta : np.array of shape (n_features, 1)
+            the normalized projection inidce
+        """
+
         ls = LogisticRegression()
         ls.fit(x, y, sample_weight=sample_weight)
         zbar = ls.coef_
@@ -538,6 +880,19 @@ class SimClassifier(BaseSim, ClassifierMixin):
         return beta
 
     def _validate_input(self, x, y):
+        
+        """method to validate data
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        Returns
+        -------
+        None
+        """
+
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True)
         if y.ndim == 2 and y.shape[1] == 1:
@@ -550,9 +905,26 @@ class SimClassifier(BaseSim, ClassifierMixin):
         y = self._label_binarizer.transform(y) * 1.0
         return x, y.ravel()
 
-    def _estimate_shape(self, x, y, sample_weight=None, xmin=-1, xmax=1):
+    def _estimate_shape(self, x, y, xmin, xmax, sample_weight=None):
 
-        #adaptive spline
+        """estimate the ridge function
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        y : array-like of shape (n_samples,),
+            containing the output dataset
+        xmin : float, 
+            the minimum value of beta ^ x
+        xmax : float, 
+            the maximum value of beta ^ x
+        sample_weight : array-like of shape (n_samples,), optional, default=None,
+            containing sample weights
+        Returns
+        -------
+        None
+        """
+
         if self.spline == "a_spline":
             self.shape_fit_ = ASplineClassifier(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
                              xmin=xmin, xmax=xmax, degree=self.degree)
@@ -572,12 +944,34 @@ class SimClassifier(BaseSim, ClassifierMixin):
             self.shape_fit_.fit(x, y, sample_weight)
 
     def predict_proba(self, x):
+        
+        """output probability prediction for given samples
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        Returns
+        -------
+        pred : np.array of shape (n_samples,)
+            containing probability prediction
+        """
 
         pred = self.decision_function(x)
         pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False)[:, 1]
         return pred_proba
 
     def predict(self, x):
+            
+        """output binary prediction for given samples
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        Returns
+        -------
+        pred : np.array of shape (n_samples,)
+            containing binary prediction
+        """  
 
         pred_proba = self.predict_proba(x)
         return self._label_binarizer.inverse_transform(pred_proba)

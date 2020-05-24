@@ -22,12 +22,92 @@ from pysim import SimRegressor, SimClassifier
 
 class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
     """
-        Base class for sim boosting classification and regression.
-     """
+    Base class for sim boosting classification and regression.
+
+    Parameters
+    ----------
+    
+    :type n_estimators: int
+    :param n_estimators: The maximum number of estimators for boosing.
+
+    :type stein_method: str, optional. default="first_order"
+    :param stein_method: the base method for estimating the projection coefficients in sparse SIM. 
+        
+        "first_order": First-order Stein's Identity via sparse PCA solver
+
+        "second_order": Second-order Stein's Identity via sparse PCA solver
+
+        "first_order_thres": First-order Stein's Identity via hard thresholding (A simplified verison)     
+
+        "ols": Least squares estimation subject to hard thresholding.
+
+    :type  spline: str, optional. default="smoothing_spline"
+    :param spline: The type of spline for fitting the curve
+      
+        "smoothing_spline": Smoothing spline
+
+        "p_spline": P-spline
+
+        "mono_p_spline": P-spline with monotonic constraint
+
+        "a_spline": Adaptive B-spline
+
+    :type  knot_dist: str, optional. default="uniform"
+    :param knot_dist: The distribution of knots
+      
+        "uniform": uniformly over the domain
+
+        "quantile": uniform quantiles of the given input data (not available when spline="p_spline" or "mono_p_spline")
+
+    :type  learning_rate: float, optional. default=1.0
+    :param learning_rate: The learning rate controling the shrinkage when performing boosting, ranges from 0 to 1
+
+    :type  reg_lambda: float, optional. default=0.1
+    :param reg_lambda: The regularization strength of sparsity of beta, ranges from 0 to 1 
+
+    :type  reg_gamma: float, optional. default=0.1
+    :param reg_gamma: The roughness penalty strength of the spline algorithm
+    
+        For spline="smoothing_spline", it ranges from 0 to 1 
+
+        For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to $+\infty$.
+    
+    :type  degree: int, optional. default=2
+    :param degree: The order of the spline, not used for spline="smoothing_spline"
+    
+    :type  knot_num: int, optional. default=20
+    :param knot_num: The number of knots
+    
+    :type  ortho_shrink: float, optional. default=1
+    :param ortho_shrink: The shrinkage strength for orthogonal enhancement, ranges from 0 to 1
+
+    :type  loss_threshold: float, optional. default=0.01
+    :param loss_threshold: This parameter is used for post-hoc pruning, ranges from 0 to 1
+        To reduce model complexity, we prefer to use fewer base learners, which is as accurate as (1 - loss_threshold) of best performance).
+        When loss_threshold=0, no pruning will be performed. 
+
+    :type  inner_update: bool, optional. default=True
+    :param inner_update: Whether to perform inner update for each base learner.
+
+    :type meta_info: None or a dict with features' information
+    :param meta_info: It has two types:
+
+        continuous:
+            Specify `Type` as `continuous`, and include the keys of `Range` (a list with lower-upper elements pair) and
+            `Wrapper`, a callable function for wrapping the values.
+        categorical:
+            Specify `Type` as `categorical`, and include the keys of `Mapping` (a list with all the possible categories).
+
+    :type  val_ratio: float, optional. default=0.2
+    :param val_ratio: The split ratio of validation set, which is used for post-hoc pruning
+
+    :type  random_state: int, optional. default=0
+    :param random_state: The random seed
+    """
 
     @abstractmethod
     def __init__(self, n_estimators, stein_method="first_order", spline="a_spline", knot_dist="uniform",
-                 learning_rate=0.1, reg_lambda=0.1, reg_gamma=0.1, degree=2, knot_num=20,
+                 learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, degree=2, knot_num=20,
                  ortho_shrink=1, loss_threshold=0.01, inner_update=True, meta_info=None, val_ratio=0.2, random_state=0):
 
         self.n_estimators = n_estimators
@@ -48,6 +128,15 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         self.random_state = random_state        
 
     def _validate_hyperparameters(self):
+
+        """method to validate model parameters
+        Parameters
+        ---------
+        None
+        Returns
+        -------
+        None
+        """
 
         if not isinstance(self.n_estimators, int):
             raise ValueError("n_estimators must be an integer, got %s." % self.n_estimators)
@@ -120,7 +209,10 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
   
     @property
     def importance_ratios_(self):
-        """Return the estimator importance ratios (the higher, the more important the feature).
+        """return the estimator importance ratios (the higher, the more important the feature).
+        Parameters
+        ---------
+        None
         Returns
         -------
         importance_ratios_ : dict of selected estimators
@@ -137,10 +229,13 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     @property
     def projection_indices_(self):
-        """Return the projection indices.
+        """return the projection indices.
+        Parameters
+        ---------
+        None
         Returns
         -------
-        projection_indices_ : ndarray of shape (d, n_estimators)
+        projection_indices_ : ndarray of shape (n_features, n_estimators)
         """
         projection_indices = np.array([])
         if self.nfeature_num_ > 0:
@@ -151,7 +246,10 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         
     @property
     def orthogonality_measure_(self):
-        """Return the orthogonality measure (the lower, the better).
+        """return the orthogonality measure (the lower, the better).
+        Parameters
+        ---------
+        None
         Returns
         -------
         orthogonality_measure_ : float scalar
@@ -166,7 +264,19 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         return ortho_measure
 
     def _validate_sample_weight(self, n_samples, sample_weight):
-        
+                
+        """method to validate sample weight
+        Parameters
+        ---------
+        n_samples : int
+            the number of samples
+        sample_weight : array-like of shape (n_samples,), optional
+            containing sample weights
+        Returns
+        -------
+        None
+        """
+
         if sample_weight is None:
             sample_weight = np.ones(n_samples) / n_samples
         else:
@@ -174,6 +284,16 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         return sample_weight
     
     def _preprocess_meta_info(self, n_features):
+        
+        """preprocess the meta info of the dataset
+        Parameters
+        ---------
+        n_features : int
+            the number of features
+        Returns
+        -------
+        None
+        """
         
         if self.meta_info is None:
             self.meta_info = {}
@@ -210,6 +330,14 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     def validation_performance(self):
 
+       """draw the validation accuracy (regression and AUC for binary classification) against the number of base learners.
+        Parameters
+        ---------
+        None
+        Returns
+        -------
+        None
+        """
         check_is_fitted(self, "best_estimators_")
 
         if is_regressor(self):
@@ -238,6 +366,24 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             plt.show()
         
     def visualize(self, cols_per_row=3, folder="./results/", name="global_plot", save_png=False, save_eps=False):
+
+        """draw the global interpretation of the fitted model
+        Parameters
+        ---------
+        cols_per_row : int, optional, default=3
+            the number of sim models visualized on each row
+        folder : str, optional, defalut="./results/"
+            the folder of the file to be saved
+        name : str, optional, default="global_plot"
+            the name of the file to be saved
+        save_png : bool, optional, default=False
+            whether to save the figure in png form
+        save_eps : bool, optional, default=False
+            whether to save the figure in eps form
+        Returns
+        -------
+        None
+        """
 
         check_is_fitted(self, "best_estimators_")
 
@@ -350,6 +496,24 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     def local_visualize(self, x, y=None, folder="./results/", name="local_plot", save_png=False, save_eps=False):
 
+        """draw the local interpretation of the fitted model
+        Parameters
+        ---------
+        cols_per_row : int, optional, default=3
+            the number of sim models visualized on each row
+        folder : str, optional, defalut="./results/"
+            the folder of the file to be saved
+        name : str, optional, default="global_plot"
+            the name of the file to be saved
+        save_png : bool, optional, default=False
+            whether to save the figure in png form
+        save_eps : bool, optional, default=False
+            whether to save the figure in eps form
+        Returns
+        -------
+        None
+        """
+
         ytick_label = ["Intercept"]
         max_ids = len(self.best_estimators_) + 1
         for indice, est in enumerate(self.best_estimators_):
@@ -387,7 +551,18 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
 
     def feature_gradient(self, x):
-        
+            
+        """calculate gradients of the fitted model to the input data
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        Returns
+        -------
+        gradient : array-like of shape (n_samples, n_features)
+            containing the gradient of the input dataset
+        """
+
         n_samples = x.shape[0]
         gradient = np.zeros((n_samples, self.nfeature_num_ + self.cfeature_num_))
         for est in self.best_estimators_:
@@ -404,6 +579,15 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         return gradient
 
     def ice_visualize(self, x, cols_per_row=3, folder="./results/", name="ice_visualize", save_png=False, save_eps=False):
+
+        """draw the Individual Conditional Expectation (ICE) plot for the fitted model
+        Parameters
+        ---------
+        None
+        Returns
+        -------
+        None
+        """
 
         max_ids = self.nfeature_num_ + self.cfeature_num_
         fig = plt.figure(figsize=(8 * cols_per_row, 4.6 * int(np.ceil(max_ids / cols_per_row))))
@@ -453,7 +637,22 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
 
     def _fit_dummy(self, x, y, sample_weight):
+        
+        """fit the categorical variables by one-hot encoding and linear models
 
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        sample_weight : array-like of shape (n_samples,), optional
+            containing sample weights
+        Returns
+        -------
+        None
+        """
+        
         transformer_list = []
         for indice in range(self.cfeature_num_):
             
@@ -474,7 +673,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         idx = 0
         for indice in range(self.cfeature_num_):
-            
+           
             feature_name = self.cfeature_list_[indice]
             feature_indice = self.cfeature_index_list_[indice]
             dummy_num = self.dummy_values_[feature_name]
@@ -495,6 +694,22 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     def fit(self, x, y, sample_weight=None):
 
+        """fit the SimBoost model
+
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        sample_weight : array-like of shape (n_samples,), optional
+            containing sample weights
+        Returns
+        -------
+        self : object
+            Returns fitted SimBoost object
+        """
+        
         start = time.time()
         x, y = self._validate_input(x, y)
         n_samples, n_features = x.shape
@@ -521,6 +736,17 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     def decision_function(self, x):
 
+        """output f1(beta1^T x) + f2(beta2^T x) + ... for given samples
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        Returns
+        -------
+        pred : np.array of shape (n_samples,)
+            containing f1(beta1^T x) + f2(beta2^T x) + ...
+        """
+
         check_is_fitted(self, "best_estimators_")
         pred = self.intercept_ * np.ones(x.shape[0])
         for est in self.best_estimators_:
@@ -534,7 +760,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
     def __init__(self, n_estimators, stein_method="first_order", spline="a_spline", knot_dist="uniform",
-                 learning_rate=0.1, reg_lambda=0.1, reg_gamma=0.1, degree=2, knot_num=20,
+                 learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, degree=2, knot_num=20,
                  ortho_shrink=1, loss_threshold=0.01, inner_update=True, meta_info=None, val_ratio=0.2, random_state=0):
 
         super(SimBoostRegressor, self).__init__(n_estimators=n_estimators,
@@ -554,12 +780,37 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                                    random_state=random_state)
 
     def _validate_input(self, x, y):
+        
+        """method to validate data
+        Parameters
+        ---------
+        None
+        Returns
+        -------
+        None
+        """
+
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True, y_numeric=True)
         return x, y.ravel()
 
     def _fit(self, x, y, sample_weight=None):
    
+        """fit the SimBoost model
+
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        sample_weight : array-like of shape (n_samples,), optional
+            containing sample weights
+        Returns
+        -------
+        None
+        """
+
         n_samples = x.shape[0]
         val_fold = np.ones((n_samples))
         val_fold[self.tr_idx] = -1
@@ -615,7 +866,19 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             self.sim_estimators_.append(sim_estimator)
 
     def _pruning(self, x, y):
-                
+          
+        """prune the base learners that are not importnat
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        y : array-like of shape (n_samples, 1),
+            containing the output dataset
+        Returns
+        -------
+        None
+        """
+
         component_importance = {}
         for indice, est in enumerate(self.sim_estimators_):
             component_importance.update({"sim " + str(indice + 1): {"type": "sim", "indice": indice,
@@ -652,6 +915,17 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
     def predict(self, x):
 
+        """output prediction for given samples
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        Returns
+        -------
+        pred : np.array of shape (n_samples,)
+            containing prediction
+        """  
+
         pred = self.decision_function(x)
         return pred
     
@@ -659,7 +933,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
     def __init__(self, n_estimators, stein_method="first_order", spline="a_spline",
-                 learning_rate=0.1, reg_lambda=0.1, reg_gamma=0.1, knot_dist="uniform", degree=2, knot_num=20, ortho_shrink=1,
+                 learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, knot_dist="uniform", degree=2, knot_num=20, ortho_shrink=1,
                  loss_threshold=0.01, val_ratio=0.2, inner_update=True, meta_info=None, random_state=0):
 
         super(SimBoostClassifier, self).__init__(n_estimators=n_estimators,
@@ -679,6 +953,18 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                                    random_state=random_state)
 
     def _validate_input(self, x, y):
+        
+        """method to validate data
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        Returns
+        -------
+        None
+        """
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True)
         if y.ndim == 2 and y.shape[1] == 1:
@@ -692,6 +978,21 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         return x, y.ravel()
 
     def _fit(self, x, y, sample_weight=None):
+        
+        """fit the SimBoost model
+
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        sample_weight : array-like of shape (n_samples,), optional
+            containing sample weights
+        Returns
+        -------
+        None
+        """
 
         n_samples = x.shape[0]
         val_fold = np.ones((n_samples))
@@ -774,9 +1075,21 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
             pred_val += self.learning_rate * sim_estimator.predict(x[self.val_idx])
             proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
             self.sim_estimators_.append(sim_estimator)
-     
+    
     def _pruning(self, x, y):
-                
+          
+        """prune the base learners that are not importnat
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        y : array-like of shape (n_samples, 1),
+            containing the output dataset
+        Returns
+        -------
+        None
+        """
+        
         component_importance = {}
         for indice, est in enumerate(self.sim_estimators_):
             component_importance.update({"sim " + str(indice + 1): {"type": "sim", "indice": indice,
@@ -816,11 +1129,33 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
     def predict_proba(self, x):
 
+        """output probability prediction for given samples
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        Returns
+        -------
+        pred : np.array of shape (n_samples,)
+            containing probability prediction
+        """
+
         pred = self.decision_function(x)
         pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False)[:, 1]
         return pred_proba
 
     def predict(self, x):
+
+        """output binary prediction for given samples
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features),
+            containing the input dataset
+        Returns
+        -------
+        pred : np.array of shape (n_samples,)
+            containing binary prediction
+        """  
 
         pred_proba = self.predict_proba(x)
         return self._label_binarizer.inverse_transform(pred_proba).reshape([-1, 1])
