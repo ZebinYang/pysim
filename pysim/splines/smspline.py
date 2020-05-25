@@ -26,43 +26,11 @@ except:
     utils.install_packages('stats', repos='http://cran.us.r-project.org')
     stats = importr("stats")
 
+__all__ = ["SMSplineRegressor", "SMSplineRegressor"]
 
+    
 class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
 
-    """Base class for Smoothing Spline classification and regression.
-
-    Parameters
-    ----------
-
-    :type  knot_num: int, optional. default=20
-    :param knot_num: The number of knots
-
-    :type  knot_dist: str, optional. default="uniform"
-    :param knot_dist: The distribution of knots
-      
-        "uniform": uniformly over the domain
-
-        "quantile": uniform quantiles of the given input data (not available when spline="p_spline" or "mono_p_spline")
-
-    :type  reg_gamma: float, optional. default=0.1
-    :param reg_gamma: The roughness penalty strength of the spline algorithm
-    
-        For spline="smoothing_spline", it ranges from 0 to 1 
-
-        For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to $+\infty$.
-    
-    :type  degree: int, optional. default=2
-    :param degree: The order of the spline
-    
-    :type  xmin: float, optional. default=-1
-    :param xmin: The min boundary of the input
-    
-    :type  xmax: float, optional. default=1
-    :param xmax: The max boundary of the input
-
-    :type  random_state: int, optional. default=0
-    :param random_state: The random seed
-    """
 
     @abstractmethod
     def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1):
@@ -76,13 +44,11 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
     def _estimate_density(self, x):
                 
         """method to estimate the density of input data
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
-        Returns
-        -------
-        None
         """
 
         self.density_, self.bins_ = np.histogram(x, bins=10, density=True)
@@ -90,12 +56,6 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
     def _validate_hyperparameters(self):
         
         """method to validate model parameters
-        Parameters
-        ---------
-        None
-        Returns
-        -------
-        None
         """
 
         if not isinstance(self.knot_num, int):
@@ -116,15 +76,13 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
     def diff(self, x, order=1):
              
         """method to calculate derivatives of the fitted adaptive spline to the input
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, 1),
+        x : array-like of shape (n_samples, 1)
             containing the input dataset
-        order : int,
+        order : int
             order of derivative
-        Returns
-        -------
-        None
         """
 
         if "coefficients" in self.sm_.names:
@@ -137,12 +95,6 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
     def visualize(self):
 
         """draw the fitted shape function
-        Parameters
-        ---------
-        None
-        Returns
-        -------
-        None
         """
 
         check_is_fitted(self, "sm_")
@@ -169,13 +121,14 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
     def decision_function(self, x):
 
         """output f(x) for given samples
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, 1),
+        x : array-like of shape (n_samples, 1)
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,),
+        np.array of shape (n_samples,)
             containing f(x) 
         """
 
@@ -192,6 +145,35 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
 
 class SMSplineRegressor(BaseSMSpline, RegressorMixin):
 
+    """Base class for Smoothing Spline regression.
+
+    Details:
+    1. This is an API for the well-known R package `stats`, and we call the function smoothing.spline through rpy2 interface.
+    2. To handle input data with less than 4 unique samples, we replace smoothing.spline by glm. 
+    3. During prediction, the data which is outside of the given `xmin` and `xmax` will be clipped to the boundary.
+    
+    Parameters
+    ----------
+    knot_num : int, optional. default=20
+           the number of knots
+
+    knot_dist : str, optional. default="uniform"
+            the distribution of knots
+      
+        "uniform": uniformly over the domain
+
+        "quantile": uniform quantiles of the given input data
+
+    reg_gamma : float, optional. default=0.1
+            the roughness penalty strength of the spline algorithm, range from 0 to 1 
+    
+    xmin : float, optional. default=-1
+        the min boundary of the input
+    
+    xmax : float, optional. default=1
+        the max boundary of the input
+    """
+
     def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1):
 
         super(SMSplineRegressor, self).__init__(knot_num=knot_num,
@@ -203,15 +185,13 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
     def _validate_input(self, x, y):
 
         """method to validate data
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, 1),
+        x : array-like of shape (n_samples, 1)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing the output dataset
-        Returns
-        -------
-        None
         """
 
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
@@ -221,18 +201,19 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
     def get_loss(self, label, pred, sample_weight=None):
         
         """method to calculate the cross entropy loss
+        
         Parameters
         ---------
-        label : array-like of shape (n_samples,),
+        label : array-like of shape (n_samples,)
             containing the input dataset
-        pred : array-like of shape (n_samples,),
+        pred : array-like of shape (n_samples,)
             containing the output dataset
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
         Returns
         -------
-        loss : float
-            the cross entropy value
+        float
+            the cross entropy loss
         """
 
         loss = np.average((label - pred) ** 2, axis=0, weights=sample_weight)
@@ -244,16 +225,16 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
         y : array-like of shape (n_samples,)
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
         Returns
         -------
-        self : object,
-            Returns fitted smoothing spline object
+        object 
+            self : Estimator instance.
         """
 
         self._validate_hyperparameters()
@@ -286,13 +267,14 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
     def predict(self, x):
 
         """output f(x) for given samples
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, 1),
+        x : array-like of shape (n_samples, 1)
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,),
+        np.array of shape (n_samples,)
             containing f(x) 
         """
 
@@ -301,6 +283,36 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
     
 
 class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
+
+    """Base class for Smoothing Spline classification.
+
+    Details:
+    1. This is an API for the well-known R package `stats`, and we call the function smoothing.spline through rpy2 interface.
+    2. To handle input data with less than 4 unique samples, we replace smoothing.spline by glm. 
+    3. During prediction, the data which is outside of the given `xmin` and `xmax` will be clipped to the boundary.
+    4. We use logit boost to handle the classification task using smoothing.spline, where the binary response (0, 1) is linearly mapped to (-2, 2).
+    
+    Parameters
+    ----------
+    knot_num : int, optional. default=20
+           the number of knots
+
+    knot_dist : str, optional. default="uniform"
+            the distribution of knots
+      
+        "uniform": uniformly over the domain
+
+        "quantile": uniform quantiles of the given input data
+
+    reg_gamma : float, optional. default=0.1
+            the roughness penalty strength of the spline algorithm, range from 0 to 1 
+    
+    xmin : float, optional. default=-1
+        the min boundary of the input
+    
+    xmax : float, optional. default=1
+        the max boundary of the input
+    """
 
     def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1):
 
@@ -314,18 +326,19 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
     def get_loss(self, label, pred, sample_weight=None):
         
         """method to calculate the cross entropy loss
+        
         Parameters
         ---------
-        label : array-like of shape (n_samples,),
+        label : array-like of shape (n_samples,)
             containing the input dataset
-        pred : array-like of shape (n_samples,),
+        pred : array-like of shape (n_samples,)
             containing the output dataset
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
         Returns
         -------
-        loss : float
-            the cross entropy value
+        float
+            the cross entropy loss
         """
 
         with np.errstate(divide="ignore", over="ignore"):
@@ -337,15 +350,13 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
     def _validate_input(self, x, y):
 
         """method to validate data
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, 1),
+        x : array-like of shape (n_samples, 1)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing the output dataset
-        Returns
-        -------
-        None
         """
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
                          multi_output=True)
@@ -363,16 +374,16 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
         y : array-like of shape (n_samples,)
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
         Returns
         -------
-        self : object,
-            Returns fitted smoothing spline object
+        object 
+            self : Estimator instance.
         """
 
         self._validate_hyperparameters()
@@ -405,13 +416,14 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
     def predict_proba(self, x):
         
         """output probability prediction for given samples
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,),
+        np.array of shape (n_samples,)
             containing probability prediction
         """
 
@@ -422,13 +434,14 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
     def predict(self, x):
         
         """output binary prediction for given samples
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,),
+        np.array of shape (n_samples,)
             containing binary prediction
         """
 

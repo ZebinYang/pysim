@@ -11,39 +11,11 @@ from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 
 from pygam import LinearGAM, LogisticGAM, s
 
+__all__ = ["PSplineRegressor", "PSplineClassifier"]
+
+
 class BasePSpline(BaseEstimator, metaclass=ABCMeta):
 
-    """Base class for P-Spline classification and regression.
-
-    Parameters
-    ----------
-
-    :type  knot_num: int, optional. default=20
-    :param knot_num: The number of knots
-
-    :type  reg_gamma: float, optional. default=0.1
-    :param reg_gamma: The roughness penalty strength of the spline algorithm
-    
-        For spline="smoothing_spline", it ranges from 0 to 1 
-
-        For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to $+\infty$.
-    
-    :type  degree: int, optional. default=2
-    :param degree: The order of the spline
-    
-    :type  xmin: float, optional. default=-1
-    :param xmin: The min boundary of the input
-    
-    :type  xmax: float, optional. default=1
-    :param xmax: The max boundary of the input
-    
-    :type  constraint: None or str, optional. default=None
-    :param constraint: The extra constraint for p-spline, it can be "mono" for monotonic constraint or None for no constraint
-
-    :type  random_state: int, optional. default=0
-    :param random_state: The random seed
-    """
-    
     @abstractmethod
     def __init__(self, knot_num=20, reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
 
@@ -57,13 +29,11 @@ class BasePSpline(BaseEstimator, metaclass=ABCMeta):
     def _estimate_density(self, x):
         
         """method to estimate the density of input data
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
-        Returns
-        -------
-        None
         """
 
         self.density_, self.bins_ = np.histogram(x, bins=10, density=True)
@@ -71,12 +41,6 @@ class BasePSpline(BaseEstimator, metaclass=ABCMeta):
     def _validate_hyperparameters(self):
                 
         """method to validate model parameters
-        Parameters
-        ---------
-        None
-        Returns
-        -------
-        None
         """
 
         if not isinstance(self.degree, int):
@@ -104,12 +68,6 @@ class BasePSpline(BaseEstimator, metaclass=ABCMeta):
     def visualize(self):
 
         """draw the fitted shape function
-        Parameters
-        ---------
-        None
-        Returns
-        -------
-        None
         """
 
         check_is_fitted(self, "ps_")
@@ -136,6 +94,34 @@ class BasePSpline(BaseEstimator, metaclass=ABCMeta):
 
 class PSplineRegressor(BasePSpline, RegressorMixin):
 
+    """PSpline regression.
+
+    Details:
+    1. This is an API for the python package `pygam`, and we use the p-spline by treating it as an univariate GAM.
+    2. During prediction, the data which is outside of the given `xmin` and `xmax` will be clipped to the boundary.
+
+    Parameters
+    ----------
+
+    knot_num : int, optional. default=20
+           the number of knots
+
+    reg_gamma : float, optional. default=0.1
+            the roughness penalty strength of the spline algorithm, range from 0 to :math:`+\infty` 
+    
+    degree : int, optional. default=2
+          the order of the spline
+    
+    xmin : float, optional. default=-1
+        the min boundary of the input
+    
+    xmax : float, optional. default=1
+        the max boundary of the input
+    
+    constraint : None or str, optional. default=None
+        constraint=None means no constrant and constraint="mono" for monotonic constraint
+    """
+
     def __init__(self, knot_num=20,  reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
 
         super(PSplineRegressor, self).__init__(knot_num=knot_num,
@@ -148,15 +134,13 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
     def _validate_input(self, x, y):
         
         """method to validate data
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, 1),
+        x : array-like of shape (n_samples, 1)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing the output dataset
-        Returns
-        -------
-        None
         """
 
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
@@ -166,18 +150,19 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
     def get_loss(self, label, pred, sample_weight=None):
         
         """method to calculate the MSE loss
+        
         Parameters
         ---------
-        label : array-like of shape (n_samples,),
+        label : array-like of shape (n_samples,)
             containing the input dataset
-        pred : array-like of shape (n_samples,),
+        pred : array-like of shape (n_samples,)
             containing the output dataset
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
         Returns
         -------
-        loss : float,
-            the MSE value
+        float
+            the MSE loss
         """
         
         loss = np.average((label - pred) ** 2, axis=0, weights=sample_weight)
@@ -189,16 +174,16 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
         Returns
         -------
-        self : object,
-            Returns fitted p-spline object
+        object 
+            self : Estimator instance.
         """
 
         self._validate_hyperparameters()
@@ -253,13 +238,14 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
     def decision_function(self, x):
 
         """output f(x) for given samples
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, 1),
+        x : array-like of shape (n_samples, 1)
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,),
+        np.array of shape (n_samples,)
             containing f(x) 
         """
 
@@ -276,11 +262,11 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
         """output f(x) for given samples
         Parameters
         ---------
-        x : array-like of shape (n_samples, 1),
+        x : array-like of shape (n_samples, 1)
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,),
+        np.array of shape (n_samples,)
             containing f(x) 
         """
         pred = self.decision_function(x)
@@ -288,6 +274,33 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
     
 
 class PSplineClassifier(BasePSpline, ClassifierMixin):
+
+    """PSpline classification.
+
+    Details:
+    1. This is an API for the python package `pygam`, and we use the p-spline by treating it as an univariate GAM.
+    2. During prediction, the data which is outside of the given `xmin` and `xmax` will be clipped to the boundary.
+
+    Parameters
+    ----------
+    knot_num : int, optional. default=20
+           the number of knots
+
+    reg_gamma : float, optional. default=0.1
+            the roughness penalty strength of the spline algorithm, range from 0 to :math:`+\infty` 
+    
+    degree : int, optional. default=2
+          the order of the spline
+    
+    xmin : float, optional. default=-1
+        the min boundary of the input
+    
+    xmax : float, optional. default=1
+        the max boundary of the input
+    
+    constraint : None or str, optional. default=None
+        constraint=None means no constrant and constraint="mono" for monotonic constraint
+    """
 
     def __init__(self, knot_num=20, reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
 
@@ -302,18 +315,19 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
     def get_loss(self, label, pred, sample_weight=None):
         
         """method to calculate the cross entropy loss
+        
         Parameters
         ---------
-        label : array-like of shape (n_samples,),
+        label : array-like of shape (n_samples,)
             containing the input dataset
-        pred : array-like of shape (n_samples,),
+        pred : array-like of shape (n_samples,)
             containing the output dataset
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
         Returns
         -------
-        loss : float
-            the cross entropy value
+        float 
+            the cross entropy loss
         """
 
         with np.errstate(divide="ignore", over="ignore"):
@@ -325,15 +339,13 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
     def _validate_input(self, x, y):
         
         """method to validate data
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, 1),
+        x : array-like of shape (n_samples, 1)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing the output dataset
-        Returns
-        -------
-        None
         """
 
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
@@ -352,16 +364,16 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
         y : array-like of shape (n_samples,)
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
         Returns
         -------
-        self : object,
-            Returns fitted p-spline object
+        object 
+            self : Estimator instance.
         """
 
         self._validate_hyperparameters()
@@ -416,13 +428,14 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
     def decision_function(self, x):
 
         """output f(x) for given samples
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, 1),
+        x : array-like of shape (n_samples, 1)
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,),
+        np.array of shape (n_samples,)
             containing f(x) 
         """
 
@@ -440,13 +453,14 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
     def predict_proba(self, x):
 
         """output probability prediction for given samples
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,),
+        np.array of shape (n_samples,)
             containing probability prediction
         """
         pred_proba = self.ps_.predict_mu(x)
@@ -455,13 +469,14 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
     def predict(self, x):
         
         """output binary prediction for given samples
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,),
+        np.array of shape (n_samples,)
             containing binary prediction
         """
 

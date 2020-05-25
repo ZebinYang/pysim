@@ -37,70 +37,18 @@ except:
     
 numpy2ri.activate()
 
+__all__ = ["SimRegressor", "SimRegressor"]
+
 
 class BaseSim(BaseEstimator, metaclass=ABCMeta):
-    """
-    Base class for sim boosting classification and regression.
-
-    Parameters
-    ----------
-
-    :type stein_method: str, optional. default="first_order"
-    :param stein_method: the base method for estimating the projection coefficients in sparse SIM. 
-        
-        "first_order": First-order Stein's Identity via sparse PCA solver
-
-        "second_order": Second-order Stein's Identity via sparse PCA solver
-
-        "first_order_thres": First-order Stein's Identity via hard thresholding (A simplified verison)     
-
-        "ols": Least squares estimation subject to hard thresholding.
-
-    :type  spline: str, optional. default="smoothing_spline"
-    :param spline: The type of spline for fitting the curve
-      
-        "smoothing_spline": Smoothing spline
-
-        "p_spline": P-spline
-
-        "mono_p_spline": P-spline with monotonic constraint
-
-        "a_spline": Adaptive B-spline
-
-    :type  knot_dist: str, optional. default="uniform"
-    :param knot_dist: The distribution of knots
-      
-        "uniform": uniformly over the domain
-
-        "quantile": uniform quantiles of the given input data (not available when spline="p_spline" or "mono_p_spline")
-
-    :type  reg_lambda: float, optional. default=0.1
-    :param reg_lambda: The regularization strength of sparsity of beta, ranges from 0 to 1 
-
-    :type  reg_gamma: float, optional. default=0.1
-    :param reg_gamma: The roughness penalty strength of the spline algorithm
-    
-        For spline="smoothing_spline", it ranges from 0 to 1 
-
-        For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to $+\infty$.
-    
-    :type  degree: int, optional. default=2
-    :param degree: The order of the spline, not used for spline="smoothing_spline"
-    
-    :type  knot_num: int, optional. default=20
-    :param knot_num: The number of knots
-    
-    :type  random_state: int, optional. default=0
-    :param random_state: The random seed
-    """
 
     @abstractmethod
-    def __init__(self, method="first_order", reg_lambda=0.1, spline="smoothing_spline", reg_gamma=0.1,
+    def __init__(self, method="first_order", spline="smoothing_spline", reg_lambda=0.1, reg_gamma=0.1,
                  knot_num=20, knot_dist="uniform", degree=2, random_state=0):
 
         self.method = method
-        self.reg_lambda = reg_lambda
         self.spline = spline
+        self.reg_lambda = reg_lambda
         self.reg_gamma = reg_gamma
         self.knot_num = knot_num
         self.knot_dist = knot_dist
@@ -144,13 +92,10 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         
         Parameters
         ---------
-        n_samples : int,
+        n_samples : int
             the number of samples
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
-        Returns
-        -------
-        None
         """
 
         if sample_weight is None:
@@ -165,17 +110,17 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
-        proj_mat : array-like of shape (n_features, n_features), optional,
+        proj_mat : array-like of shape (n_features, n_features), optional
             to project the projection indice for enhancing orthogonality
         Returns
         -------
-        beta : np.array of shape (n_features, 1),
+        np.array of shape (n_features, 1)
             the normalized projection inidce
         """
         
@@ -199,17 +144,17 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
-        proj_mat : array-like of shape (n_features, n_features), optional,
+        proj_mat : array-like of shape (n_features, n_features), optional
             to project the projection indice for enhancing orthogonality
         Returns
         -------
-        beta : np.array of shape (n_features, 1),
+        np.array of shape (n_features, 1)
             the normalized projection inidce
         """
 
@@ -235,17 +180,17 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
-        proj_mat : array-like of shape (n_features, n_features), optional,
+        proj_mat : array-like of shape (n_features, n_features), optional
             to project the projection indice for enhancing orthogonality
         Returns
         -------
-        beta : np.array of shape (n_features, 1),
+        np.array of shape (n_features, 1)
             the normalized projection inidce
         """
 
@@ -272,18 +217,18 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
-        proj_mat : array-like of shape (n_features, n_features), optional,
+        proj_mat : array-like of shape (n_features, n_features), optional
             to project the projection indice for enhancing orthogonality
         Returns
         -------
-        self : object,
-            Returns fitted Sim object
+        object 
+            self : Estimator instance.
         """
 
         np.random.seed(self.random_state)
@@ -320,41 +265,38 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
-        proj_mat : array-like of shape (n_features, n_features), optional,
+        proj_mat : array-like of shape (n_features, n_features), optional
             to project the projection indice for enhancing orthogonality
-        method : std, optional, default="adam",
+        method : std, optional, default="adam"
             the inner update method, including "adam" and "bfgs"
-        val_ratio : float, optional, default=0.2,
+        val_ratio : float, optional, default=0.2
             the split ratio for validation set
-        tol : float, optional, default=0.0001,
+        tol : float, optional, default=0.0001
             the tolerance for early stopping
-        max_inner_iter : int, optional, default=10,
+        max_inner_iter : int, optional, default=10
             the maximal number of inner update iteration
-        n_inner_iter_no_change : int, optional, default=1,
+        n_inner_iter_no_change : int, optional, default=1
             the tolerance of non-improving inner iterations
-        max_epoches : int, optional, default=100,
+        max_epoches : int, optional, default=100
             the maximal number of epoches for "adam" optimizer
-        n_epoch_no_change : int, optional, default=5,
+        n_epoch_no_change : int, optional, default=5
             the tolerance of non-improving epoches for adam optimizer
-        batch_size : int, optional, default=100,
+        batch_size : int, optional, default=100
             the batch_size for adam optimizer
-        learning_rate : float, optional, default=1e-3,
+        learning_rate : float, optional, default=1e-3
             the learning rate for adam optimizer
-        beta_1 : float, optional, default=0.9,
+        beta_1 : float, optional, default=0.9
             the beta_1 parameter for adam optimizer
-        beta_2 : float, optional, default=0.999,
+        beta_2 : float, optional, default=0.999
             the beta_1 parameter for adam optimizer
-        verbose : bool, optional, default=False,
+        verbose : bool, optional, default=False
             whether to show the training history
-        Returns
-        -------
-        None
         """
 
         if method == "adam":                
@@ -373,39 +315,36 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
-        proj_mat : array-like of shape (n_features, n_features), optional,
+        proj_mat : array-like of shape (n_features, n_features), optional
             to project the projection indice for enhancing orthogonality
-        val_ratio : float, optional, default=0.2,
+        val_ratio : float, optional, default=0.2
             the split ratio for validation set
-        tol : float, optional, default=0.0001,
+        tol : float, optional, default=0.0001
             the tolerance for early stopping
-        max_inner_iter : int, optional, default=10,
+        max_inner_iter : int, optional, default=10
             the maximal number of inner update iteration
-        n_inner_iter_no_change : int, optional, default=1,
+        n_inner_iter_no_change : int, optional, default=1
             the tolerance of non-improving inner iterations
-        max_epoches : int, optional, default=100,
+        max_epoches : int, optional, default=100
             the maximal number of epoches for "adam" optimizer
-        n_epoch_no_change : int, optional, default=5,
+        n_epoch_no_change : int, optional, default=5
             the tolerance of non-improving epoches for adam optimizer
-        batch_size : int, optional, default=100,
+        batch_size : int, optional, default=100
             the batch_size for adam optimizer
-        learning_rate : float, optional, default=1e-3,
+        learning_rate : float, optional, default=1e-3
             the learning rate for adam optimizer
-        beta_1 : float, optional, default=0.9,
+        beta_1 : float, optional, default=0.9
             the beta_1 parameter for adam optimizer
-        beta_2 : float, optional, default=0.999,
+        beta_2 : float, optional, default=0.999
             the beta_1 parameter for adam optimizer
-        verbose : bool, optional, default=False,
+        verbose : bool, optional, default=False
             whether to show the training history
-        Returns
-        -------
-        None
         """
             
         x, y = self._validate_input(x, y)
@@ -530,29 +469,26 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
-        proj_mat : array-like of shape (n_features, n_features), optional,
+        proj_mat : array-like of shape (n_features, n_features), optional
             to project the projection indice for enhancing orthogonality
-        val_ratio : float, optional, default=0.2,
+        val_ratio : float, optional, default=0.2
             the split ratio for validation set
-        tol : float, optional, default=0.0001,
+        tol : float, optional, default=0.0001
             the tolerance for early stopping
-        max_inner_iter : int, optional, default=10,
+        max_inner_iter : int, optional, default=10
             the maximal number of inner update iteration
-        n_inner_iter_no_change : int, optional, default=1,
+        n_inner_iter_no_change : int, optional, default=1
             the tolerance of non-improving inner iterations
-        max_epoches : int, optional, default=100,
+        max_epoches : int, optional, default=100
             the maximal number of epoches for "adam" optimizer
-        verbose : bool, optional, default=False,
+        verbose : bool, optional, default=False
             whether to show the training history
-        Returns
-        -------
-        None
         """
 
         x, y = self._validate_input(x, y)
@@ -633,13 +569,14 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
     def decision_function(self, x):
 
         """output f(beta^T x) for given samples
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,),
+        np.array of shape (n_samples,)
             containing f(beta^T x) 
         """
 
@@ -652,12 +589,6 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
     def visualize(self):
 
         """draw the fitted projection indices and ridge function
-        Parameters
-        ---------
-        None
-        Returns
-        -------
-        None
         """
         
         check_is_fitted(self, "beta_")
@@ -720,12 +651,66 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
 class SimRegressor(BaseSim, RegressorMixin):
 
-    def __init__(self, method="first_order", reg_lambda=0.1, spline="smoothing_spline", reg_gamma=0.1,
+    """
+    Base class for sim regression.
+
+    Parameters
+    ----------
+    method : str, optional. default="first_order"
+        The base method for estimating the projection coefficients in sparse SIM
+        
+        "first_order": First-order Stein's Identity via sparse PCA solver
+
+        "second_order": Second-order Stein's Identity via sparse PCA solver
+
+        "first_order_thres": First-order Stein's Identity via hard thresholding (A simplified verison)     
+
+        "ols": Least squares estimation subject to hard thresholding
+
+    spline : str, optional. default="smoothing_spline"
+        The type of spline for fitting the curve
+      
+        "smoothing_spline": Smoothing spline
+
+        "p_spline": P-spline
+
+        "mono_p_spline": P-spline with monotonic constraint
+
+        "a_spline": Adaptive B-spline
+
+    knot_dist : str, optional. default="uniform"
+        Distribution of knots
+      
+        "uniform": uniformly over the domain
+
+        "quantile": uniform quantiles of the given input data (not available when spline="p_spline" or "mono_p_spline")
+
+    reg_lambda : float, optional. default=0.1
+        Sparsity strength of projection indice, ranges from 0 to 1 
+
+    reg_gamma : float, optional. default=0.1
+        Roughness penalty strength of the spline algorithm
+    
+        For spline="smoothing_spline", it ranges from 0 to 1 
+
+        For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to :math:`+\infty`
+    
+    degree : int, optional. default=2
+        The order of the spline, not used for spline="smoothing_spline"
+    
+    knot_num : int, optional. default=20
+        Number of knots
+    
+    random_state : int, optional. default=0
+        Random seed
+    """
+
+    def __init__(self, method="first_order", spline="smoothing_spline", reg_lambda=0.1, reg_gamma=0.1,
                  knot_num=20, knot_dist="uniform", degree=2, random_state=0):
 
         super(SimRegressor, self).__init__(method=method,
-                                reg_lambda=reg_lambda,
                                 spline=spline,
+                                reg_lambda=reg_lambda,
                                 reg_gamma=reg_gamma,
                                 knot_num=knot_num,
                                 knot_dist=knot_dist,
@@ -738,17 +723,17 @@ class SimRegressor(BaseSim, RegressorMixin):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
-        proj_mat : array-like of shape (n_features, n_features), optional,
+        proj_mat : array-like of shape (n_features, n_features), optional
             to project the projection indice for enhancing orthogonality
         Returns
         -------
-        beta : np.array of shape (n_features, 1),
+        np.array of shape (n_features, 1)
             the normalized projection inidce
         """
         
@@ -767,15 +752,13 @@ class SimRegressor(BaseSim, RegressorMixin):
     def _validate_input(self, x, y):
                 
         """method to validate data
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing the output dataset
-        Returns
-        -------
-        None
         """
 
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
@@ -785,21 +768,19 @@ class SimRegressor(BaseSim, RegressorMixin):
     def _estimate_shape(self, x, y, xmin, xmax, sample_weight=None):
        
         """estimate the ridge function
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing the output dataset
-        xmin : float, 
+        xmin : float
             the minimum value of beta ^ x
-        xmax : float, 
+        xmax : float
             the maximum value of beta ^ x
-        sample_weight : array-like of shape (n_samples,), optional, default=None,
+        sample_weight : array-like of shape (n_samples,), optional, default=None
             containing sample weights
-        Returns
-        -------
-        None
         """
 
         if self.spline == "a_spline":
@@ -822,13 +803,14 @@ class SimRegressor(BaseSim, RegressorMixin):
     def predict(self, x):
 
         """output f(beta^T x) for given samples
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,),
+        np.array of shape (n_samples,)
             containing f(beta^T x) 
         """
         pred = self.decision_function(x)
@@ -836,6 +818,60 @@ class SimRegressor(BaseSim, RegressorMixin):
 
 
 class SimClassifier(BaseSim, ClassifierMixin):
+
+    """
+    Base class for sim classification.
+
+    Parameters
+    ----------
+    method : str, optional. default="first_order"
+        The base method for estimating the projection coefficients in sparse SIM
+        
+        "first_order": First-order Stein's Identity via sparse PCA solver
+
+        "second_order": Second-order Stein's Identity via sparse PCA solver
+
+        "first_order_thres": First-order Stein's Identity via hard thresholding (A simplified verison)     
+
+        "ols": Least squares estimation subject to hard thresholding
+
+    spline : str, optional. default="smoothing_spline"
+        The type of spline for fitting the curve
+      
+        "smoothing_spline": Smoothing spline
+
+        "p_spline": P-spline
+
+        "mono_p_spline": P-spline with monotonic constraint
+
+        "a_spline": Adaptive B-spline
+
+    knot_dist : str, optional. default="uniform"
+        Distribution of knots
+      
+        "uniform": uniformly over the domain
+
+        "quantile": uniform quantiles of the given input data (not available when spline="p_spline" or "mono_p_spline")
+
+    reg_lambda : float, optional. default=0.1
+        Sparsity strength of projection indice, ranges from 0 to 1 
+
+    reg_gamma : float, optional. default=0.1
+        Roughness penalty strength of the spline algorithm
+    
+        For spline="smoothing_spline", it ranges from 0 to 1 
+
+        For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to :math:`+\infty`
+    
+    degree : int, optional. default=2
+        The order of the spline, not used for spline="smoothing_spline"
+    
+    knot_num : int, optional. default=20
+        Number of knots
+    
+    random_state : int, optional. default=0
+        Random seed
+    """
 
     def __init__(self, method="first_order", reg_lambda=0.1, spline="smoothing_spline", reg_gamma=0.1,
                  knot_num=20, knot_dist="uniform", degree=2, random_state=0):
@@ -856,17 +892,17 @@ class SimClassifier(BaseSim, ClassifierMixin):
 
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
         y : array-like of shape (n_samples,)
             containing target values
-        sample_weight : array-like of shape (n_samples,), optional,
+        sample_weight : array-like of shape (n_samples,), optional
             containing sample weights
-        proj_mat : array-like of shape (n_features, n_features), optional,
+        proj_mat : array-like of shape (n_features, n_features), optional
             to project the projection indice for enhancing orthogonality
         Returns
         -------
-        beta : np.array of shape (n_features, 1),
+        np.array of shape (n_features, 1)
             the normalized projection inidce
         """
 
@@ -885,15 +921,13 @@ class SimClassifier(BaseSim, ClassifierMixin):
     def _validate_input(self, x, y):
         
         """method to validate data
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing target values
-        Returns
-        -------
-        None
         """
 
         x, y = check_X_y(x, y, accept_sparse=["csr", "csc", "coo"],
@@ -911,21 +945,19 @@ class SimClassifier(BaseSim, ClassifierMixin):
     def _estimate_shape(self, x, y, xmin, xmax, sample_weight=None):
 
         """estimate the ridge function
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
-        y : array-like of shape (n_samples,),
+        y : array-like of shape (n_samples,)
             containing the output dataset
-        xmin : float, 
+        xmin : float
             the minimum value of beta ^ x
-        xmax : float, 
+        xmax : float
             the maximum value of beta ^ x
-        sample_weight : array-like of shape (n_samples,), optional, default=None,
+        sample_weight : array-like of shape (n_samples,), optional, default=None
             containing sample weights
-        Returns
-        -------
-        None
         """
 
         if self.spline == "a_spline":
@@ -949,13 +981,14 @@ class SimClassifier(BaseSim, ClassifierMixin):
     def predict_proba(self, x):
         
         """output probability prediction for given samples
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,),
+        np.array of shape (n_samples,)
             containing probability prediction
         """
 
@@ -966,13 +999,14 @@ class SimClassifier(BaseSim, ClassifierMixin):
     def predict(self, x):
             
         """output binary prediction for given samples
+        
         Parameters
         ---------
-        x : array-like of shape (n_samples, n_features),
+        x : array-like of shape (n_samples, n_features)
             containing the input dataset
         Returns
         -------
-        pred : np.array of shape (n_samples,),
+        np.array of shape (n_samples,)
             containing binary prediction
         """  
 
