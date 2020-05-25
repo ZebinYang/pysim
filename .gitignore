@@ -1,3 +1,4 @@
-docs/*
+pysim/__pycache__/*
+pysim/splines/__pycache__/*
 example/.ipynb_checkpoints/*
 scripts/*

@@ -1,0 +1,30 @@
+
+pysim 
+-----------------
+
+pysim\.splines
+______________________________
+.. automodule:: splines.aspline
+  :members:
+  :inherited-members:
+  
+.. automodule:: splines.smspline
+  :members:
+  :inherited-members:
+
+.. automodule:: splines.pspline
+  :members:
+  :inherited-members:
+
+pysim\.simboost
+______________________________
+.. automodule:: pysim.simboost
+  :members:
+  :inherited-members:
+
+
+pysim\.sim
+______________________________
+.. automodule:: pysim.sim
+  :members:
+  :inherited-members:

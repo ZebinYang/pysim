@@ -652,7 +652,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 class SimRegressor(BaseSim, RegressorMixin):
 
     """
-    Base class for sim regression.
+    Sim regression.
 
     Parameters
     ----------
@@ -820,7 +820,7 @@ class SimRegressor(BaseSim, RegressorMixin):
 class SimClassifier(BaseSim, ClassifierMixin):
 
     """
-    Base class for sim classification.
+    Sim classification.
 
     Parameters
     ----------
