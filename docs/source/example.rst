@@ -142,7 +142,7 @@ Sim Boosting
         
         clf = SimBoostRegressor(n_estimators=50, knot_num=20, knot_dist="uniform", spline="a_spline", learning_rate=0.5,
                         reg_lambda=[0.1, 0.2, 0.3, 0.4, 0.5],
-                        reg_gamma=[0.1, 1, 10], inner_update=False, meta_info=None)
+                        reg_gamma=[0.1, 1, 10], inner_update="adam", meta_info=None)
         clf.fit(train_x, train_y)
         
         clf.visualize()
