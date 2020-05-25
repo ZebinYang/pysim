@@ -32,7 +32,7 @@ except:
         utils = importr("utils")
         utils.install_packages("devtools")
         devtools = importr("devtools")
-    devtools.install_git("https://github.com/vqv/fps")
+    devtools.install_github("https://github.com/vqv/fps")
     fps = importr("fps")
     
 numpy2ri.activate()
