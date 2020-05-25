@@ -1,7 +1,7 @@
-from .pysim.sim import SimRegressor
-from .pysim.sim import SimClassifier
-from .pysim.simboost import SimBoostRegressor
-from .pysim.simboost import SimBoostClassifier
+from .sim import SimRegressor
+from .sim import SimClassifier
+from .simboost import SimBoostRegressor
+from .simboost import SimBoostClassifier
 
 __all__ = ["SimRegressor", "SimClassifier", "SimBoostRegressor", "SimBoostClassifier"]
 
