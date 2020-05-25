@@ -27,7 +27,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
     @abstractmethod
     def __init__(self, n_estimators, stein_method="first_order", spline="a_spline", knot_dist="uniform",
                  learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, degree=2, knot_num=20,
-                 ortho_shrink=1, loss_threshold=0.01, inner_update=True, meta_info=None, val_ratio=0.2, random_state=0):
+                 ortho_shrink=1, loss_threshold=0.01, inner_update=None, meta_info=None, val_ratio=0.2, random_state=0):
 
         self.n_estimators = n_estimators
         self.stein_method = stein_method
@@ -108,10 +108,11 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("knot_num must be > 0, got" % self.knot_num)
 
         if self.knot_dist not in ["uniform", "quantile"]:
-            raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
+            raise ValueError("knot_dist must be an element of [uniform, quantile], got %s." % self.knot_dist)
 
-        if not isinstance(self.inner_update, bool):
-            raise ValueError("inner_update must be an integer, got %s." % self.inner_update)
+        if self.inner_update is not None: 
+            if self.inner_update not in ["adam", "bfgs"]:
+                raise ValueError("inner_update must be None or an element of [adam, bfgs], got %s." % self.inner_update)
 
         if self.meta_info is not None:
             if not isinstance(self.meta_info, dict):
@@ -734,8 +735,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         This parameter is used for post-hoc pruning, ranges from 0 to 1
         To reduce model complexity, we prefer to use fewer base learners, which is as accurate as (1 - loss_threshold) of the best performance)
 
-    inner_update : bool, optional. default=True
-        Whether to perform inner update for each base learner
+    inner_update : None or str, optional. default=None
+        The inner update method for each base learner
 
     meta_info : None or a dict with features' information
         It has two types:
@@ -842,9 +843,9 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             
             sim_estimator.fit(x[self.tr_idx], z[self.tr_idx],
                        sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
-            if self.inner_update:
+            if self.inner_update is not None:
                 sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z, 
-                        sample_weight=sample_weight, proj_mat=proj_mat, method="adam",
+                        sample_weight=sample_weight, proj_mat=proj_mat, method=self.inner_update,
                         n_inner_iter_no_change=1, batch_size=min(200, int(0.2 * n_samples)), val_ratio=self.val_ratio)
             # update    
             z = z - self.learning_rate * sim_estimator.predict(x)
@@ -992,7 +993,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         To reduce model complexity, we prefer to use fewer base learners, which is as accurate as (1 - loss_threshold) of the best performance)
 
     inner_update : bool, optional. default=True
-        Whether to perform inner update for each base learner
+        The inner update method for each base learner
 
     meta_info : None or a dict with features' information
         It has two types:
@@ -1138,9 +1139,9 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                         sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
 
             # update
-            if self.inner_update:
+            if self.inner_update is not None:
                 sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z, 
-                        sample_weight=sample_weight, proj_mat=proj_mat, method="adam",
+                        sample_weight=sample_weight, proj_mat=proj_mat, method=self.inner_update,
                         n_inner_iter_no_change=1, batch_size=min(200, int(0.2 * n_samples)), val_ratio=self.val_ratio)
             pred_train += self.learning_rate * sim_estimator.predict(x[self.tr_idx])
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
