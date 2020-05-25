@@ -12,7 +12,7 @@ Note pysim will call the R package fps (https://github.com/vqv/fps) using rpy2 i
 
 ```python
 from pysim import SimClassifier
-clf = SimClassifier(method="first_order", reg_lambda=0.1, spline="smoothing_spline", reg_gamma=10, knot_num=20, knot_dist="uniform", degree=2, random_state=0)
+clf = SimClassifier(method="first_order", spline="smoothing_spline", reg_lambda=0.1, reg_gamma=10, knot_num=20, knot_dist="uniform", degree=2, random_state=0)
 ## clf.fit(x, y)
 ```
 

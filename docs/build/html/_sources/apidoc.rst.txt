@@ -1,7 +1,4 @@
 
-pysim 
------------------
-
 pysim\.splines
 ______________________________
 .. automodule:: splines.aspline
@@ -16,15 +13,17 @@ ______________________________
   :members:
   :inherited-members:
 
-pysim\.simboost
-______________________________
-.. automodule:: pysim.simboost
-  :members:
-  :inherited-members:
-
 
 pysim\.sim
 ______________________________
 .. automodule:: pysim.sim
   :members:
   :inherited-members:
+
+
+pysim\.simboost
+______________________________
+.. automodule:: pysim.simboost
+  :members:
+  :inherited-members:
+

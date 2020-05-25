@@ -1,8 +1,4 @@
 
-pysim 
------------------
-
-
 pysim\.splines
 ______________________________
 .. automodule:: splines.aspline
