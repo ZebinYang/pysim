@@ -1919,7 +1919,7 @@ component of a nested object.</p>
 
 <dl class="method">
 <dt id="pysim.sim.SimRegressor.fit_inner_update_bfgs">
-<code class="sig-name descname">fit_inner_update_bfgs</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_inner_iter=10</em>, <em class="sig-param">n_inner_iter_no_change=1</em>, <em class="sig-param">max_epoches=100</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimRegressor.fit_inner_update_bfgs" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">fit_inner_update_bfgs</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_inner_iter=10</em>, <em class="sig-param">n_inner_iter_no_change=1</em>, <em class="sig-param">max_epoches=10</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimRegressor.fit_inner_update_bfgs" title="Permalink to this definition">¶</a></dt>
 <dd><p>fine tune the fitted Sim model using inner update method (bfgs)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1932,7 +1932,7 @@ component of a nested object.</p>
 <li><p><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.0001</em>) – the tolerance for early stopping</p></li>
 <li><p><strong>max_inner_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=10</em>) – the maximal number of inner update iteration</p></li>
 <li><p><strong>n_inner_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – the tolerance of non-improving inner iterations</p></li>
-<li><p><strong>max_epoches</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the maximal number of epoches for “adam” optimizer</p></li>
+<li><p><strong>max_epoches</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=10</em>) – the maximal number of epoches for “bfgs” optimizer</p></li>
 <li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – whether to show the training history</p></li>
 </ul>
 </dd>
@@ -2320,7 +2320,7 @@ component of a nested object.</p>
 
 <dl class="method">
 <dt>
-<code class="sig-name descname">fit_inner_update_bfgs</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_inner_iter=10</em>, <em class="sig-param">n_inner_iter_no_change=1</em>, <em class="sig-param">max_epoches=100</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span></dt>
+<code class="sig-name descname">fit_inner_update_bfgs</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_inner_iter=10</em>, <em class="sig-param">n_inner_iter_no_change=1</em>, <em class="sig-param">max_epoches=10</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span></dt>
 <dd><p>fine tune the fitted Sim model using inner update method (bfgs)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2333,7 +2333,7 @@ component of a nested object.</p>
 <li><p><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.0001</em>) – the tolerance for early stopping</p></li>
 <li><p><strong>max_inner_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=10</em>) – the maximal number of inner update iteration</p></li>
 <li><p><strong>n_inner_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – the tolerance of non-improving inner iterations</p></li>
-<li><p><strong>max_epoches</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the maximal number of epoches for “adam” optimizer</p></li>
+<li><p><strong>max_epoches</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=10</em>) – the maximal number of epoches for “bfgs” optimizer</p></li>
 <li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – whether to show the training history</p></li>
 </ul>
 </dd>
@@ -2497,7 +2497,7 @@ component of a nested object.</p>
 <li><p><strong>ortho_shrink</strong> (<em>float</em><em>, </em><em>optional. default=1</em>) – Shrinkage strength for orthogonal enhancement, ranges from 0 to 1, valid when learning_rage=1.0</p></li>
 <li><p><strong>loss_threshold</strong> (<em>float</em><em>, </em><em>optional. default=0.01</em>) – This parameter is used for post-hoc pruning, ranges from 0 to 1
 To reduce model complexity, we prefer to use fewer base learners, which is as accurate as (1 - loss_threshold) of the best performance)</p></li>
-<li><p><strong>inner_update</strong> (<em>bool</em><em>, </em><em>optional. default=True</em>) – Whether to perform inner update for each base learner</p></li>
+<li><p><strong>inner_update</strong> (<em>None</em><em> or </em><em>str</em><em>, </em><em>optional. default=None</em>) – The inner update method for each base learner</p></li>
 <li><p><strong>meta_info</strong> (<em>None</em><em> or </em><em>a dict with features' information</em>) – <p>It has two types:</p>
 <dl class="simple">
 <dt>continuous:</dt><dd><p>Specify <cite>Type</cite> as <cite>continuous</cite>, and include the keys of <cite>Range</cite> (a list with lower-upper elements pair) and
@@ -2890,7 +2890,7 @@ component of a nested object.</p>
 <li><p><strong>ortho_shrink</strong> (<em>float</em><em>, </em><em>optional. default=1</em>) – Shrinkage strength for orthogonal enhancement, ranges from 0 to 1, valid when learning_rage=1.0</p></li>
 <li><p><strong>loss_threshold</strong> (<em>float</em><em>, </em><em>optional. default=0.01</em>) – This parameter is used for post-hoc pruning, ranges from 0 to 1
 To reduce model complexity, we prefer to use fewer base learners, which is as accurate as (1 - loss_threshold) of the best performance)</p></li>
-<li><p><strong>inner_update</strong> (<em>bool</em><em>, </em><em>optional. default=True</em>) – Whether to perform inner update for each base learner</p></li>
+<li><p><strong>inner_update</strong> (<em>None</em><em> or </em><em>str</em><em>, </em><em>optional. default=None</em>) – The inner update method for each base learner</p></li>
 <li><p><strong>meta_info</strong> (<em>None</em><em> or </em><em>a dict with features' information</em>) – <p>It has two types:</p>
 <dl class="simple">
 <dt>continuous:</dt><dd><p>Specify <cite>Type</cite> as <cite>continuous</cite>, and include the keys of <cite>Range</cite> (a list with lower-upper elements pair) and

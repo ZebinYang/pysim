@@ -180,7 +180,7 @@
         <span class="n">utils</span> <span class="o">=</span> <span class="n">importr</span><span class="p">(</span><span class="s2">&quot;utils&quot;</span><span class="p">)</span>
         <span class="n">utils</span><span class="o">.</span><span class="n">install_packages</span><span class="p">(</span><span class="s2">&quot;devtools&quot;</span><span class="p">)</span>
         <span class="n">devtools</span> <span class="o">=</span> <span class="n">importr</span><span class="p">(</span><span class="s2">&quot;devtools&quot;</span><span class="p">)</span>
-    <span class="n">devtools</span><span class="o">.</span><span class="n">install_git</span><span class="p">(</span><span class="s2">&quot;https://github.com/vqv/fps&quot;</span><span class="p">)</span>
+    <span class="n">devtools</span><span class="o">.</span><span class="n">install_github</span><span class="p">(</span><span class="s2">&quot;https://github.com/vqv/fps&quot;</span><span class="p">)</span>
     <span class="n">fps</span> <span class="o">=</span> <span class="n">importr</span><span class="p">(</span><span class="s2">&quot;fps&quot;</span><span class="p">)</span>
     
 <span class="n">numpy2ri</span><span class="o">.</span><span class="n">activate</span><span class="p">()</span>
@@ -611,7 +611,7 @@
                 <span class="k">break</span>
 
     <span class="k">def</span> <span class="nf">fit_inner_update_bfgs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">proj_mat</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">val_ratio</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span> 
-                      <span class="n">max_inner_iter</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">n_inner_iter_no_change</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_epoches</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                      <span class="n">max_inner_iter</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">n_inner_iter_no_change</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_epoches</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 
         <span class="sd">&quot;&quot;&quot;fine tune the fitted Sim model using inner update method (bfgs)</span>
 
@@ -633,8 +633,8 @@
 <span class="sd">            the maximal number of inner update iteration</span>
 <span class="sd">        n_inner_iter_no_change : int, optional, default=1</span>
 <span class="sd">            the tolerance of non-improving inner iterations</span>
-<span class="sd">        max_epoches : int, optional, default=100</span>
-<span class="sd">            the maximal number of epoches for &quot;adam&quot; optimizer</span>
+<span class="sd">        max_epoches : int, optional, default=10</span>
+<span class="sd">            the maximal number of epoches for &quot;bfgs&quot; optimizer</span>
 <span class="sd">        verbose : bool, optional, default=False</span>
 <span class="sd">            whether to show the training history</span>
 <span class="sd">        &quot;&quot;&quot;</span>
