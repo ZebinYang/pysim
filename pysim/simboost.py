@@ -857,7 +857,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
             if self.inner_update is not None:
                 sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z, 
                         sample_weight=sample_weight, proj_mat=proj_mat, method=self.inner_update,
-                        n_inner_iter_no_change=1, batch_size=min(200, int(0.2 * n_samples)), val_ratio=self.val_ratio)
+                        batch_size=min(200, int(0.2 * n_samples)), val_ratio=self.val_ratio)
             # update
             z = z - self.learning_rates[indice] * sim_estimator.predict(x)
             self.sim_estimators_.append(sim_estimator)
