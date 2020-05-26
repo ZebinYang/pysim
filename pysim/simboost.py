@@ -27,7 +27,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
     @abstractmethod
     def __init__(self, n_estimators, stein_method="first_order", spline="a_spline", knot_dist="uniform",
                  learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, degree=2, knot_num=20,
-                 ortho_shrink=1, loss_threshold=0.01, inner_update=None, meta_info=None, val_ratio=0.2, random_state=0):
+                 ortho_shrink=1, loss_threshold=0.01, inner_update=None, meta_info=None, pruning=True, val_ratio=0.2, random_state=0):
 
         self.n_estimators = n_estimators
         self.stein_method = stein_method
@@ -43,6 +43,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         self.loss_threshold = loss_threshold
         self.inner_update = inner_update
         self.meta_info = meta_info
+        self.pruning = pruning
         self.val_ratio = val_ratio
         self.random_state = random_state        
 
@@ -117,6 +118,9 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         if self.meta_info is not None:
             if not isinstance(self.meta_info, dict):
                 raise ValueError("meta_info must be a dict, got %s." % self.meta_info)
+
+        if not isinstance(self.pruning, bool):
+            raise ValueError("pruning must be a bool, got %s." % self.pruning)
 
         if self.val_ratio <= 0:
             raise ValueError("val_ratio must be > 0, got" % self.val_ratio)
@@ -611,6 +615,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         self.sim_estimators_ = []
         self.dummy_estimators_ = []
         self.dummy_density_ = {}
+        self.learning_rates = [1] + [self.learning_rate] * (self.n_estimators - 1)
         
         if is_regressor(self):
             self.tr_idx, self.val_idx = train_test_split(np.arange(n_samples), test_size=self.val_ratio,
@@ -640,11 +645,11 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         check_is_fitted(self, "best_estimators_")
         pred = self.intercept_ * np.ones(x.shape[0])
-        for est in self.best_estimators_:
+        for indice, est in enumerate(self.best_estimators_):
             if "sim" in est.named_steps.keys():
-                pred += self.learning_rate * est.predict(x)
+                pred += self.best_weights_[indice] * est.predict(x)
             elif "dummy_lr" in est.named_steps.keys():
-                pred += est.predict(x)
+                pred += self.best_weights_[indice] * est.predict(x)
         return pred
 
 
@@ -732,21 +737,26 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         Shrinkage strength for orthogonal enhancement, ranges from 0 to 1, valid when learning_rage=1.0
 
     loss_threshold : float, optional. default=0.01
-        This parameter is used for post-hoc pruning, ranges from 0 to 1
+        This parameter is used for post-hoc pruning, ranges from 0 to 1, only used when pruning=True
         To reduce model complexity, we prefer to use fewer base learners, which is as accurate as (1 - loss_threshold) of the best performance)
 
     inner_update : None or str, optional. default=None
         The inner update method for each base learner
 
-    meta_info : None or a dict with features' information
-        It has two types:
+    meta_info : None or a dict with features' information. default=None
+        Features are classified as:
 
         continuous:
             Specify `Type` as `continuous`, and include the keys of `Range` (a list with lower-upper elements pair) and
-            `Wrapper`, a callable function for wrapping the values.
+            `Wrapper`, a callable function for wrapping the values
         categorical:
-            Specify `Type` as `categorical`, and include the keys of `Mapping` (a list with all the possible categories).
+            Specify `Type` as `categorical`, and include the keys of `Mapping` (a list with all the possible categories)
 
+        If None, then all the features will be treated as continuous
+        
+    pruning : bool. default=True
+        Whether to perform pruning for the base sim estimators
+    
     val_ratio : float, optional. default=0.2
         The split ratio of validation set, which is used for post-hoc pruning
 
@@ -756,7 +766,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
     def __init__(self, n_estimators, stein_method="first_order", spline="a_spline", knot_dist="uniform",
                  learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, degree=2, knot_num=20,
-                 ortho_shrink=1, loss_threshold=0.01, inner_update=True, meta_info=None, val_ratio=0.2, random_state=0):
+                 ortho_shrink=1, loss_threshold=0.01, inner_update=True, meta_info=None, pruning=True, val_ratio=0.2, random_state=0):
 
         super(SimBoostRegressor, self).__init__(n_estimators=n_estimators,
                                    stein_method=stein_method,
@@ -771,6 +781,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                                    loss_threshold=loss_threshold,
                                    inner_update=inner_update,
                                    meta_info=meta_info,
+                                   pruning=pruning,
                                    val_ratio=val_ratio,
                                    random_state=random_state)
 
@@ -815,11 +826,11 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         if self.nfeature_num_ == 0:
             return 
         
-        for i in range(self.n_estimators):
+        for indice in range(self.n_estimators):
 
             # projection matrix
             if self.learning_rate == 1:
-                if (i == 0) or (i >= self.nfeature_num_) or (self.ortho_shrink == 0):
+                if (indice == 0) or (indice >= self.nfeature_num_) or (self.ortho_shrink == 0):
                     proj_mat = np.eye(self.nfeature_num_)
                 else:
                     projection_indices_ = np.array([est["sim"].beta_.flatten() for est in self.sim_estimators_]).T
@@ -847,8 +858,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                 sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z, 
                         sample_weight=sample_weight, proj_mat=proj_mat, method=self.inner_update,
                         n_inner_iter_no_change=1, batch_size=min(200, int(0.2 * n_samples)), val_ratio=self.val_ratio)
-            # update    
-            z = z - self.learning_rate * sim_estimator.predict(x)
+            # update
+            z = z - self.learning_rate[indice] * sim_estimator.predict(x)
             self.sim_estimators_.append(sim_estimator)
 
     def _pruning(self, x, y):
@@ -866,13 +877,14 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         component_importance = {}
         for indice, est in enumerate(self.sim_estimators_):
             component_importance.update({"sim " + str(indice + 1): {"type": "sim", "indice": indice,
-                                 "importance": np.std(self.learning_rate * est.predict(x[self.tr_idx, :]))}})
+                                 "importance": np.std(self.learning_rates[indice] * est.predict(x[self.tr_idx, :]))}})
 
         for indice, est in enumerate(self.dummy_estimators_):
             feature_name = list(est.named_steps.keys())[0]
             component_importance.update({feature_name: {"type": "dummy_lr", "indice": indice,
                                  "importance": np.std(est.predict(x[self.tr_idx, :]))}})
         
+        self.weights_ = []
         self.estimators_ = []
         pred_val = self.intercept_ * np.ones(len(self.val_idx))
         self.val_mse_ = [mean_squared_error(y[self.val_idx], pred_val)]
@@ -880,19 +892,25 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
             if item["type"] == "sim":
                 est = self.sim_estimators_[item["indice"]]
-                pred_val += self.learning_rate * est.predict(x[self.val_idx])
+                pred_val += self.learning_rates[item["indice"]] * est.predict(x[self.val_idx])
+                self.weights_.append(self.learning_rates[item["indice"]])
             elif item["type"] == "dummy_lr":
                 est = self.dummy_estimators_[item["indice"]]
                 pred_val += est.predict(x[self.val_idx])
-
+                self.weights_.append(1)
             self.estimators_.append(est)
             self.val_mse_.append(mean_squared_error(y[self.val_idx], pred_val))
 
-        best_loss = np.min(self.val_mse_)
-        if np.sum((self.val_mse_ / best_loss - 1) < self.loss_threshold) > 0:
-            best_idx = np.where((self.val_mse_ / best_loss - 1) < self.loss_threshold)[0][0]
+        if not self.pruning:
+            best_idx = len(self.val_mse_) - 1
         else:
-            best_idx = np.argmin(self.val_mse_)
+            best_loss = np.min(self.val_mse_)
+            if np.sum((self.val_mse_ / best_loss - 1) < self.loss_threshold) > 0:
+                best_idx = np.where((self.val_mse_ / best_loss - 1) < self.loss_threshold)[0][0]
+            else:
+                best_idx = np.argmin(self.val_mse_)
+            
+        self.best_weights_ = self.weights_[:best_idx]
         self.best_estimators_ = self.estimators_[:best_idx]
         self.component_importance_ = dict(sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1][:best_idx])
         self.activate_cfeature_index_ = [est[0].kw_args["idx"] for est in self.best_estimators_ if "dummy_lr" in est.named_steps.keys()]
@@ -989,20 +1007,25 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         Shrinkage strength for orthogonal enhancement, ranges from 0 to 1, valid when learning_rage=1.0
 
     loss_threshold : float, optional. default=0.01
-        This parameter is used for post-hoc pruning, ranges from 0 to 1
+        This parameter is used for post-hoc pruning, ranges from 0 to 1, only used when pruning=True
         To reduce model complexity, we prefer to use fewer base learners, which is as accurate as (1 - loss_threshold) of the best performance)
-
+        
     inner_update : bool, optional. default=True
         The inner update method for each base learner
 
-    meta_info : None or a dict with features' information
-        It has two types:
+    meta_info : None or a dict with features' information. default=None
+        Features are classified as:
 
         continuous:
             Specify `Type` as `continuous`, and include the keys of `Range` (a list with lower-upper elements pair) and
-            `Wrapper`, a callable function for wrapping the values.
+            `Wrapper`, a callable function for wrapping the values
         categorical:
-            Specify `Type` as `categorical`, and include the keys of `Mapping` (a list with all the possible categories).
+            Specify `Type` as `categorical`, and include the keys of `Mapping` (a list with all the possible categories)
+
+        If None, then all the features will be treated as continuous
+        
+    pruning : bool. default=True
+        Whether to perform pruning for the base sim estimators
 
     val_ratio : float, optional. default=0.2
         The split ratio of validation set, which is used for post-hoc pruning
@@ -1013,7 +1036,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
     def __init__(self, n_estimators, stein_method="first_order", spline="a_spline",
                  learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, knot_dist="uniform", degree=2, knot_num=20, ortho_shrink=1,
-                 loss_threshold=0.01, val_ratio=0.2, inner_update=True, meta_info=None, random_state=0):
+                 loss_threshold=0.01, val_ratio=0.2, inner_update=True, meta_info=None, pruning=True, random_state=0):
 
         super(SimBoostClassifier, self).__init__(n_estimators=n_estimators,
                                    stein_method=stein_method,
@@ -1028,6 +1051,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                                    loss_threshold=loss_threshold,
                                    inner_update=inner_update,
                                    meta_info=meta_info,
+                                   pruning=pruning,
                                    val_ratio=val_ratio,
                                    random_state=random_state)
 
@@ -1100,7 +1124,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         if self.nfeature_num_ == 0:
             return 
 
-        for i in range(self.n_estimators):
+        for indice in range(self.n_estimators):
             sample_weight[self.tr_idx] = proba_train * (1 - proba_train)
             sample_weight[self.tr_idx] /= np.sum(sample_weight[self.tr_idx])
             sample_weight[self.tr_idx] = np.maximum(sample_weight[self.tr_idx], 2 * np.finfo(np.float64).eps)
@@ -1112,7 +1136,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             # projection matrix
             if self.learning_rate == 1:
-                if (i == 0) or (i >= self.nfeature_num_) or (self.ortho_shrink == 0):
+                if (indice == 0) or (indice >= self.nfeature_num_) or (self.ortho_shrink == 0):
                     proj_mat = np.eye(self.nfeature_num_)
                 else:
                     projection_indices_ = np.array([est["sim"].beta_.flatten() for est in self.sim_estimators_]).T
@@ -1142,10 +1166,10 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
             if self.inner_update is not None:
                 sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z, 
                         sample_weight=sample_weight, proj_mat=proj_mat, method=self.inner_update,
-                        n_inner_iter_no_change=1, batch_size=min(200, int(0.2 * n_samples)), val_ratio=self.val_ratio)
-            pred_train += self.learning_rate * sim_estimator.predict(x[self.tr_idx])
+                        batch_size=min(200, int(0.2 * n_samples)), val_ratio=self.val_ratio)
+            pred_train += self.learning_rates[indice] * sim_estimator.predict(x[self.tr_idx])
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
-            pred_val += self.learning_rate * sim_estimator.predict(x[self.val_idx])
+            pred_val += self.learning_rates[indice] * sim_estimator.predict(x[self.val_idx])
             proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
             self.sim_estimators_.append(sim_estimator)
     
@@ -1171,6 +1195,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
             component_importance.update({feature_name: {"type": "dummy_lr", "indice": indice,
                                 "importance": np.std(self.learning_rate * est.predict(x[self.tr_idx, :]))}})
     
+        self.weights_ = []
         self.estimators_ = []
         pred_val = self.intercept_ + np.zeros(len(self.val_idx))
         proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
@@ -1179,21 +1204,28 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             if item["type"] == "sim":
                 est = self.sim_estimators_[item["indice"]]
-                pred_val += self.learning_rate * est.predict(x[self.val_idx])
+                pred_val += self.learning_rates[item["indice"]] * est.predict(x[self.val_idx])
+                self.weights_.append(self.learning_rates[item["indice"]])
             elif item["type"] == "dummy_lr":
                 est = self.dummy_estimators_[item["indice"]]
                 pred_val += est.predict(x[self.val_idx])
+                self.weights_.append(1)
                 
             self.estimators_.append(est)
             pred_val += est.predict(x[self.val_idx])
             proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
             self.val_auc_.append(roc_auc_score(y[self.val_idx], proba_val))
 
-        best_auc = np.max(self.val_auc_)
-        if np.sum((1 - self.val_auc_ / best_auc) < self.loss_threshold) > 0:
-            best_idx = np.where((1 - self.val_auc_ / best_auc) < self.loss_threshold)[0][0]
+        if not self.pruning:
+            best_idx = len(self.val_auc_) - 1
         else:
-            best_idx = np.argmax(self.val_auc_)
+            best_auc = np.max(self.val_auc_)
+            if np.sum((1 - self.val_auc_ / best_auc) < self.loss_threshold) > 0:
+                best_idx = np.where((1 - self.val_auc_ / best_auc) < self.loss_threshold)[0][0]
+            else:
+                best_idx = np.argmax(self.val_auc_)
+
+        self.best_weights_ = self.weights_[:best_idx]
         self.best_estimators_ = self.estimators_[:best_idx]
         self.component_importance_ = dict(sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1][:best_idx])
         self.activate_cfeature_index_ = [est[0].kw_args["idx"] for est in self.best_estimators_ if "dummy_lr" in est.named_steps.keys()]

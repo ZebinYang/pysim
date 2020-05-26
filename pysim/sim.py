@@ -259,7 +259,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
     
     
     def fit_inner_update(self, x, y, sample_weight=None, proj_mat=None, method="adam", val_ratio=0.2, tol=0.0001,
-                      max_inner_iter=10, n_inner_iter_no_change=1, max_epoches=100,
+                      max_inner_iter=3, n_inner_iter_no_change=3, max_epoches=100,
                       n_epoch_no_change=5, batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, verbose=False):
         """fine tune the fitted Sim model using inner update method
 
@@ -279,9 +279,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             the split ratio for validation set
         tol : float, optional, default=0.0001
             the tolerance for early stopping
-        max_inner_iter : int, optional, default=10
+        max_inner_iter : int, optional, default=3
             the maximal number of inner update iteration
-        n_inner_iter_no_change : int, optional, default=1
+        n_inner_iter_no_change : int, optional, default=3
             the tolerance of non-improving inner iterations
         max_epoches : int, optional, default=100
             the maximal number of epoches for "adam" optimizer
@@ -308,7 +308,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                       max_inner_iter, n_inner_iter_no_change, max_epoches, verbose)
 
     def fit_inner_update_adam(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001,
-                      max_inner_iter=10, n_inner_iter_no_change=1, max_epoches=100,
+                      max_inner_iter=3, n_inner_iter_no_change=3, max_epoches=100,
                       n_epoch_no_change=5, batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, verbose=False):
 
         """fine tune the fitted Sim model using inner update method (adam)
@@ -327,9 +327,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             the split ratio for validation set
         tol : float, optional, default=0.0001
             the tolerance for early stopping
-        max_inner_iter : int, optional, default=10
+        max_inner_iter : int, optional, default=3
             the maximal number of inner update iteration
-        n_inner_iter_no_change : int, optional, default=1
+        n_inner_iter_no_change : int, optional, default=3
             the tolerance of non-improving inner iterations
         max_epoches : int, optional, default=100
             the maximal number of epoches for "adam" optimizer
@@ -463,7 +463,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 break
 
     def fit_inner_update_bfgs(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001, 
-                      max_inner_iter=10, n_inner_iter_no_change=1, max_epoches=100, verbose=False):
+                      max_inner_iter=3, n_inner_iter_no_change=3, max_epoches=100, verbose=False):
 
         """fine tune the fitted Sim model using inner update method (bfgs)
 
@@ -481,12 +481,12 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             the split ratio for validation set
         tol : float, optional, default=0.0001
             the tolerance for early stopping
-        max_inner_iter : int, optional, default=10
+        max_inner_iter : int, optional, default=3
             the maximal number of inner update iteration
-        n_inner_iter_no_change : int, optional, default=1
+        n_inner_iter_no_change : int, optional, default=3
             the tolerance of non-improving inner iterations
         max_epoches : int, optional, default=100
-            the maximal number of epoches for "adam" optimizer
+            the maximal number of epoches for "bfgs" optimizer
         verbose : bool, optional, default=False
             whether to show the training history
         """
