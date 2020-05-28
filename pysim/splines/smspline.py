@@ -251,13 +251,21 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
         if unique_num >= 4:
             self.knot_num = min(unique_num, self.knot_num)
             if self.knot_dist == "uniform":
-                self.sm_ = stats.smooth_spline(x, y, nknots=self.knot_num,
-                                     spar=self.reg_gamma, w=sample_weight, tol=1e-6 * (np.max(x) - np.min(x)))
+                if self.reg_gamma > 0:
+                    self.sm_ = stats.smooth_spline(x, y, nknots=self.knot_num,
+                                         spar=self.reg_gamma, w=sample_weight, tol=1e-6 * (np.max(x) - np.min(x)))
+                else:
+                    self.sm_ = stats.smooth_spline(x, y, nknots=self.knot_num,
+                                         w=sample_weight, tol=1e-6 * (np.max(x) - np.min(x)))
             elif self.knot_dist == "quantile":
                 knots = np.percentile(x, list(np.linspace(0, 100, self.knot_num + 2, dtype=np.float32))).tolist()
                 knots = (knots - self.xmin) / (self.xmax - self.xmin)
-                self.sm_ = stats.smooth_spline(x, y, all_knots=ro.FloatVector(knots),
-                                     spar=self.reg_gamma, w=sample_weight, tol=1e-6 * (np.max(x) - np.min(x)))
+                if self.reg_gamma > 0:
+                    self.sm_ = stats.smooth_spline(x, y, all_knots=ro.FloatVector(knots),
+                                         spar=self.reg_gamma, w=sample_weight, tol=1e-6 * (np.max(x) - np.min(x)))
+                else:
+                    self.sm_ = stats.smooth_spline(x, y, all_knots=ro.FloatVector(knots),
+                                         w=sample_weight, tol=1e-6 * (np.max(x) - np.min(x)))
         else:
             self.sm_ = stats.glm(Formula('y ~ x'), family="gaussian",
                     data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
