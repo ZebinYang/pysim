@@ -99,7 +99,7 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
     Details:
     1. This is an API for the python package `pygam`, and we use the p-spline by treating it as an univariate GAM.
     2. During prediction, the data which is outside of the given `xmin` and `xmax` will be clipped to the boundary.
-
+    
     Parameters
     ----------
 
@@ -197,37 +197,16 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
             sample_weight = np.round(sample_weight / np.sum(sample_weight) * n_samples, 4)
            
         if self.constraint is None:
-            i = 0
-            exit = True
-            while exit:
-                try:
-                    self.ps_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num,
-                                    spline_order=self.degree, lam=self.reg_gamma + 0.1 * i))
-                    self.ps_.fit(x, y, sample_weight)
-                    exit = False
-                except ValueError:
-                    i += 1
+            self.ps_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num,
+                            spline_order=self.degree, lam=self.reg_gamma))
+            self.ps_.fit(x, y, sample_weight)
 
         elif self.constraint == "mono":
-            i = 0
-            exit = True
-            while exit:
-                try:
-                    ps1_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
-                                  lam=self.reg_gamma + 0.1 * i, constraints='monotonic_inc')).fit(x, y)
-                    exit = False
-                except ValueError:
-                    i += 1
+            ps1_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
+                          lam=self.reg_gamma, constraints='monotonic_inc')).fit(x, y)
 
-            i = 0
-            exit = True
-            while exit:
-                try:
-                    ps2_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
-                                  lam=self.reg_gamma + 0.1 * i, constraints='monotonic_dec')).fit(x, y)
-                    exit = False
-                except ValueError:
-                    i += 1
+            ps2_ = LinearGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
+                          lam=self.reg_gamma, constraints='monotonic_dec')).fit(x, y)
 
             if ps1_.loglikelihood(x, y) >= ps2_.loglikelihood(x, y):
                 self.ps_ = ps1_
@@ -280,7 +259,8 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
     Details:
     1. This is an API for the python package `pygam`, and we use the p-spline by treating it as an univariate GAM.
     2. During prediction, the data which is outside of the given `xmin` and `xmax` will be clipped to the boundary.
-
+    3. reg_gamma will be increased if the current value is too small
+    
     Parameters
     ----------
     knot_num : int, optional. default=20
@@ -391,37 +371,40 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
             while exit:
                 try:
                     self.ps_ = LogisticGAM(s(0, basis="ps", n_splines=self.knot_num,
-                                    spline_order=self.degree, lam=self.reg_gamma + 0.1 * i))
+                                    spline_order=self.degree, lam=self.reg_gamma + 10 ** (i - 3)))
                     self.ps_.fit(x, y, sample_weight)
                     exit = False
                 except ValueError:
                     i += 1
-
+            self.reg_gamma *= 10 ** i
+            
         elif self.constraint == "mono":
             i = 0
             exit = True
             while exit:
                 try:
                     ps1_ = LogisticGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
-                                  lam=self.reg_gamma + 0.1 * i, constraints='monotonic_inc')).fit(x, y)
+                                  lam=self.reg_gamma + 10 ** (i - 3), constraints='monotonic_inc')).fit(x, y)
                     exit = False
                 except ValueError:
                     i += 1
 
-            i = 0
+            j = 0
             exit = True
             while exit:
                 try:
                     ps2_ = LogisticGAM(s(0, basis="ps", n_splines=self.knot_num, spline_order=self.degree,
-                                  lam=self.reg_gamma + 0.1 * i, constraints='monotonic_dec')).fit(x, y)
+                                  lam=self.reg_gamma + 10 ** (j - 3), constraints='monotonic_dec')).fit(x, y)
                     exit = False
                 except ValueError:
-                    i += 1
+                    j += 1
 
             if ps1_.loglikelihood(x, y) >= ps2_.loglikelihood(x, y):
                 self.ps_ = ps1_
+                self.reg_gamma += 10 ** (i - 3)
             else:
                 self.ps_ = ps2_
+                self.reg_gamma += 10 ** (j - 3)
 
         return self
     
