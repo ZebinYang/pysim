@@ -20,11 +20,11 @@ numpy2ri.activate()
 pandas2ri.activate()
 
 try:
-    stats = importr("stats")
+    bigsplines = importr("bigsplines")
 except:
     utils = importr('utils')
-    utils.install_packages('stats', repos='http://cran.us.r-project.org')
-    stats = importr("stats")
+    utils.install_packages('bigsplines', repos='http://cran.us.r-project.org')
+    bigsplines = importr("bigsplines")
 
 __all__ = ["SMSplineRegressor", "SMSplineRegressor"]
 
