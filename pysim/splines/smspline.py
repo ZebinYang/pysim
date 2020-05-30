@@ -87,7 +87,8 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         modelspec = self.sm_[int(np.where(self.sm_.names == "modelspec")[0][0])]
         knots = np.array(modelspec[0])
         coefs = np.array(modelspec[11]).reshape(-1, 1)
-        basis = bigsplines.ssBasis((x - self.xmin) / (self.xmax - self.xmin), knots, d=order, periodic=False, intercept=True)
+        basis = bigsplines.ssBasis((x - self.xmin) / (self.xmax - self.xmin), knots, d=order,
+                           xmin=0, xmax=1, periodic=False, intercept=True)
         derivative = np.dot(basis[0], coefs).ravel()
         return derivative
 
