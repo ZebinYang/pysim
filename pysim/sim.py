@@ -352,9 +352,14 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         batch_size = min(batch_size, n_samples)
         sample_weight = self._validate_sample_weight(n_samples, sample_weight)
 
-        idx1, idx2 = train_test_split(np.arange(n_samples),test_size=val_ratio, random_state=self.random_state)
+        if is_regressor(self):
+            idx1, idx2 = train_test_split(np.arange(n_samples), test_size=val_ratio,
+                                          random_state=self.random_state)
+        elif is_classifier(self):
+            idx1, idx2 = train_test_split(np.arange(n_samples), test_size=val_ratio,
+                                          stratify=y, random_state=self.random_state)
+        
         tr_x, tr_y, val_x, val_y = x[idx1], y[idx1], x[idx2], y[idx2]
-
         val_xb = np.dot(val_x, self.beta_)
         if is_regressor(self):
             val_pred = self.shape_fit_.predict(val_xb)
