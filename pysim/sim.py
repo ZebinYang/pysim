@@ -1,5 +1,6 @@
 import scipy
 import numpy as np
+from copy import deepcopy
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
 
@@ -260,7 +261,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
     
     def fit_inner_update(self, x, y, sample_weight=None, proj_mat=None, method="adam", val_ratio=0.2, tol=0.0001,
                       max_inner_iter=3, n_inner_iter_no_change=3, max_epoches=100,
-                      n_epoch_no_change=5, batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, stratify=True, verbose=False):
+                      n_epoch_no_change=5, batch_size=100, learning_rate=1e-4, beta_1=0.9, beta_2=0.999, stratify=True, verbose=False):
         """fine tune the fitted Sim model using inner update method
 
         Parameters
@@ -289,7 +290,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             the tolerance of non-improving epoches for adam optimizer
         batch_size : int, optional, default=100
             the batch_size for adam optimizer
-        learning_rate : float, optional, default=1e-3
+        learning_rate : float, optional, default=1e-4
             the learning rate for adam optimizer
         beta_1 : float, optional, default=0.9
             the beta_1 parameter for adam optimizer
@@ -311,7 +312,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
     def fit_inner_update_adam(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001,
                       max_inner_iter=3, n_inner_iter_no_change=3, max_epoches=100,
-                      n_epoch_no_change=5, batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, stratify=True, verbose=False):
+                      n_epoch_no_change=5, batch_size=100, learning_rate=1e-4, beta_1=0.9, beta_2=0.999, stratify=True, verbose=False):
 
         """fine tune the fitted Sim model using inner update method (adam)
 
@@ -339,7 +340,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             the tolerance of non-improving epoches for adam optimizer
         batch_size : int, optional, default=100
             the batch_size for adam optimizer
-        learning_rate : float, optional, default=1e-3
+        learning_rate : float, optional, default=1e-4
             the learning rate for adam optimizer
         beta_1 : float, optional, default=0.9
             the beta_1 parameter for adam optimizer
@@ -375,6 +376,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             val_pred = self.shape_fit_.predict_proba(val_xb)
             val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
 
+        self_copy = deepcopy(self)
         no_inner_iter_change = 0
         val_loss_inner_iter_best = val_loss
         for inner_iter in range(max_inner_iter):
@@ -383,7 +385,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             v_t = 0 # moving average of the gradient square
             num_updates = 0
             no_epoch_change = 0
-            theta_0 = self.beta_ 
+            theta_0 = self_copy.beta_ 
             train_size = tr_x.shape[0]
             val_loss_epoch_best = np.inf
             for epoch in range(max_epoches):
@@ -402,13 +404,13 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     batch_sample_weight = sample_weight[idx1][offset:(offset + batch_size)]
 
                     xb = np.dot(batch_xx, theta_0)
-                    if is_regressor(self):
-                        r = batch_yy - self.shape_fit_.predict(xb)
-                    elif is_classifier(self):
-                        r = batch_yy - self.shape_fit_.predict_proba(xb)
+                    if is_regressor(self_copy):
+                        r = batch_yy - self_copy.shape_fit_.predict(xb)
+                    elif is_classifier(self_copy):
+                        r = batch_yy - self_copy.shape_fit_.predict_proba(xb)
                     
                     # gradient
-                    dfxb = self.shape_fit_.diff(xb, order=1)
+                    dfxb = self_copy.shape_fit_.diff(xb, order=1)
                     g_t = np.average((- dfxb * r).reshape(-1, 1) * batch_xx, axis=0,
                                 weights=batch_sample_weight).reshape(-1, 1)
 
@@ -423,12 +425,12 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
                 # validation loss
                 val_xb = np.dot(val_x, theta_0)
-                if is_regressor(self):
-                    val_pred = self.shape_fit_.predict(val_xb)
-                    val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
-                elif is_classifier(self):
-                    val_pred = self.shape_fit_.predict_proba(val_xb)
-                    val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
+                if is_regressor(self_copy):
+                    val_pred = self_copy.shape_fit_.predict(val_xb)
+                    val_loss = self_copy.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
+                elif is_classifier(self_copy):
+                    val_pred = self_copy.shape_fit_.predict_proba(val_xb)
+                    val_loss = self_copy.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
                 if verbose:
                     print("Inner iter:", inner_iter + 1, "epoch:", epoch + 1, "with validation loss:", np.round(val_loss, 5))
                 # stop criterion
@@ -446,30 +448,31 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             if proj_mat is not None:
                 theta_0 = np.dot(proj_mat, theta_0)
 
-            theta_0[np.abs(theta_0) < self.reg_lambda * np.max(np.abs(theta_0))] = 0
+            theta_0[np.abs(theta_0) < self_copy.reg_lambda * np.max(np.abs(theta_0))] = 0
             if np.linalg.norm(theta_0) > 0:
                 theta_0 = theta_0 / np.linalg.norm(theta_0)
                 if (theta_0[np.abs(theta_0) > 0][0] < 0):
                     theta_0 = - theta_0
 
             # ridge update
-            self.beta_ = theta_0
-            tr_xb = np.dot(tr_x, self.beta_)
-            self._estimate_shape(tr_xb, tr_y, np.min(tr_xb), np.max(tr_xb), sample_weight[idx1])
+            self_copy.beta_ = theta_0
+            tr_xb = np.dot(tr_x, self_copy.beta_)
+            self_copy._estimate_shape(tr_xb, tr_y, np.min(tr_xb), np.max(tr_xb), sample_weight[idx1])
             
-            val_xb = np.dot(val_x, self.beta_)
-            if is_regressor(self):
-                val_pred = self.shape_fit_.predict(val_xb)
-                val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
-            elif is_classifier(self):
-                val_pred = self.shape_fit_.predict_proba(val_xb)
-                val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
+            val_xb = np.dot(val_x, self_copy.beta_)
+            if is_regressor(self_copy):
+                val_pred = self_copy.shape_fit_.predict(val_xb)
+                val_loss = self_copy.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
+            elif is_classifier(self_copy):
+                val_pred = self_copy.shape_fit_.predict_proba(val_xb)
+                val_loss = self_copy.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
 
             if val_loss > val_loss_inner_iter_best - tol:
                 no_inner_iter_change += 1
             else:
                 no_inner_iter_change = 0
             if val_loss < val_loss_inner_iter_best:
+                self = self_copy
                 val_loss_inner_iter_best = val_loss
             if no_inner_iter_change >= n_inner_iter_no_change:
                 break
@@ -527,22 +530,23 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             val_pred = self.shape_fit_.predict_proba(val_xb)
             val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
 
+        self_copy = deepcopy(self)
         no_inner_iter_change = 0
         val_loss_inner_iter_best = val_loss
         for inner_iter in range(max_inner_iter):
             
-            theta_0 = self.beta_ 
+            theta_0 = self_copy.beta_ 
             def loss_func(beta):
-                pred = self.shape_fit_.predict(np.dot(tr_x, beta))
-                return self.shape_fit_.get_loss(tr_y, pred, sample_weight[idx1])
+                pred = self_copy.shape_fit_.predict(np.dot(tr_x, beta))
+                return self_copy.shape_fit_.get_loss(tr_y, pred, sample_weight[idx1])
 
             def grad(beta):
                 xb = np.dot(tr_x, beta)
-                if is_regressor(self):
-                    r = tr_y - self.shape_fit_.predict(xb)
-                elif is_classifier(self):
-                    r = tr_y - self.shape_fit_.predict_proba(xb)
-                dfxb = self.shape_fit_.diff(xb, order=1)
+                if is_regressor(self_copy):
+                    r = tr_y - self_copy.shape_fit_.predict(xb)
+                elif is_classifier(self_copy):
+                    r = tr_y - self_copy.shape_fit_.predict_proba(xb)
+                dfxb = self_copy.shape_fit_.diff(xb, order=1)
                 g_t = np.average((- dfxb * r).reshape(-1, 1) * tr_x, axis=0,
                             weights=sample_weight[idx1])
                 return g_t
@@ -553,24 +557,24 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             if proj_mat is not None:
                 theta_0 = np.dot(proj_mat, theta_0)
 
-            theta_0[np.abs(theta_0) < self.reg_lambda * np.max(np.abs(theta_0))] = 0
+            theta_0[np.abs(theta_0) < self_copy.reg_lambda * np.max(np.abs(theta_0))] = 0
             if np.linalg.norm(theta_0) > 0:
                 theta_0 = theta_0 / np.linalg.norm(theta_0)
                 if (theta_0[np.abs(theta_0) > 0][0] < 0):
                     theta_0 = - theta_0
 
             # ridge update
-            self.beta_ = theta_0
-            tr_xb = np.dot(tr_x, self.beta_).reshape(-1, 1)
-            self._estimate_shape(tr_xb, tr_y, np.min(tr_xb), np.max(tr_xb), sample_weight[idx1])
+            self_copy.beta_ = theta_0
+            tr_xb = np.dot(tr_x, self_copy.beta_).reshape(-1, 1)
+            self_copy._estimate_shape(tr_xb, tr_y, np.min(tr_xb), np.max(tr_xb), sample_weight[idx1])
             
-            val_xb = np.dot(val_x, self.beta_)
-            if is_regressor(self):
-                val_pred = self.shape_fit_.predict(val_xb)
-                val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
-            elif is_classifier(self):
-                val_pred = self.shape_fit_.predict_proba(val_xb)
-                val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
+            val_xb = np.dot(val_x, self_copy.beta_)
+            if is_regressor(self_copy):
+                val_pred = self_copy.shape_fit_.predict(val_xb)
+                val_loss = self_copy.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
+            elif is_classifier(self_copy):
+                val_pred = self_copy.shape_fit_.predict_proba(val_xb)
+                val_loss = self_copy.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
             if verbose:
                 print("Inner iter:", inner_iter + 1, "with validation loss:", np.round(val_loss, 5))
 
@@ -579,6 +583,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             else:
                 no_inner_iter_change = 0
             if val_loss < val_loss_inner_iter_best:
+                self = self_copy
                 val_loss_inner_iter_best = val_loss
             if no_inner_iter_change >= n_inner_iter_no_change:
                 break
