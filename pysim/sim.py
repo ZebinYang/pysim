@@ -260,7 +260,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
     
     def fit_inner_update(self, x, y, sample_weight=None, proj_mat=None, method="adam", val_ratio=0.2, tol=0.0001,
                       max_inner_iter=3, n_inner_iter_no_change=3, max_epoches=100,
-                      n_epoch_no_change=5, batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, verbose=False):
+                      n_epoch_no_change=5, batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, stratify=True, verbose=False):
         """fine tune the fitted Sim model using inner update method
 
         Parameters
@@ -295,6 +295,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             the beta_1 parameter for adam optimizer
         beta_2 : float, optional, default=0.999
             the beta_1 parameter for adam optimizer
+        stratify : bool, optional, default=True
+            whether to stratify the target variable when splitting the validation set
         verbose : bool, optional, default=False
             whether to show the training history
         """
@@ -309,7 +311,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
     def fit_inner_update_adam(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001,
                       max_inner_iter=3, n_inner_iter_no_change=3, max_epoches=100,
-                      n_epoch_no_change=5, batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, verbose=False):
+                      n_epoch_no_change=5, batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, stratify=True, verbose=False):
 
         """fine tune the fitted Sim model using inner update method (adam)
 
@@ -343,6 +345,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             the beta_1 parameter for adam optimizer
         beta_2 : float, optional, default=0.999
             the beta_1 parameter for adam optimizer
+        stratify : bool, optional, default=True
+            whether to stratify the target variable when splitting the validation set
         verbose : bool, optional, default=False
             whether to show the training history
         """
@@ -356,8 +360,11 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             idx1, idx2 = train_test_split(np.arange(n_samples), test_size=val_ratio,
                                           random_state=self.random_state)
         elif is_classifier(self):
-            idx1, idx2 = train_test_split(np.arange(n_samples), test_size=val_ratio,
-                                          stratify=y, random_state=self.random_state)
+            if stratify:
+                idx1, idx2 = train_test_split(np.arange(n_samples),test_size=val_ratio, stratify=y, random_state=self.random_state)
+            else:
+                idx1, idx2 = train_test_split(np.arange(n_samples),test_size=val_ratio, random_state=self.random_state)
+            tr_x, tr_y, val_x, val_y = x[idx1], y[idx1], x[idx2], y[idx2]
         
         tr_x, tr_y, val_x, val_y = x[idx1], y[idx1], x[idx2], y[idx2]
         val_xb = np.dot(val_x, self.beta_)
@@ -468,7 +475,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 break
 
     def fit_inner_update_bfgs(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001, 
-                      max_inner_iter=3, n_inner_iter_no_change=3, max_epoches=100, verbose=False):
+                      max_inner_iter=3, n_inner_iter_no_change=3, max_epoches=100, stratify=True, verbose=False):
 
         """fine tune the fitted Sim model using inner update method (bfgs)
 
@@ -492,6 +499,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             the tolerance of non-improving inner iterations
         max_epoches : int, optional, default=100
             the maximal number of epoches for "bfgs" optimizer
+        stratify : bool, optional, default=True
+            whether to stratify the target variable when splitting the validation set
         verbose : bool, optional, default=False
             whether to show the training history
         """
@@ -504,7 +513,10 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             idx1, idx2 = train_test_split(np.arange(n_samples),test_size=val_ratio, random_state=self.random_state)
             tr_x, tr_y, val_x, val_y = x[idx1], y[idx1], x[idx2], y[idx2]
         elif is_classifier(self):
-            idx1, idx2 = train_test_split(np.arange(n_samples),test_size=val_ratio, stratify=y, random_state=self.random_state)
+            if stratify:
+                idx1, idx2 = train_test_split(np.arange(n_samples),test_size=val_ratio, stratify=y, random_state=self.random_state)
+            else:
+                idx1, idx2 = train_test_split(np.arange(n_samples),test_size=val_ratio, random_state=self.random_state)
             tr_x, tr_y, val_x, val_y = x[idx1], y[idx1], x[idx2], y[idx2]
 
         val_xb = np.dot(val_x, self.beta_)
