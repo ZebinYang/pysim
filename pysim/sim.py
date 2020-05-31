@@ -304,10 +304,10 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         if method == "adam":                
             self.fit_inner_update_adam(x, y, sample_weight, proj_mat, val_ratio, tol,
                       max_inner_iter, n_inner_iter_no_change, max_epoches,
-                      n_epoch_no_change, batch_size, learning_rate, beta_1, beta_2, verbose)
+                      n_epoch_no_change, batch_size, learning_rate, beta_1, beta_2, stratify, verbose)
         elif method == "bfgs":
             self.fit_inner_update_bfgs(x, y, sample_weight, proj_mat, val_ratio, tol, 
-                      max_inner_iter, n_inner_iter_no_change, max_epoches, verbose)
+                      max_inner_iter, n_inner_iter_no_change, max_epoches, stratify, verbose)
 
     def fit_inner_update_adam(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001,
                       max_inner_iter=3, n_inner_iter_no_change=3, max_epoches=100,
