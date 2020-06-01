@@ -400,6 +400,8 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
         exit = True
         while exit:
             try:
+                if self.reg_gamma + 10 ** (i - 9) > 1:
+                    break
                 self.sm_ = bigsplines.bigssg(Formula('y ~ x'), family="binomial",
                         nknots=knot_idx, lambdas=self.reg_gamma + 10 ** (i - 9), rparm=1e-6,
                         data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
