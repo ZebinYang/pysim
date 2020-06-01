@@ -890,7 +890,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
     
     knot_num : int, optional. default=20
         Number of knots
-    
+
     random_state : int, optional. default=0
         Random seed
     """

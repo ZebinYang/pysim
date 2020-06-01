@@ -136,10 +136,13 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         x = x.copy()
         x[x < self.xmin] = self.xmin
         x[x > self.xmax] = self.xmax
-        if "family" in self.sm_.names:
-            pred = bigsplines.predict_bigssg(self.sm_, ro.r("data.frame")(x=x))[1]
-        if "family" not in self.sm_.names:
-            pred = bigsplines.predict_bigssa(self.sm_, ro.r("data.frame")(x=x))
+        if isinstance(self.sm_, float):
+            pred = self.sm_ * np.ones(x.shape[0])
+        else:
+            if "family" in self.sm_.names:
+                pred = bigsplines.predict_bigssg(self.sm_, ro.r("data.frame")(x=x))[1]
+            if "family" not in self.sm_.names:
+                pred = bigsplines.predict_bigssa(self.sm_, ro.r("data.frame")(x=x))
         return pred
 
 
@@ -253,10 +256,14 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
             knots = np.quantile(x, list(np.linspace(0, 1, self.knot_num + 2, dtype=np.float32)))[1:-1]
             knot_idx = [(np.abs(x - i)).argmin() + 1 for i in knots]
 
-        self.sm_ = bigsplines.bigssa(Formula('y ~ x'), 
-                            nknots=knot_idx, lambdas=self.reg_gamma, rparm=1e-6,
-                            data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
-                            weights=pd.DataFrame({"w":sample_weight})["w"])
+        unique_num = len(np.unique(x.round(decimals=6)))
+        if unique_num <= 1:
+            self.sm_ = np.mean(y)
+        else:
+            self.sm_ = bigsplines.bigssa(Formula('y ~ x'), 
+                                nknots=knot_idx, lambdas=self.reg_gamma, rparm=1e-6,
+                                data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
+                                weights=pd.DataFrame({"w":sample_weight})["w"])
         return self
 
     def predict(self, x):
@@ -396,20 +403,25 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
             knots = np.quantile(x, list(np.linspace(0, 1, self.knot_num + 2, dtype=np.float32)))[1:-1]
             knot_idx = [(np.abs(x - i)).argmin() + 1 for i in knots]
 
-        i = 0
-        exit = True
-        while exit:
-            try:
-                if self.reg_gamma + 10 ** (i - 9) > 1:
-                    break
-                self.sm_ = bigsplines.bigssg(Formula('y ~ x'), family="binomial",
-                        nknots=knot_idx, lambdas=self.reg_gamma + 10 ** (i - 9), rparm=1e-6,
-                        data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
-                        weights=pd.DataFrame({"w":sample_weight})["w"])
-                exit = False
-            except rpy2.rinterface_lib.embedded.RRuntimeError:
-                i += 1
-        self.reg_gamma += 10 ** (i - 9)
+        unique_num = len(np.unique(x.round(decimals=6)))
+        if unique_num <= 1:
+            p = np.clip(np.mean(y), self.EPS, 1. - self.EPS)
+            self.sm_ = np.log(p / (1 - p))
+        else:
+            i = 0
+            exit = False
+            while not exit:
+                try:
+                    if self.reg_gamma + 10 ** (i - 9) > 1:
+                        break
+                    self.sm_ = bigsplines.bigssg(Formula('y ~ x'), family="binomial",
+                            nknots=knot_idx, lambdas=self.reg_gamma + 10 ** (i - 9), rparm=1e-6,
+                            data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
+                            weights=pd.DataFrame({"w":sample_weight})["w"])
+                    exit = True
+                except rpy2.rinterface_lib.embedded.RRuntimeError:
+                    i += 1
+            self.reg_gamma += 10 ** (i - 9)
         return self
     
     def predict_proba(self, x):
