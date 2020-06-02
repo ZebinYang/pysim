@@ -136,7 +136,7 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         x = x.copy()
         x[x < self.xmin] = self.xmin
         x[x > self.xmax] = self.xmax
-        if isinstance(self.sm_, float):
+        if isinstance(self.sm_, np.ndarray):
             pred = self.sm_ * np.ones(x.shape[0])
         else:
             if "family" in self.sm_.names:
