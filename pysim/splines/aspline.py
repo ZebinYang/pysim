@@ -12,6 +12,8 @@ from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 import scipy
 from scipy.linalg import cholesky
 
+EPSILON = 1e-7
+
 __all__ = ["ASplineRegressor", "ASplineClassifier"]
 
 
@@ -476,7 +478,6 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
                                    maxiter=maxiter)
 
         self.maxiter_irls = maxiter_irls
-        self.EPS = 10**(-8)
 
     @staticmethod
     def _link(x):
@@ -532,7 +533,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
         """
 
         with np.errstate(divide="ignore", over="ignore"):
-            pred = np.clip(pred, self.EPS, 1. - self.EPS)
+            pred = np.clip(pred, EPSILON, 1. - EPSILON)
             loss = - np.average(label * np.log(pred) + (1 - label) * np.log(1 - pred),
                                 axis=0, weights=sample_weight)
         return loss
@@ -606,7 +607,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
                 lp = np.dot(init_basis, self.coef_)
                 mu = self._link(lp)
                 omega = mu * (1 - mu)
-                mask = (np.abs(omega) >= self.EPS) * np.isfinite(omega)
+                mask = (np.abs(omega) >= EPSILON) * np.isfinite(omega)
                 mask = mask.ravel()
                 if np.sum(mask) == 0:
                     break
@@ -636,7 +637,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
                 lp = np.dot(init_basis, update_a)
                 mu = self._link(lp)
                 omega = mu * (1 - mu)
-                mask = (np.abs(omega) >= self.EPS) * np.isfinite(omega)
+                mask = (np.abs(omega) >= EPSILON) * np.isfinite(omega)
                 mask = mask.ravel()
                 if np.sum(mask) == 0:
                     break
@@ -665,7 +666,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
             lp = np.dot(selected_basis, self.coef_)
             mu = self._link(lp)
             omega = mu * (1 - mu)
-            mask = (np.abs(omega) >= self.EPS) * np.isfinite(omega)
+            mask = (np.abs(omega) >= EPSILON) * np.isfinite(omega)
             mask = mask.ravel()
             if np.sum(mask) == 0:
                 break

@@ -26,9 +26,11 @@ except:
     utils.install_packages("bigsplines")
     bigsplines = importr("bigsplines")
 
+EPSILON = 1e-7
+
 __all__ = ["SMSplineRegressor", "SMSplineRegressor"]
 
-    
+
 class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
 
 
@@ -137,6 +139,9 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         x[x < self.xmin] = self.xmin
         x[x > self.xmax] = self.xmax
         if isinstance(self.sm_, np.ndarray):
+            pred = self.sm_ * np.ones(x.shape[0])
+            
+        elif isinstance(self.sm_, float):
             pred = self.sm_ * np.ones(x.shape[0])
         else:
             if "family" in self.sm_.names:
@@ -322,7 +327,6 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
                                   reg_gamma=reg_gamma,
                                   xmin=xmin,
                                   xmax=xmax)
-        self.EPS = 10 ** (-8)
 
     def get_loss(self, label, pred, sample_weight=None):
         
@@ -343,7 +347,7 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
         """
 
         with np.errstate(divide="ignore", over="ignore"):
-            pred = np.clip(pred, self.EPS, 1. - self.EPS)
+            pred = np.clip(pred, EPSILON, 1. - EPSILON)
             loss = - np.average(label * np.log(pred) + (1 - label) * np.log(1 - pred),
                                 axis=0, weights=sample_weight)
         return loss
@@ -405,7 +409,7 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
 
         unique_num = len(np.unique(x.round(decimals=6)))
         if unique_num <= 1:
-            p = np.clip(np.mean(y), self.EPS, 1. - self.EPS)
+            p = np.clip(np.mean(y), EPSILON, 1. - EPSILON)
             self.sm_ = np.log(p / (1 - p))
         else:
             i = 0

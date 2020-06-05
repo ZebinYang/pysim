@@ -906,7 +906,6 @@ class SimClassifier(BaseSim, ClassifierMixin):
                                 knot_dist=knot_dist,
                                 degree=degree,
                                 random_state=random_state)
-        self.EPS = 10 **(-8)
 
     def _ols(self, x, y, sample_weight=None, proj_mat=None):
                 

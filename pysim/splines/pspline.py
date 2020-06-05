@@ -11,6 +11,8 @@ from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 
 from pygam import LinearGAM, LogisticGAM, s
 
+EPSILON = 1e-7
+
 __all__ = ["PSplineRegressor", "PSplineClassifier"]
 
 
@@ -290,7 +292,6 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
                                    xmax=xmax,
                                    degree=degree,
                                    constraint=constraint)
-        self.EPS = 10 ** (-8)
         
     def get_loss(self, label, pred, sample_weight=None):
         
@@ -311,7 +312,7 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
         """
 
         with np.errstate(divide="ignore", over="ignore"):
-            pred = np.clip(pred, self.EPS, 1. - self.EPS)
+            pred = np.clip(pred, EPSILON, 1. - EPSILON)
             loss = - np.average(label * np.log(pred) + (1 - label) * np.log(1 - pred),
                                 axis=0, weights=sample_weight)
         return loss
@@ -429,7 +430,7 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
         x[x > self.xmax] = self.xmax
         pred_proba = self.ps_.predict_mu(x)
         pred_proba[np.isnan(pred_proba)] = 0.5
-        pred_proba = np.clip(pred_proba, self.EPS, 1. - self.EPS)
+        pred_proba = np.clip(pred_proba, EPSILON, 1. - EPSILON)
         pred = np.log(pred_proba / (1 - pred_proba))
         return pred
 
