@@ -373,7 +373,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             val_pred = self.shape_fit_.predict(val_xb)
             val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
         elif is_classifier(self):
-            val_pred = self.shape_fit_.predict_proba(val_xb)
+            val_pred = self.shape_fit_.predict_proba(val_xb)[:, 1]
             val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
 
         self_copy = deepcopy(self)
@@ -407,7 +407,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     if is_regressor(self_copy):
                         r = batch_yy - self_copy.shape_fit_.predict(xb)
                     elif is_classifier(self_copy):
-                        r = batch_yy - self_copy.shape_fit_.predict_proba(xb)
+                        r = batch_yy - self_copy.shape_fit_.predict_proba(xb)[:, 1]
                     
                     # gradient
                     dfxb = self_copy.shape_fit_.diff(xb, order=1)
@@ -429,7 +429,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     val_pred = self_copy.shape_fit_.predict(val_xb)
                     val_loss = self_copy.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
                 elif is_classifier(self_copy):
-                    val_pred = self_copy.shape_fit_.predict_proba(val_xb)
+                    val_pred = self_copy.shape_fit_.predict_proba(val_xb)[:, 1]
                     val_loss = self_copy.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
                 if verbose:
                     print("Inner iter:", inner_iter + 1, "epoch:", epoch + 1, "with validation loss:", np.round(val_loss, 5))
@@ -464,7 +464,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 val_pred = self_copy.shape_fit_.predict(val_xb)
                 val_loss = self_copy.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
             elif is_classifier(self_copy):
-                val_pred = self_copy.shape_fit_.predict_proba(val_xb)
+                val_pred = self_copy.shape_fit_.predict_proba(val_xb)[:, 1]
                 val_loss = self_copy.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
 
             if val_loss > val_loss_inner_iter_best - tol:
@@ -527,7 +527,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             val_pred = self.shape_fit_.predict(val_xb)
             val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
         elif is_classifier(self):
-            val_pred = self.shape_fit_.predict_proba(val_xb)
+            val_pred = self.shape_fit_.predict_proba(val_xb)[:, 1]
             val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
 
         self_copy = deepcopy(self)
@@ -545,7 +545,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 if is_regressor(self_copy):
                     r = tr_y - self_copy.shape_fit_.predict(xb)
                 elif is_classifier(self_copy):
-                    r = tr_y - self_copy.shape_fit_.predict_proba(xb)
+                    r = tr_y - self_copy.shape_fit_.predict_proba(xb)[:, 1]
                 dfxb = self_copy.shape_fit_.diff(xb, order=1)
                 g_t = np.average((- dfxb * r).reshape(-1, 1) * tr_x, axis=0,
                             weights=sample_weight[idx1])
@@ -573,7 +573,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 val_pred = self_copy.shape_fit_.predict(val_xb)
                 val_loss = self_copy.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
             elif is_classifier(self_copy):
-                val_pred = self_copy.shape_fit_.predict_proba(val_xb)
+                val_pred = self_copy.shape_fit_.predict_proba(val_xb)[:, 1]
                 val_loss = self_copy.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
             if verbose:
                 print("Inner iter:", inner_iter + 1, "with validation loss:", np.round(val_loss, 5))
@@ -1009,12 +1009,12 @@ class SimClassifier(BaseSim, ClassifierMixin):
             containing the input dataset
         Returns
         -------
-        np.array of shape (n_samples,)
+        np.array of shape (n_samples, 2)
             containing probability prediction
         """
 
         pred = self.decision_function(x)
-        pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False)[:, 1]
+        pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False)
         return pred_proba
 
     def predict(self, x):
@@ -1031,5 +1031,5 @@ class SimClassifier(BaseSim, ClassifierMixin):
             containing binary prediction
         """  
 
-        pred_proba = self.predict_proba(x)
+        pred_proba = self.predict_proba(x)[:, 1]
         return self._label_binarizer.inverse_transform(pred_proba)

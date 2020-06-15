@@ -444,11 +444,11 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
             containing the input dataset
         Returns
         -------
-        np.array of shape (n_samples,)
+        np.array of shape (n_samples, 2)
             containing probability prediction
         """
-        pred_proba = self.ps_.predict_mu(x)
-        return pred_proba
+        proba = self.ps_.predict_mu(x).reshape(-1, 1)
+        return np.hstack([1 - proba, proba])
 
     def predict(self, x):
         
@@ -464,5 +464,5 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
             containing binary prediction
         """
 
-        pred_proba = self.predict_proba(x)
+        pred_proba = self.predict_proba(x)[:, 1]
         return self._label_binarizer.inverse_transform(pred_proba)

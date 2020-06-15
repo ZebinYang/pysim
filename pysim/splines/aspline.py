@@ -691,12 +691,12 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
             containing the input dataset
         Returns
         -------
-        np.array of shape (n_samples,)
+        np.array of shape (n_samples, 2)
             containing probability prediction
         """
 
         pred = self.decision_function(x)
-        pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False)[:, 1]
+        pred_proba = softmax(np.vstack([-pred, pred]).T / 2, copy=False)
         return pred_proba
 
     def predict(self, x):
@@ -713,5 +713,5 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
             containing binary prediction
         """
 
-        pred_proba = self.predict_proba(x)
+        pred_proba = self.predict_proba(x)[:, 1]
         return self._label_binarizer.inverse_transform(pred_proba)
