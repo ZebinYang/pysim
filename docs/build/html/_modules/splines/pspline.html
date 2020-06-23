@@ -167,7 +167,7 @@
 <span class="k">class</span> <span class="nc">BasePSpline</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
 
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knot_num</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">xmin</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">constraint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knot_num</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">xmin</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">constraint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">knot_num</span> <span class="o">=</span> <span class="n">knot_num</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span> <span class="o">=</span> <span class="n">reg_gamma</span>
@@ -253,7 +253,7 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 
-<span class="sd">    knot_num : int, optional. default=20</span>
+<span class="sd">    knot_num : int, optional. default=10</span>
 <span class="sd">           the number of knots</span>
 
 <span class="sd">    reg_gamma : float, optional. default=0.1</span>
@@ -272,7 +272,7 @@
 <span class="sd">        constraint=None means no constrant and constraint=&quot;mono&quot; for monotonic constraint</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knot_num</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>  <span class="n">reg_gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">xmin</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">constraint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knot_num</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">xmin</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">constraint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">PSplineRegressor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">knot_num</span><span class="o">=</span><span class="n">knot_num</span><span class="p">,</span>
                                   <span class="n">reg_gamma</span><span class="o">=</span><span class="n">reg_gamma</span><span class="p">,</span>
@@ -413,7 +413,7 @@
 <span class="sd">    </span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    knot_num : int, optional. default=20</span>
+<span class="sd">    knot_num : int, optional. default=10</span>
 <span class="sd">           the number of knots</span>
 
 <span class="sd">    reg_gamma : float, optional. default=0.1</span>
@@ -432,7 +432,7 @@
 <span class="sd">        constraint=None means no constrant and constraint=&quot;mono&quot; for monotonic constraint</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knot_num</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">xmin</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">constraint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knot_num</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">xmin</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">constraint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">PSplineClassifier</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">knot_num</span><span class="o">=</span><span class="n">knot_num</span><span class="p">,</span>
                                    <span class="n">reg_gamma</span><span class="o">=</span><span class="n">reg_gamma</span><span class="p">,</span>

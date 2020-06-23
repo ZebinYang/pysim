@@ -35,10 +35,11 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
 
 
     @abstractmethod
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1):
+    def __init__(self, knot_num=10, knot_dist="quantile", degree=3, reg_gamma=0.1, xmin=-1, xmax=1):
 
         self.knot_num = knot_num
         self.knot_dist = knot_dist
+        self.degree = degree
         self.reg_gamma = reg_gamma
         self.xmin = xmin
         self.xmax = xmax
@@ -69,8 +70,16 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         if self.knot_dist not in ["uniform", "quantile"]:
             raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
 
-        if (self.reg_gamma < 0) or (self.reg_gamma > 1):
-            raise ValueError("reg_gamma must be >= 0 and <1, got %s." % self.reg_gamma)
+        if not isinstance(self.degree, int):
+            raise ValueError("degree must be an integer, got %s." % self.degree)
+        elif self.degree not in [1, 3]:
+            raise ValueError("degree must be 1 or 3, got" % self.degree)
+
+        if not isinstance(self.reg_gamma, str):
+            if (self.reg_gamma < 0) or (self.reg_gamma > 1):
+                raise ValueError("reg_gamma must be GCV or >= 0 and <1, got %s" % self.reg_gamma)
+        elif self.reg_gamma not in ["GCV"]:
+            raise ValueError("reg_gamma must be GCV or >= 0 and <1, got %s." % self.reg_gamma)
 
         if self.xmin > self.xmax:
             raise ValueError("xmin must be <= xmax, got %s and %s." % (self.xmin, self.xmax))
@@ -161,18 +170,21 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
     
     Parameters
     ----------
-    knot_num : int, optional. default=20
+    knot_num : int, optional. default=10
            the number of knots
 
-    knot_dist : str, optional. default="uniform"
+    knot_dist : str, optional. default="quantile"
             the distribution of knots
       
         "uniform": uniformly over the domain
 
         "quantile": uniform quantiles of the given input data
 
+    degree : int, optional. default=3
+          the order of the spline, possible values include 1 and 3
+
     reg_gamma : float, optional. default=0.1
-            the roughness penalty strength of the spline algorithm, range from 0 to 1 
+            the roughness penalty strength of the spline algorithm, range from 0 to 1; it can also be set to "GCV".
     
     xmin : float, optional. default=-1
         the min boundary of the input
@@ -181,10 +193,11 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
         the max boundary of the input
     """
 
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1):
+    def __init__(self, knot_num=10, knot_dist="quantile", degree=3, reg_gamma=0.1, xmin=-1, xmax=1):
 
         super(SMSplineRegressor, self).__init__(knot_num=knot_num,
                                   knot_dist=knot_dist,
+                                  degree=degree,
                                   reg_gamma=reg_gamma,
                                   xmin=xmin,
                                   xmax=xmax)
@@ -265,10 +278,14 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
         if unique_num <= 1:
             self.sm_ = np.mean(y)
         else:
-            self.sm_ = bigsplines.bigssa(Formula('y ~ x'), 
-                                nknots=knot_idx, lambdas=self.reg_gamma, rparm=1e-6,
-                                data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
-                                weights=pd.DataFrame({"w":sample_weight})["w"])
+            kwargs = {"formula": Formula('y ~ x'),
+                   "nknots": knot_idx, 
+                   "lambdas": ro.r("NULL") if self.reg_gamma == "GCV" else self.reg_gamma,
+                   "rparm": 1e-6,
+                   "type": "lin" if self.degree==1 else "cub",
+                   "data": pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
+                   "weights": pd.DataFrame({"w":sample_weight})["w"]}
+            self.sm_ = bigsplines.bigssa(**kwargs)
         return self
 
     def predict(self, x):
@@ -300,18 +317,21 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
 
     Parameters
     ----------
-    knot_num : int, optional. default=20
+    knot_num : int, optional. default=10
            the number of knots
 
-    knot_dist : str, optional. default="uniform"
+    knot_dist : str, optional. default="quantile"
             the distribution of knots
       
         "uniform": uniformly over the domain
 
         "quantile": uniform quantiles of the given input data
 
+    degree : int, optional. default=3
+          the order of the spline, possible values include 1 and 3
+
     reg_gamma : float, optional. default=0.1
-            the roughness penalty strength of the spline algorithm, range from 0 to 1 
+            the roughness penalty strength of the spline algorithm, range from 0 to 1; it can also be set to "GCV".
     
     xmin : float, optional. default=-1
         the min boundary of the input
@@ -320,10 +340,11 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
         the max boundary of the input
     """
 
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1):
+    def __init__(self, knot_num=10, knot_dist="quantile", degree=3, reg_gamma=0.1, xmin=-1, xmax=1):
 
         super(SMSplineClassifier, self).__init__(knot_num=knot_num,
                                   knot_dist=knot_dist,
+                                  degree=degree,
                                   reg_gamma=reg_gamma,
                                   xmin=xmin,
                                   xmax=xmax)
@@ -416,16 +437,24 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
             exit = False
             while not exit:
                 try:
-                    if self.reg_gamma + 10 ** (i - 9) > 1:
-                        break
-                    self.sm_ = bigsplines.bigssg(Formula('y ~ x'), family="binomial",
-                            nknots=knot_idx, lambdas=self.reg_gamma + 10 ** (i - 9), rparm=1e-6,
-                            data=pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
-                            weights=pd.DataFrame({"w":sample_weight})["w"])
+                    if not isinstance(self.reg_gamma, str):
+                        if self.reg_gamma + 10 ** (i - 9) > 1:
+                            break
+                        
+                    kwargs = {"formula": Formula('y ~ x'),
+                           "family": "binomial",
+                           "nknots": knot_idx, 
+                           "lambdas": ro.r("NULL") if self.reg_gamma == "GCV" else self.reg_gamma + 10 ** (i - 9),
+                           "rparm": 1e-6,
+                           "type": "lin" if self.degree==1 else "cub",
+                           "data": pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
+                           "weights": pd.DataFrame({"w":sample_weight})["w"]}
+                    self.sm_ = bigsplines.bigssg(**kwargs)
                     exit = True
                 except rpy2.rinterface_lib.embedded.RRuntimeError:
                     i += 1
-            self.reg_gamma += 10 ** (i - 9)
+            if not isinstance(self.reg_gamma, str):
+                self.reg_gamma += 10 ** (i - 9)
         return self
     
     def predict_proba(self, x):

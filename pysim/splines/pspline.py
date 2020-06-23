@@ -19,7 +19,7 @@ __all__ = ["PSplineRegressor", "PSplineClassifier"]
 class BasePSpline(BaseEstimator, metaclass=ABCMeta):
 
     @abstractmethod
-    def __init__(self, knot_num=20, reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
+    def __init__(self, knot_num=10, reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
 
         self.knot_num = knot_num
         self.reg_gamma = reg_gamma
@@ -105,7 +105,7 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
     Parameters
     ----------
 
-    knot_num : int, optional. default=20
+    knot_num : int, optional. default=10
            the number of knots
 
     reg_gamma : float, optional. default=0.1
@@ -124,7 +124,7 @@ class PSplineRegressor(BasePSpline, RegressorMixin):
         constraint=None means no constrant and constraint="mono" for monotonic constraint
     """
 
-    def __init__(self, knot_num=20,  reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
+    def __init__(self, knot_num=10, reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
 
         super(PSplineRegressor, self).__init__(knot_num=knot_num,
                                   reg_gamma=reg_gamma,
@@ -265,7 +265,7 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
     
     Parameters
     ----------
-    knot_num : int, optional. default=20
+    knot_num : int, optional. default=10
            the number of knots
 
     reg_gamma : float, optional. default=0.1
@@ -284,7 +284,7 @@ class PSplineClassifier(BasePSpline, ClassifierMixin):
         constraint=None means no constrant and constraint="mono" for monotonic constraint
     """
 
-    def __init__(self, knot_num=20, reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
+    def __init__(self, knot_num=10, reg_gamma=0.1, xmin=-1, xmax=1, degree=2, constraint=None):
 
         super(PSplineClassifier, self).__init__(knot_num=knot_num,
                                    reg_gamma=reg_gamma,

@@ -20,7 +20,7 @@ __all__ = ["ASplineRegressor", "ASplineClassifier"]
 class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         
     @abstractmethod
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99, maxiter=10):
+    def __init__(self, knot_num=10, knot_dist="quantile", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99, maxiter=10):
 
         self.knot_num = knot_num
         self.knot_dist = knot_dist
@@ -254,10 +254,10 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
     Parameters
     ----------
 
-    knot_num : int, optional. default=20
+    knot_num : int, optional. default=10
            the number of knots
 
-    knot_dist : str, optional. default="uniform"
+    knot_dist : str, optional. default="quantile"
             the distribution of knots
       
         "uniform": uniformly over the domain
@@ -286,7 +286,7 @@ class ASplineRegressor(BaseASpline, RegressorMixin):
         the max iteration for fitting ASpline
     """
 
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99, maxiter=10):
+    def __init__(self, knot_num=10, knot_dist="quantile", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99, maxiter=10):
 
         super(ASplineRegressor, self).__init__(knot_num=knot_num,
                                   knot_dist=knot_dist,
@@ -429,10 +429,10 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
     Parameters
     ----------
 
-    knot_num : int, optional. default=20
+    knot_num : int, optional. default=10
            the number of knots
 
-    knot_dist : str, optional. default="uniform"
+    knot_dist : str, optional. default="quantile"
             the distribution of knots
       
         "uniform": uniformly over the domain
@@ -464,7 +464,7 @@ class ASplineClassifier(BaseASpline, ClassifierMixin):
         the max iteration for irls algorithm
     """
 
-    def __init__(self, knot_num=20, knot_dist="uniform", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99,
+    def __init__(self, knot_num=10, knot_dist="quantile", reg_gamma=0.1, xmin=-1, xmax=1, degree=2, epsilon=0.00001, threshold=0.99,
                  maxiter=10, maxiter_irls=10):
 
         super(ASplineClassifier, self).__init__(knot_num=knot_num,

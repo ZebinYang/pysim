@@ -45,7 +45,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, method="first_order", spline="smoothing_spline", reg_lambda=0.1, reg_gamma=0.1,
-                 knot_num=10, knot_dist="quantile", degree=2, random_state=0):
+                 knot_num=10, knot_dist="quantile", degree=3, random_state=0):
 
         self.method = method
         self.spline = spline
@@ -83,10 +83,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("spline must be an element of [a_spline, smoothing_spline, p_spline, mono_p_spline], got %s." % 
                          self.spline)
 
-        if (self.reg_lambda < 0) or (self.reg_lambda > 1):
-            raise ValueError("reg_lambda must be >= 0 and <=1, got %s." % self.reg_lambda)
-        elif self.reg_gamma < 0:
-            raise ValueError("reg_gamma must be >= 0, got %s." % self.reg_gamma)
+        if not isinstance(self.reg_gamma, str):
+            if (self.reg_lambda < 0) or (self.reg_lambda > 1):
+                raise ValueError("reg_lambda must be >= 0 and <=1, got %s." % self.reg_lambda)
 
     def _validate_sample_weight(self, n_samples, sample_weight):
         
@@ -721,7 +720,7 @@ class SimRegressor(BaseSim, RegressorMixin):
 
         "first_order_thres": First-order Stein's Identity via hard thresholding (A simplified verison)     
 
-        "marginal_regression": Marginal regression
+        "marginal_regression": Marginal regression subject to hard thresholding
         
         "ols": Least squares estimation subject to hard thresholding
 
@@ -749,12 +748,12 @@ class SimRegressor(BaseSim, RegressorMixin):
     reg_gamma : float, optional. default=0.1
         Roughness penalty strength of the spline algorithm
     
-        For spline="smoothing_spline", it ranges from 0 to 1 
+        For spline="smoothing_spline", it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to "GCV".
 
         For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to :math:`+\infty`
     
-    degree : int, optional. default=2
-        The order of the spline, not used for spline="smoothing_spline"
+    degree : int, optional. default=3
+        The order of the spline. For spline="smoothing_spline", possible values include 1 and 3.
     
     knot_num : int, optional. default=10
         Number of knots
@@ -764,7 +763,7 @@ class SimRegressor(BaseSim, RegressorMixin):
     """
 
     def __init__(self, method="first_order", spline="smoothing_spline", reg_lambda=0.1, reg_gamma=0.1,
-                 knot_num=10, knot_dist="quantile", degree=2, random_state=0):
+                 knot_num=10, knot_dist="quantile", degree=3, random_state=0):
 
         super(SimRegressor, self).__init__(method=method,
                                 spline=spline,
@@ -847,7 +846,7 @@ class SimRegressor(BaseSim, RegressorMixin):
             self.shape_fit_.fit(x, y, sample_weight)
         elif self.spline == "smoothing_spline":
             self.shape_fit_ = SMSplineRegressor(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
-                                    xmin=xmin, xmax=xmax)
+                                    xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
         elif self.spline == "p_spline":
             self.shape_fit_ = PSplineRegressor(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
@@ -891,7 +890,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
 
         "first_order_thres": First-order Stein's Identity via hard thresholding (A simplified verison)     
 
-        "marginal_regression": Marginal regression
+        "marginal_regression": Marginal regression subject to hard thresholding
         
         "ols": Least squares estimation subject to hard thresholding
 
@@ -919,13 +918,14 @@ class SimClassifier(BaseSim, ClassifierMixin):
     reg_gamma : float, optional. default=0.1
         Roughness penalty strength of the spline algorithm
     
-        For spline="smoothing_spline", it ranges from 0 to 1 
+        For spline="smoothing_spline", it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to "GCV".
 
         For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to :math:`+\infty`
     
-    degree : int, optional. default=2
-        The order of the spline, not used for spline="smoothing_spline"
+    degree : int, optional. default=3
+        The order of the spline. For spline="smoothing_spline", possible values include 1 and 3.
     
+
     knot_num : int, optional. default=10
         Number of knots
 
@@ -934,7 +934,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
     """
 
     def __init__(self, method="first_order", reg_lambda=0.1, spline="smoothing_spline", reg_gamma=0.1,
-                 knot_num=10, knot_dist="quantile", degree=2, random_state=0):
+                 knot_num=10, knot_dist="quantile", degree=3, random_state=0):
 
         super(SimClassifier, self).__init__(method=method,
                                 reg_lambda=reg_lambda,
@@ -1025,9 +1025,8 @@ class SimClassifier(BaseSim, ClassifierMixin):
             self.shape_fit_.fit(x, y, sample_weight)
         elif self.spline == "smoothing_spline":
             self.shape_fit_ = SMSplineClassifier(knot_num=self.knot_num, reg_gamma=self.reg_gamma, knot_dist=self.knot_dist,
-                                     xmin=xmin, xmax=xmax)
+                                     xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
-            
         elif self.spline == "p_spline":
             self.shape_fit_ = PSplineClassifier(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
                                     xmin=xmin, xmax=xmax, degree=self.degree)

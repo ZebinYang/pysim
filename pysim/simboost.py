@@ -26,7 +26,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, n_estimators, prjection_method="marginal_regression", spline="smoothing_spline", knot_dist="quantile",
-                 learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, degree=2, knot_num=10,
+                 learning_rate=1.0, reg_lambda=0.1, reg_gamma="GCV", degree=3, knot_num=10,
                  ortho_shrink=1, loss_threshold=0.01, inner_update=None, meta_info=None, pruning=False, val_ratio=0.2, random_state=0):
 
         self.n_estimators = n_estimators
@@ -90,7 +90,9 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 raise ValueError("reg_lambda must be >= 0 and <=1, got %s." % self.reg_lambda)
             self.reg_lambda_list = [self.reg_lambda]
 
-        if isinstance(self.reg_gamma, list):
+        if isinstance(self.reg_gamma, str):
+            self.reg_gamma_list = [self.reg_gamma]
+        elif isinstance(self.reg_gamma, list):
             for val in self.reg_gamma:
                 if val < 0:
                     raise ValueError("all the elements in reg_gamma must be >= 0, got %s." % self.reg_gamma)
@@ -696,7 +698,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
         "first_order_thres": First-order Stein's Identity via hard thresholding (A simplified verison)     
 
-        "marginal_regression": Marginal regression
+        "marginal_regression": Marginal regression subject to hard thresholding
         
         "ols": Least squares estimation subject to hard thresholding.
 
@@ -725,13 +727,13 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         The sparsity strength of projection inidce, ranges from 0 to 1 
 
     reg_gamma : float, optional. default=0.1
-        The roughness penalty strength of the spline algorithm
+        Roughness penalty strength of the spline algorithm
     
-        For spline="smoothing_spline", it ranges from 0 to 1 
+        For spline="smoothing_spline", it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to "GCV".
 
         For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to :math:`+\infty`
     
-    degree : int, optional. default=2
+    degree : int, optional. default=3
         The order of the spline, not used for spline="smoothing_spline"
     
     knot_num : int, optional. default=10
@@ -769,7 +771,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     """
 
     def __init__(self, n_estimators, prjection_method="marginal_regression", spline="smoothing_spline", knot_dist="quantile",
-                 learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, degree=2, knot_num=10,
+                 learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, degree=3, knot_num=10,
                  ortho_shrink=1, loss_threshold=0.01, inner_update=None, meta_info=None, pruning=False, val_ratio=0.2, random_state=0):
 
         super(SimBoostRegressor, self).__init__(n_estimators=n_estimators,
@@ -977,7 +979,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
         "first_order_thres": First-order Stein's Identity via hard thresholding (A simplified verison)     
 
-        "marginal_regression": Marginal regression
+        "marginal_regression": Marginal regression subject to hard thresholding
         
         "ols": Least squares estimation subject to hard thresholding.
 
@@ -1006,13 +1008,13 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         The sparsity strength of projection inidce, ranges from 0 to 1 
 
     reg_gamma : float, optional. default=0.1
-        The roughness penalty strength of the spline algorithm
+        Roughness penalty strength of the spline algorithm
     
-        For spline="smoothing_spline", it ranges from 0 to 1 
+        For spline="smoothing_spline", it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to "GCV".
 
         For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to :math:`+\infty`
     
-    degree : int, optional. default=2
+    degree : int, optional. default=3
         The order of the spline, not used for spline="smoothing_spline"
     
     knot_num : int, optional. default=10
@@ -1050,7 +1052,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
     """
 
     def __init__(self, n_estimators, prjection_method="marginal_regression", spline="smoothing_spline",
-                 learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, knot_dist="quantile", degree=2, knot_num=10, ortho_shrink=1,
+                 learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, knot_dist="quantile", degree=3, knot_num=10, ortho_shrink=1,
                  loss_threshold=0.01, val_ratio=0.2, inner_update=None, meta_info=None, pruning=False, random_state=0):
 
         super(SimBoostClassifier, self).__init__(n_estimators=n_estimators,

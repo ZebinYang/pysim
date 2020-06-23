@@ -20,14 +20,13 @@ clf = SimClassifier(method="first_order", spline="smoothing_spline", reg_lambda=
 
 - method: the base method for estimating the projection coefficients in sparse SIM. default="first_order"
 
-
         "first_order": First-order Stein's Identity via sparse PCA solver
 
         "second_order": Second-order Stein's Identity via sparse PCA solver
 
         "first_order_thres": First-order Stein's Identity via hard thresholding (A simplified verison)     
         
-        "marginal_regression": Marginal regression
+        "marginal_regression": Marginal regression subject to hard thresholding
         
         "ols": Least squares estimation subject to hard thresholding.
         
@@ -43,13 +42,13 @@ clf = SimClassifier(method="first_order", spline="smoothing_spline", reg_lambda=
         
         "a_spline": Adaptive B-spline
 
-- reg_gamma: The regularization strength of the spline algorithm. default=0.1.
+- reg_gamma: The regularization strength of the spline algorithm. default=0.1. 
 
-        For spline="smoothing_spline", it ranges from 0 to 1 
+        For spline="smoothing_spline", it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; For spline="smoothing_spline", it can also be set to "GCV".
         
         For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to $+\infty$.
 
-- degree: The order of the spline basis, not used in "smoothing_spline". default=2
+- degree: The order of the spline basis. default=3; For spline="smoothing_spline", possible values include 1 and 3, default=3.
 
 - knot_num: The number of knots. default=10
 

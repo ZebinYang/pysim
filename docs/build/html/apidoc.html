@@ -161,13 +161,13 @@
 <span id="pysim-splines"></span><h1>pysim.splines<a class="headerlink" href="#module-splines.aspline" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="splines.aspline.ASplineRegressor">
-<em class="property">class </em><code class="sig-prename descclassname">splines.aspline.</code><code class="sig-name descname">ASplineRegressor</code><span class="sig-paren">(</span><em class="sig-param">knot_num=20</em>, <em class="sig-param">knot_dist='uniform'</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">xmin=-1</em>, <em class="sig-param">xmax=1</em>, <em class="sig-param">degree=2</em>, <em class="sig-param">epsilon=1e-05</em>, <em class="sig-param">threshold=0.99</em>, <em class="sig-param">maxiter=10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/aspline.html#ASplineRegressor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.aspline.ASplineRegressor" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">splines.aspline.</code><code class="sig-name descname">ASplineRegressor</code><span class="sig-paren">(</span><em class="sig-param">knot_num=10</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">xmin=-1</em>, <em class="sig-param">xmax=1</em>, <em class="sig-param">degree=2</em>, <em class="sig-param">epsilon=1e-05</em>, <em class="sig-param">threshold=0.99</em>, <em class="sig-param">maxiter=10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/aspline.html#ASplineRegressor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.aspline.ASplineRegressor" title="Permalink to this definition">¶</a></dt>
 <dd><p>ASpline regression.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=20</em>) – the number of knots</p></li>
-<li><p><strong>knot_dist</strong> (<em>str</em><em>, </em><em>optional. default=&quot;uniform&quot;</em>) – <p>the distribution of knots</p>
+<li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=10</em>) – the number of knots</p></li>
+<li><p><strong>knot_dist</strong> (<em>str</em><em>, </em><em>optional. default=&quot;quantile&quot;</em>) – <p>the distribution of knots</p>
 <p>”uniform”: uniformly over the domain</p>
 <p>”quantile”: uniform quantiles of the given input data</p>
 </p></li>
@@ -427,13 +427,13 @@ component of a nested object.</p>
 
 <dl class="class">
 <dt id="splines.aspline.ASplineClassifier">
-<em class="property">class </em><code class="sig-prename descclassname">splines.aspline.</code><code class="sig-name descname">ASplineClassifier</code><span class="sig-paren">(</span><em class="sig-param">knot_num=20</em>, <em class="sig-param">knot_dist='uniform'</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">xmin=-1</em>, <em class="sig-param">xmax=1</em>, <em class="sig-param">degree=2</em>, <em class="sig-param">epsilon=1e-05</em>, <em class="sig-param">threshold=0.99</em>, <em class="sig-param">maxiter=10</em>, <em class="sig-param">maxiter_irls=10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/aspline.html#ASplineClassifier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.aspline.ASplineClassifier" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">splines.aspline.</code><code class="sig-name descname">ASplineClassifier</code><span class="sig-paren">(</span><em class="sig-param">knot_num=10</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">xmin=-1</em>, <em class="sig-param">xmax=1</em>, <em class="sig-param">degree=2</em>, <em class="sig-param">epsilon=1e-05</em>, <em class="sig-param">threshold=0.99</em>, <em class="sig-param">maxiter=10</em>, <em class="sig-param">maxiter_irls=10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/aspline.html#ASplineClassifier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.aspline.ASplineClassifier" title="Permalink to this definition">¶</a></dt>
 <dd><p>ASpline classification.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=20</em>) – the number of knots</p></li>
-<li><p><strong>knot_dist</strong> (<em>str</em><em>, </em><em>optional. default=&quot;uniform&quot;</em>) – <p>the distribution of knots</p>
+<li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=10</em>) – the number of knots</p></li>
+<li><p><strong>knot_dist</strong> (<em>str</em><em>, </em><em>optional. default=&quot;quantile&quot;</em>) – <p>the distribution of knots</p>
 <p>”uniform”: uniformly over the domain</p>
 <p>”quantile”: uniform quantiles of the given input data</p>
 </p></li>
@@ -727,7 +727,7 @@ component of a nested object.</p>
 
 <span class="target" id="module-splines.smspline"></span><dl class="class">
 <dt id="splines.smspline.SMSplineRegressor">
-<em class="property">class </em><code class="sig-prename descclassname">splines.smspline.</code><code class="sig-name descname">SMSplineRegressor</code><span class="sig-paren">(</span><em class="sig-param">knot_num=20</em>, <em class="sig-param">knot_dist='uniform'</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">xmin=-1</em>, <em class="sig-param">xmax=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/smspline.html#SMSplineRegressor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.smspline.SMSplineRegressor" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">splines.smspline.</code><code class="sig-name descname">SMSplineRegressor</code><span class="sig-paren">(</span><em class="sig-param">knot_num=10</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">degree=3</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">xmin=-1</em>, <em class="sig-param">xmax=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/smspline.html#SMSplineRegressor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.smspline.SMSplineRegressor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base class for Smoothing Spline regression.</p>
 <p>Details:
 1. This is an API for the well-known R package <cite>bigsplines</cite>, and we call the function bigssa through rpy2 interface.
@@ -735,12 +735,13 @@ component of a nested object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=20</em>) – the number of knots</p></li>
-<li><p><strong>knot_dist</strong> (<em>str</em><em>, </em><em>optional. default=&quot;uniform&quot;</em>) – <p>the distribution of knots</p>
+<li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=10</em>) – the number of knots</p></li>
+<li><p><strong>knot_dist</strong> (<em>str</em><em>, </em><em>optional. default=&quot;quantile&quot;</em>) – <p>the distribution of knots</p>
 <p>”uniform”: uniformly over the domain</p>
 <p>”quantile”: uniform quantiles of the given input data</p>
 </p></li>
-<li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – the roughness penalty strength of the spline algorithm, range from 0 to 1</p></li>
+<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=3</em>) – the order of the spline, possible values include 1 and 3</p></li>
+<li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – the roughness penalty strength of the spline algorithm, range from 0 to 1; it can also be set to “GCV”.</p></li>
 <li><p><strong>xmin</strong> (<em>float</em><em>, </em><em>optional. default=-1</em>) – the min boundary of the input</p></li>
 <li><p><strong>xmax</strong> (<em>float</em><em>, </em><em>optional. default=1</em>) – the max boundary of the input</p></li>
 </ul>
@@ -964,7 +965,7 @@ component of a nested object.</p>
 
 <dl class="class">
 <dt>
-<em class="property">class </em><code class="sig-prename descclassname">splines.smspline.</code><code class="sig-name descname">SMSplineRegressor</code><span class="sig-paren">(</span><em class="sig-param">knot_num=20</em>, <em class="sig-param">knot_dist='uniform'</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">xmin=-1</em>, <em class="sig-param">xmax=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/smspline.html#SMSplineRegressor"><span class="viewcode-link">[source]</span></a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">splines.smspline.</code><code class="sig-name descname">SMSplineRegressor</code><span class="sig-paren">(</span><em class="sig-param">knot_num=10</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">degree=3</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">xmin=-1</em>, <em class="sig-param">xmax=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/smspline.html#SMSplineRegressor"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Base class for Smoothing Spline regression.</p>
 <p>Details:
 1. This is an API for the well-known R package <cite>bigsplines</cite>, and we call the function bigssa through rpy2 interface.
@@ -972,12 +973,13 @@ component of a nested object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=20</em>) – the number of knots</p></li>
-<li><p><strong>knot_dist</strong> (<em>str</em><em>, </em><em>optional. default=&quot;uniform&quot;</em>) – <p>the distribution of knots</p>
+<li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=10</em>) – the number of knots</p></li>
+<li><p><strong>knot_dist</strong> (<em>str</em><em>, </em><em>optional. default=&quot;quantile&quot;</em>) – <p>the distribution of knots</p>
 <p>”uniform”: uniformly over the domain</p>
 <p>”quantile”: uniform quantiles of the given input data</p>
 </p></li>
-<li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – the roughness penalty strength of the spline algorithm, range from 0 to 1</p></li>
+<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=3</em>) – the order of the spline, possible values include 1 and 3</p></li>
+<li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – the roughness penalty strength of the spline algorithm, range from 0 to 1; it can also be set to “GCV”.</p></li>
 <li><p><strong>xmin</strong> (<em>float</em><em>, </em><em>optional. default=-1</em>) – the min boundary of the input</p></li>
 <li><p><strong>xmax</strong> (<em>float</em><em>, </em><em>optional. default=1</em>) – the max boundary of the input</p></li>
 </ul>
@@ -1201,7 +1203,7 @@ component of a nested object.</p>
 
 <span class="target" id="module-splines.pspline"></span><dl class="class">
 <dt id="splines.pspline.PSplineRegressor">
-<em class="property">class </em><code class="sig-prename descclassname">splines.pspline.</code><code class="sig-name descname">PSplineRegressor</code><span class="sig-paren">(</span><em class="sig-param">knot_num=20</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">xmin=-1</em>, <em class="sig-param">xmax=1</em>, <em class="sig-param">degree=2</em>, <em class="sig-param">constraint=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/pspline.html#PSplineRegressor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.pspline.PSplineRegressor" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">splines.pspline.</code><code class="sig-name descname">PSplineRegressor</code><span class="sig-paren">(</span><em class="sig-param">knot_num=10</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">xmin=-1</em>, <em class="sig-param">xmax=1</em>, <em class="sig-param">degree=2</em>, <em class="sig-param">constraint=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/pspline.html#PSplineRegressor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.pspline.PSplineRegressor" title="Permalink to this definition">¶</a></dt>
 <dd><p>PSpline regression.</p>
 <p>Details:
 1. This is an API for the python package <cite>pygam</cite>, and we use the p-spline by treating it as an univariate GAM.
@@ -1209,7 +1211,7 @@ component of a nested object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=20</em>) – the number of knots</p></li>
+<li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=10</em>) – the number of knots</p></li>
 <li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – the roughness penalty strength of the spline algorithm, range from 0 to <span class="math notranslate nohighlight">\(+\infty\)</span></p></li>
 <li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=2</em>) – the order of the spline</p></li>
 <li><p><strong>xmin</strong> (<em>float</em><em>, </em><em>optional. default=-1</em>) – the min boundary of the input</p></li>
@@ -1421,7 +1423,7 @@ component of a nested object.</p>
 
 <dl class="class">
 <dt id="splines.pspline.PSplineClassifier">
-<em class="property">class </em><code class="sig-prename descclassname">splines.pspline.</code><code class="sig-name descname">PSplineClassifier</code><span class="sig-paren">(</span><em class="sig-param">knot_num=20</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">xmin=-1</em>, <em class="sig-param">xmax=1</em>, <em class="sig-param">degree=2</em>, <em class="sig-param">constraint=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/pspline.html#PSplineClassifier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.pspline.PSplineClassifier" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">splines.pspline.</code><code class="sig-name descname">PSplineClassifier</code><span class="sig-paren">(</span><em class="sig-param">knot_num=10</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">xmin=-1</em>, <em class="sig-param">xmax=1</em>, <em class="sig-param">degree=2</em>, <em class="sig-param">constraint=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/pspline.html#PSplineClassifier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.pspline.PSplineClassifier" title="Permalink to this definition">¶</a></dt>
 <dd><p>PSpline classification.</p>
 <p>Details:
 1. This is an API for the python package <cite>pygam</cite>, and we use the p-spline by treating it as an univariate GAM.
@@ -1430,7 +1432,7 @@ component of a nested object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=20</em>) – the number of knots</p></li>
+<li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=10</em>) – the number of knots</p></li>
 <li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – the roughness penalty strength of the spline algorithm, range from 0 to <span class="math notranslate nohighlight">\(+\infty\)</span></p></li>
 <li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=2</em>) – the order of the spline</p></li>
 <li><p><strong>xmin</strong> (<em>float</em><em>, </em><em>optional. default=-1</em>) – the min boundary of the input</p></li>
