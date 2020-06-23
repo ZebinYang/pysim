@@ -27,6 +27,8 @@ clf = SimClassifier(method="first_order", spline="smoothing_spline", reg_lambda=
 
         "first_order_thres": First-order Stein's Identity via hard thresholding (A simplified verison)     
         
+        "marginal_regression": Marginal regression
+        
         "ols": Least squares estimation subject to hard thresholding.
         
 - reg_lambda: The regularization strength of sparsity of beta. default=0.1, from 0 to 1 
@@ -49,9 +51,9 @@ clf = SimClassifier(method="first_order", spline="smoothing_spline", reg_lambda=
 
 - degree: The order of the spline basis, not used in "smoothing_spline". default=2
 
-- knot_num: The number of knots. default=20
+- knot_num: The number of knots. default=10
 
-- knot_dist: The method of specifying the knots. default="uniform"
+- knot_dist: The method of specifying the knots. default="quantile"
 
         "uniform": uniformly over the domain
         

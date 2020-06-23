@@ -45,7 +45,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, method="first_order", spline="smoothing_spline", reg_lambda=0.1, reg_gamma=0.1,
-                 knot_num=20, knot_dist="uniform", degree=2, random_state=0):
+                 knot_num=10, knot_dist="quantile", degree=2, random_state=0):
 
         self.method = method
         self.spline = spline
@@ -62,8 +62,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         """method to validate model parameters
         """
 
-        if self.method not in ["first_order", "second_order", "first_order_thres", "ols"]:
-            raise ValueError("method must be an element of [first_order, second_order, first_order_thres, ols], got %s." % self.method)
+        if self.method not in ["first_order", "second_order", "first_order_thres", "marginal_regression", "ols"]:
+            raise ValueError("method must be an element of [first_order, second_order,\
+                         first_order_thres, marginal_regression, ols], got %s." % self.method)
                 
         if not isinstance(self.degree, int):
             raise ValueError("degree must be an integer, got %s." % self.degree)
@@ -212,6 +213,37 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * reg_lambda_max))
         return beta
     
+    def _marginal_regression(self, x, y, sample_weight=None, proj_mat=None):
+
+        """calculate the projection indice using marginal regression
+
+        Parameters
+        ---------
+        x : array-like of shape (n_samples, n_features)
+            containing the input dataset
+        y : array-like of shape (n_samples,)
+            containing target values
+        sample_weight : array-like of shape (n_samples,), optional
+            containing sample weights
+        proj_mat : array-like of shape (n_features, n_features), optional
+            to project the projection indice for enhancing orthogonality
+        Returns
+        -------
+        np.array of shape (n_features, 1)
+            the normalized projection inidce
+        """
+
+        zbar = np.average(y.reshape(-1, 1) * x, axis=0, weights=sample_weight)
+        if proj_mat is not None:
+            zbar = np.dot(proj_mat, zbar)
+        zbar[np.abs(zbar) < self.reg_lambda * np.max(np.abs(zbar))] = 0
+        if np.linalg.norm(zbar) > 0:
+            beta = zbar / np.linalg.norm(zbar)
+        else:
+            beta = zbar
+        return beta.reshape([-1, 1])
+
+    
     def fit(self, x, y, sample_weight=None, proj_mat=None):
 
         """fit the Sim model
@@ -250,7 +282,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             self.beta_ = self._second_order(x, y, sample_weight, proj_mat)
         elif self.method == "ols":
             self.beta_ = self._ols(x, y, sample_weight, proj_mat)
-
+        elif self.method = "marginal_regression":
+            self.beta_ = self._marginal_regression(x, y, sample_weight, proj_mat)
+        
         if len(self.beta_[np.abs(self.beta_) > 0]) > 0:
             if (self.beta_[np.abs(self.beta_) > 0][0] < 0):
                 self.beta_ = - self.beta_
@@ -687,6 +721,8 @@ class SimRegressor(BaseSim, RegressorMixin):
 
         "first_order_thres": First-order Stein's Identity via hard thresholding (A simplified verison)     
 
+        "marginal_regression": Marginal regression
+        
         "ols": Least squares estimation subject to hard thresholding
 
     spline : str, optional. default="smoothing_spline"
@@ -700,7 +736,7 @@ class SimRegressor(BaseSim, RegressorMixin):
 
         "a_spline": Adaptive B-spline
 
-    knot_dist : str, optional. default="uniform"
+    knot_dist : str, optional. default="quantile"
         Distribution of knots
       
         "uniform": uniformly over the domain
@@ -720,7 +756,7 @@ class SimRegressor(BaseSim, RegressorMixin):
     degree : int, optional. default=2
         The order of the spline, not used for spline="smoothing_spline"
     
-    knot_num : int, optional. default=20
+    knot_num : int, optional. default=10
         Number of knots
     
     random_state : int, optional. default=0
@@ -728,7 +764,7 @@ class SimRegressor(BaseSim, RegressorMixin):
     """
 
     def __init__(self, method="first_order", spline="smoothing_spline", reg_lambda=0.1, reg_gamma=0.1,
-                 knot_num=20, knot_dist="uniform", degree=2, random_state=0):
+                 knot_num=10, knot_dist="quantile", degree=2, random_state=0):
 
         super(SimRegressor, self).__init__(method=method,
                                 spline=spline,
@@ -855,6 +891,8 @@ class SimClassifier(BaseSim, ClassifierMixin):
 
         "first_order_thres": First-order Stein's Identity via hard thresholding (A simplified verison)     
 
+        "marginal_regression": Marginal regression
+        
         "ols": Least squares estimation subject to hard thresholding
 
     spline : str, optional. default="smoothing_spline"
@@ -868,7 +906,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
 
         "a_spline": Adaptive B-spline
 
-    knot_dist : str, optional. default="uniform"
+    knot_dist : str, optional. default="quantile"
         Distribution of knots
       
         "uniform": uniformly over the domain
@@ -888,7 +926,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
     degree : int, optional. default=2
         The order of the spline, not used for spline="smoothing_spline"
     
-    knot_num : int, optional. default=20
+    knot_num : int, optional. default=10
         Number of knots
 
     random_state : int, optional. default=0
@@ -896,7 +934,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
     """
 
     def __init__(self, method="first_order", reg_lambda=0.1, spline="smoothing_spline", reg_gamma=0.1,
-                 knot_num=20, knot_dist="uniform", degree=2, random_state=0):
+                 knot_num=10, knot_dist="quantile", degree=2, random_state=0):
 
         super(SimClassifier, self).__init__(method=method,
                                 reg_lambda=reg_lambda,

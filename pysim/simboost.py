@@ -25,12 +25,12 @@ __all__ = ["SimBoostRegressor", "SimBoostRegressor"]
 class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     @abstractmethod
-    def __init__(self, n_estimators, stein_method="first_order", spline="a_spline", knot_dist="uniform",
-                 learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, degree=2, knot_num=20,
-                 ortho_shrink=1, loss_threshold=0.01, inner_update=None, meta_info=None, pruning=True, val_ratio=0.2, random_state=0):
+    def __init__(self, n_estimators, prjection_method="marginal_regression", spline="smoothing_spline", knot_dist="quantile",
+                 learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, degree=2, knot_num=10,
+                 ortho_shrink=1, loss_threshold=0.01, inner_update=None, meta_info=None, pruning=False, val_ratio=0.2, random_state=0):
 
         self.n_estimators = n_estimators
-        self.stein_method = stein_method
+        self.prjection_method = prjection_method
         self.spline = spline
         self.learning_rate = learning_rate
         self.reg_lambda = reg_lambda
@@ -57,17 +57,18 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         elif self.n_estimators < 0:
             raise ValueError("n_estimators must be >= 0, got" % self.n_estimators)
 
-        if isinstance(self.stein_method, list):
-            for val in self.stein_method:
-                if val not in ["first_order", "second_order", "first_order_thres", "ols"]:
-                    raise ValueError("method must be an element of [first_order, second_order, first_order_thres, ols], got %s." % 
-                                 self.stein_method)
-            self.stein_method_list = self.stein_method  
-        elif isinstance(self.stein_method, str):
-            if self.stein_method not in ["first_order", "second_order", "first_order_thres"]:
+        if isinstance(self.prjection_method, list):
+            for val in self.prjection_method:
+                if val not in ["first_order", "second_order", "first_order_thres", "marginal_regression", "ols"]:
+                    raise ValueError("method must be an element of [first_order, second_order,\
+                                first_order_thres, marginal_regression, ols], got %s." % 
+                                 self.prjection_method)
+            self.prjection_method_list = self.prjection_method  
+        elif isinstance(self.prjection_method, str):
+            if self.prjection_method not in ["first_order", "second_order", "first_order_thres"]:
                 raise ValueError("method must be an element of [first_order, second_order, first_order_thres, ols], got %s." % 
-                                 self.stein_method)
-            self.stein_method_list = [self.stein_method]
+                                 self.prjection_method)
+            self.prjection_method_list = [self.prjection_method]
 
         if self.spline not in ["a_spline", "smoothing_spline", "p_spline", "mono_p_spline"]:
             raise ValueError("spline must be an element of [a_spline, smoothing_spline, p_spline, mono_p_spline], got %s." % 
@@ -685,7 +686,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     n_estimators : int
         The maximum number of estimators for boosing
 
-    stein_method : str, optional. default="first_order"
+    prjection_method : str, optional. default="marginal_regression"
         The base method for estimating the projection coefficients in sparse SIM
         
         "first_order": First-order Stein's Identity via sparse PCA solver
@@ -694,6 +695,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
         "first_order_thres": First-order Stein's Identity via hard thresholding (A simplified verison)     
 
+        "marginal_regression": Marginal regression
+        
         "ols": Least squares estimation subject to hard thresholding.
 
     spline : str, optional. default="smoothing_spline"
@@ -707,7 +710,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
         "a_spline": Adaptive B-spline
 
-    knot_dist : str, optional. default="uniform"
+    knot_dist : str, optional. default="quantile"
         Distribution of knots
       
         "uniform": uniformly over the domain
@@ -730,7 +733,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     degree : int, optional. default=2
         The order of the spline, not used for spline="smoothing_spline"
     
-    knot_num : int, optional. default=20
+    knot_num : int, optional. default=10
         Number of knots
     
     ortho_shrink : float, optional. default=1
@@ -741,7 +744,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         To reduce model complexity, we prefer to use fewer base learners, which is as accurate as (1 - loss_threshold) of the best performance)
 
     inner_update : None or str, optional. default=None
-        The inner update method for each base learner
+        The inner update method for each base learner, can be None, "adam" or "bfgs"
 
     meta_info : None or a dict with features' information. default=None
         Features are classified as:
@@ -754,7 +757,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
         If None, then all the features will be treated as continuous
         
-    pruning : bool. default=True
+    pruning : bool. default=False
         Whether to perform pruning for the base sim estimators
     
     val_ratio : float, optional. default=0.2
@@ -764,12 +767,12 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         Random seed
     """
 
-    def __init__(self, n_estimators, stein_method="first_order", spline="a_spline", knot_dist="uniform",
-                 learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, degree=2, knot_num=20,
-                 ortho_shrink=1, loss_threshold=0.01, inner_update=True, meta_info=None, pruning=True, val_ratio=0.2, random_state=0):
+    def __init__(self, n_estimators, prjection_method="marginal_regression", spline="smoothing_spline", knot_dist="quantile",
+                 learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, degree=2, knot_num=10,
+                 ortho_shrink=1, loss_threshold=0.01, inner_update=None, meta_info=None, pruning=False, val_ratio=0.2, random_state=0):
 
         super(SimBoostRegressor, self).__init__(n_estimators=n_estimators,
-                                   stein_method=stein_method,
+                                   prjection_method=prjection_method,
                                    spline=spline,
                                    learning_rate=learning_rate,
                                    reg_lambda=reg_lambda,
@@ -840,7 +843,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                 proj_mat = None
 
             # fit Sim estimator
-            param_grid = {"method": self.stein_method_list, 
+            param_grid = {"method": self.prjection_method_list, 
                       "reg_lambda": self.reg_lambda_list,
                       "reg_gamma": self.reg_gamma_list}
             grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, spline=self.spline,
@@ -940,14 +943,23 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
     Training Steps:
     1. Preprocess all categorical features with one-hot encodeing, and then build a linear model between all the dummy variables and the response. (_fit_dummy)
+    
     2. Calculate the pseudo residual using logit boost. (_fit)
+    
     3. Calculate the orthogonal enhancement for the next SIM Regressor (ortho_shrink, only used when learning_rate=1.0). (_fit)
+    
     4. Fit a SIM Regressor using all numerical features and the pseudo residual. (_fit)
+    
     5. Recalculate the pseudo residual subject to learning_rate. (_fit)
+    
     6. Repeat steps 2 - 5 until n_estimators is reached. (_fit)
+    
     7. Rank the fitted SIM Regressors according to variation they explained. (_pruning)
+    
     8. Sequentially add the ranked SIM Regressors (starting from top ranked) and evaluate the validation performance. (_pruning)
+    
     9. Select the best number of SIM Regressors according to the validation performance. (_pruning)
+    
     10. Interpretation: the pruning procedure (validation_performance), global model (visualize), local interpretation (local_visualize and ice_visualize).
     
     Parameters
@@ -955,7 +967,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
     n_estimators : int
         The maximum number of estimators for boosing
 
-    stein_method : str, optional. default="first_order"
+    prjection_method : str, optional. default="marginal_regression"
         The base method for estimating the projection coefficients in sparse SIM
         
         "first_order": First-order Stein's Identity via sparse PCA solver
@@ -964,6 +976,8 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
         "first_order_thres": First-order Stein's Identity via hard thresholding (A simplified verison)     
 
+        "marginal_regression": Marginal regression
+        
         "ols": Least squares estimation subject to hard thresholding.
 
     spline : str, optional. default="smoothing_spline"
@@ -977,7 +991,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
         "a_spline": Adaptive B-spline
 
-    knot_dist : str, optional. default="uniform"
+    knot_dist : str, optional. default="quantile"
         Distribution of knots
       
         "uniform": uniformly over the domain
@@ -1000,7 +1014,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
     degree : int, optional. default=2
         The order of the spline, not used for spline="smoothing_spline"
     
-    knot_num : int, optional. default=20
+    knot_num : int, optional. default=10
         Number of knots
     
     ortho_shrink : float, optional. default=1
@@ -1010,8 +1024,8 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         This parameter is used for post-hoc pruning, ranges from 0 to 1, only used when pruning=True
         To reduce model complexity, we prefer to use fewer base learners, which is as accurate as (1 - loss_threshold) of the best performance)
         
-    inner_update : bool, optional. default=True
-        The inner update method for each base learner
+    inner_update : None or str, optional. default=None
+        The inner update method for each base learner, can be None, "adam" or "bfgs"
 
     meta_info : None or a dict with features' information. default=None
         Features are classified as:
@@ -1024,7 +1038,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
         If None, then all the features will be treated as continuous
         
-    pruning : bool. default=True
+    pruning : bool. default=False
         Whether to perform pruning for the base sim estimators
 
     val_ratio : float, optional. default=0.2
@@ -1034,12 +1048,12 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         Random seed
     """
 
-    def __init__(self, n_estimators, stein_method="first_order", spline="a_spline",
-                 learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, knot_dist="uniform", degree=2, knot_num=20, ortho_shrink=1,
-                 loss_threshold=0.01, val_ratio=0.2, inner_update=True, meta_info=None, pruning=True, random_state=0):
+    def __init__(self, n_estimators, prjection_method="marginal_regression", spline="smoothing_spline",
+                 learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, knot_dist="quantile", degree=2, knot_num=10, ortho_shrink=1,
+                 loss_threshold=0.01, val_ratio=0.2, inner_update=None, meta_info=None, pruning=False, random_state=0):
 
         super(SimBoostClassifier, self).__init__(n_estimators=n_estimators,
-                                   stein_method=stein_method,
+                                   prjection_method=prjection_method,
                                    spline=spline,
                                    learning_rate=learning_rate,
                                    reg_lambda=reg_lambda,
@@ -1146,7 +1160,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                 proj_mat = None
 
             # fit Sim estimator
-            param_grid = {"method": self.stein_method_list, 
+            param_grid = {"method": self.prjection_method_list, 
                       "reg_lambda": self.reg_lambda_list,
                       "reg_gamma": self.reg_gamma_list}
             grid = GridSearchCV(SimRegressor(degree=self.degree, knot_num=self.knot_num, spline=self.spline,
@@ -1164,7 +1178,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             # update
             if self.inner_update is not None:
-                sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z, 
+                sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z,
                         sample_weight=sample_weight, proj_mat=proj_mat, method=self.inner_update,
                         batch_size=min(200, int(0.2 * n_samples)), val_ratio=self.val_ratio)
             pred_train += self.learning_rates[indice] * sim_estimator.predict(x[self.tr_idx])
