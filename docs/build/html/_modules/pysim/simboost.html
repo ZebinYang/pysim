@@ -173,12 +173,12 @@
 <span class="k">class</span> <span class="nc">BaseSimBooster</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
 
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_estimators</span><span class="p">,</span> <span class="n">stein_method</span><span class="o">=</span><span class="s2">&quot;first_order&quot;</span><span class="p">,</span> <span class="n">spline</span><span class="o">=</span><span class="s2">&quot;a_spline&quot;</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="s2">&quot;uniform&quot;</span><span class="p">,</span>
-                 <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">reg_lambda</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">knot_num</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
-                 <span class="n">ortho_shrink</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">loss_threshold</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">inner_update</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">meta_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pruning</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">val_ratio</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_estimators</span><span class="p">,</span> <span class="n">prjection_method</span><span class="o">=</span><span class="s2">&quot;marginal_regression&quot;</span><span class="p">,</span> <span class="n">spline</span><span class="o">=</span><span class="s2">&quot;smoothing_spline&quot;</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="s2">&quot;quantile&quot;</span><span class="p">,</span>
+                 <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">reg_lambda</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">knot_num</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                 <span class="n">ortho_shrink</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">loss_threshold</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">inner_update</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">meta_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pruning</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">val_ratio</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">n_estimators</span> <span class="o">=</span> <span class="n">n_estimators</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stein_method</span> <span class="o">=</span> <span class="n">stein_method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prjection_method</span> <span class="o">=</span> <span class="n">prjection_method</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="o">=</span> <span class="n">spline</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span> <span class="o">=</span> <span class="n">learning_rate</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reg_lambda</span> <span class="o">=</span> <span class="n">reg_lambda</span>
@@ -205,17 +205,19 @@
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_estimators</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_estimators must be &gt;= 0, got&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_estimators</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stein_method</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stein_method</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">val</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;first_order&quot;</span><span class="p">,</span> <span class="s2">&quot;second_order&quot;</span><span class="p">,</span> <span class="s2">&quot;first_order_thres&quot;</span><span class="p">,</span> <span class="s2">&quot;ols&quot;</span><span class="p">]:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;method must be an element of [first_order, second_order, first_order_thres, ols], got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> 
-                                 <span class="bp">self</span><span class="o">.</span><span class="n">stein_method</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">stein_method_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stein_method</span>  
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stein_method</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stein_method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;first_order&quot;</span><span class="p">,</span> <span class="s2">&quot;second_order&quot;</span><span class="p">,</span> <span class="s2">&quot;first_order_thres&quot;</span><span class="p">]:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;method must be an element of [first_order, second_order, first_order_thres, ols], got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> 
-                                 <span class="bp">self</span><span class="o">.</span><span class="n">stein_method</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">stein_method_list</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">stein_method</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prjection_method</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">prjection_method</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">val</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;first_order&quot;</span><span class="p">,</span> <span class="s2">&quot;second_order&quot;</span><span class="p">,</span> <span class="s2">&quot;first_order_thres&quot;</span><span class="p">,</span> <span class="s2">&quot;marginal_regression&quot;</span><span class="p">,</span> <span class="s2">&quot;marginal_regression&quot;</span><span class="p">,</span> <span class="s2">&quot;ols&quot;</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;method must be an element of [first_order, second_order,</span><span class="se">\</span>
+<span class="s2">                                first_order_thres, marginal_regression, ols], got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> 
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">prjection_method</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prjection_method_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prjection_method</span>  
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prjection_method</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prjection_method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;first_order&quot;</span><span class="p">,</span> <span class="s2">&quot;second_order&quot;</span><span class="p">,</span> <span class="s2">&quot;first_order_thres&quot;</span><span class="p">,</span> <span class="s2">&quot;marginal_regression&quot;</span><span class="p">,</span> <span class="s2">&quot;ols&quot;</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;method must be an element of [first_order, second_order, first_order_thres,</span><span class="se">\</span>
+<span class="s2">                                 marginal_regression, ols], got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> 
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">prjection_method</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prjection_method_list</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">prjection_method</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;a_spline&quot;</span><span class="p">,</span> <span class="s2">&quot;smoothing_spline&quot;</span><span class="p">,</span> <span class="s2">&quot;p_spline&quot;</span><span class="p">,</span> <span class="s2">&quot;mono_p_spline&quot;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;spline must be an element of [a_spline, smoothing_spline, p_spline, mono_p_spline], got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> 
@@ -833,7 +835,7 @@
 <span class="sd">    n_estimators : int</span>
 <span class="sd">        The maximum number of estimators for boosing</span>
 
-<span class="sd">    stein_method : str, optional. default=&quot;first_order&quot;</span>
+<span class="sd">    prjection_method : str, optional. default=&quot;marginal_regression&quot;</span>
 <span class="sd">        The base method for estimating the projection coefficients in sparse SIM</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;first_order&quot;: First-order Stein&#39;s Identity via sparse PCA solver</span>
@@ -842,6 +844,8 @@
 
 <span class="sd">        &quot;first_order_thres&quot;: First-order Stein&#39;s Identity via hard thresholding (A simplified verison)     </span>
 
+<span class="sd">        &quot;marginal_regression&quot;: Marginal regression</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;ols&quot;: Least squares estimation subject to hard thresholding.</span>
 
 <span class="sd">    spline : str, optional. default=&quot;smoothing_spline&quot;</span>
@@ -855,7 +859,7 @@
 
 <span class="sd">        &quot;a_spline&quot;: Adaptive B-spline</span>
 
-<span class="sd">    knot_dist : str, optional. default=&quot;uniform&quot;</span>
+<span class="sd">    knot_dist : str, optional. default=&quot;quantile&quot;</span>
 <span class="sd">        Distribution of knots</span>
 <span class="sd">      </span>
 <span class="sd">        &quot;uniform&quot;: uniformly over the domain</span>
@@ -878,7 +882,7 @@
 <span class="sd">    degree : int, optional. default=2</span>
 <span class="sd">        The order of the spline, not used for spline=&quot;smoothing_spline&quot;</span>
 <span class="sd">    </span>
-<span class="sd">    knot_num : int, optional. default=20</span>
+<span class="sd">    knot_num : int, optional. default=10</span>
 <span class="sd">        Number of knots</span>
 <span class="sd">    </span>
 <span class="sd">    ortho_shrink : float, optional. default=1</span>
@@ -889,7 +893,7 @@
 <span class="sd">        To reduce model complexity, we prefer to use fewer base learners, which is as accurate as (1 - loss_threshold) of the best performance)</span>
 
 <span class="sd">    inner_update : None or str, optional. default=None</span>
-<span class="sd">        The inner update method for each base learner</span>
+<span class="sd">        The inner update method for each base learner, can be None, &quot;adam&quot; or &quot;bfgs&quot;</span>
 
 <span class="sd">    meta_info : None or a dict with features&#39; information. default=None</span>
 <span class="sd">        Features are classified as:</span>
@@ -902,7 +906,7 @@
 
 <span class="sd">        If None, then all the features will be treated as continuous</span>
 <span class="sd">        </span>
-<span class="sd">    pruning : bool. default=True</span>
+<span class="sd">    pruning : bool. default=False</span>
 <span class="sd">        Whether to perform pruning for the base sim estimators</span>
 <span class="sd">    </span>
 <span class="sd">    val_ratio : float, optional. default=0.2</span>
@@ -912,12 +916,12 @@
 <span class="sd">        Random seed</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_estimators</span><span class="p">,</span> <span class="n">stein_method</span><span class="o">=</span><span class="s2">&quot;first_order&quot;</span><span class="p">,</span> <span class="n">spline</span><span class="o">=</span><span class="s2">&quot;a_spline&quot;</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="s2">&quot;uniform&quot;</span><span class="p">,</span>
-                 <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">reg_lambda</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">knot_num</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
-                 <span class="n">ortho_shrink</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">loss_threshold</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">inner_update</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">meta_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pruning</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">val_ratio</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_estimators</span><span class="p">,</span> <span class="n">prjection_method</span><span class="o">=</span><span class="s2">&quot;marginal_regression&quot;</span><span class="p">,</span> <span class="n">spline</span><span class="o">=</span><span class="s2">&quot;smoothing_spline&quot;</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="s2">&quot;quantile&quot;</span><span class="p">,</span>
+                 <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">reg_lambda</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">knot_num</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                 <span class="n">ortho_shrink</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">loss_threshold</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">inner_update</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">meta_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pruning</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">val_ratio</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">SimBoostRegressor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">n_estimators</span><span class="o">=</span><span class="n">n_estimators</span><span class="p">,</span>
-                                   <span class="n">stein_method</span><span class="o">=</span><span class="n">stein_method</span><span class="p">,</span>
+                                   <span class="n">prjection_method</span><span class="o">=</span><span class="n">prjection_method</span><span class="p">,</span>
                                    <span class="n">spline</span><span class="o">=</span><span class="n">spline</span><span class="p">,</span>
                                    <span class="n">learning_rate</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">,</span>
                                    <span class="n">reg_lambda</span><span class="o">=</span><span class="n">reg_lambda</span><span class="p">,</span>
@@ -988,7 +992,7 @@
                 <span class="n">proj_mat</span> <span class="o">=</span> <span class="kc">None</span>
 
             <span class="c1"># fit Sim estimator</span>
-            <span class="n">param_grid</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">stein_method_list</span><span class="p">,</span> 
+            <span class="n">param_grid</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">prjection_method_list</span><span class="p">,</span> 
                       <span class="s2">&quot;reg_lambda&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg_lambda_list</span><span class="p">,</span>
                       <span class="s2">&quot;reg_gamma&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma_list</span><span class="p">}</span>
             <span class="n">grid</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span><span class="n">SimRegressor</span><span class="p">(</span><span class="n">degree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="n">knot_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_num</span><span class="p">,</span> <span class="n">spline</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spline</span><span class="p">,</span>
@@ -1088,14 +1092,23 @@
 
 <span class="sd">    Training Steps:</span>
 <span class="sd">    1. Preprocess all categorical features with one-hot encodeing, and then build a linear model between all the dummy variables and the response. (_fit_dummy)</span>
+<span class="sd">    </span>
 <span class="sd">    2. Calculate the pseudo residual using logit boost. (_fit)</span>
+<span class="sd">    </span>
 <span class="sd">    3. Calculate the orthogonal enhancement for the next SIM Regressor (ortho_shrink, only used when learning_rate=1.0). (_fit)</span>
+<span class="sd">    </span>
 <span class="sd">    4. Fit a SIM Regressor using all numerical features and the pseudo residual. (_fit)</span>
+<span class="sd">    </span>
 <span class="sd">    5. Recalculate the pseudo residual subject to learning_rate. (_fit)</span>
+<span class="sd">    </span>
 <span class="sd">    6. Repeat steps 2 - 5 until n_estimators is reached. (_fit)</span>
+<span class="sd">    </span>
 <span class="sd">    7. Rank the fitted SIM Regressors according to variation they explained. (_pruning)</span>
+<span class="sd">    </span>
 <span class="sd">    8. Sequentially add the ranked SIM Regressors (starting from top ranked) and evaluate the validation performance. (_pruning)</span>
+<span class="sd">    </span>
 <span class="sd">    9. Select the best number of SIM Regressors according to the validation performance. (_pruning)</span>
+<span class="sd">    </span>
 <span class="sd">    10. Interpretation: the pruning procedure (validation_performance), global model (visualize), local interpretation (local_visualize and ice_visualize).</span>
 <span class="sd">    </span>
 <span class="sd">    Parameters</span>
@@ -1103,7 +1116,7 @@
 <span class="sd">    n_estimators : int</span>
 <span class="sd">        The maximum number of estimators for boosing</span>
 
-<span class="sd">    stein_method : str, optional. default=&quot;first_order&quot;</span>
+<span class="sd">    prjection_method : str, optional. default=&quot;marginal_regression&quot;</span>
 <span class="sd">        The base method for estimating the projection coefficients in sparse SIM</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;first_order&quot;: First-order Stein&#39;s Identity via sparse PCA solver</span>
@@ -1112,6 +1125,8 @@
 
 <span class="sd">        &quot;first_order_thres&quot;: First-order Stein&#39;s Identity via hard thresholding (A simplified verison)     </span>
 
+<span class="sd">        &quot;marginal_regression&quot;: Marginal regression</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;ols&quot;: Least squares estimation subject to hard thresholding.</span>
 
 <span class="sd">    spline : str, optional. default=&quot;smoothing_spline&quot;</span>
@@ -1125,7 +1140,7 @@
 
 <span class="sd">        &quot;a_spline&quot;: Adaptive B-spline</span>
 
-<span class="sd">    knot_dist : str, optional. default=&quot;uniform&quot;</span>
+<span class="sd">    knot_dist : str, optional. default=&quot;quantile&quot;</span>
 <span class="sd">        Distribution of knots</span>
 <span class="sd">      </span>
 <span class="sd">        &quot;uniform&quot;: uniformly over the domain</span>
@@ -1148,7 +1163,7 @@
 <span class="sd">    degree : int, optional. default=2</span>
 <span class="sd">        The order of the spline, not used for spline=&quot;smoothing_spline&quot;</span>
 <span class="sd">    </span>
-<span class="sd">    knot_num : int, optional. default=20</span>
+<span class="sd">    knot_num : int, optional. default=10</span>
 <span class="sd">        Number of knots</span>
 <span class="sd">    </span>
 <span class="sd">    ortho_shrink : float, optional. default=1</span>
@@ -1158,8 +1173,8 @@
 <span class="sd">        This parameter is used for post-hoc pruning, ranges from 0 to 1, only used when pruning=True</span>
 <span class="sd">        To reduce model complexity, we prefer to use fewer base learners, which is as accurate as (1 - loss_threshold) of the best performance)</span>
 <span class="sd">        </span>
-<span class="sd">    inner_update : bool, optional. default=True</span>
-<span class="sd">        The inner update method for each base learner</span>
+<span class="sd">    inner_update : None or str, optional. default=None</span>
+<span class="sd">        The inner update method for each base learner, can be None, &quot;adam&quot; or &quot;bfgs&quot;</span>
 
 <span class="sd">    meta_info : None or a dict with features&#39; information. default=None</span>
 <span class="sd">        Features are classified as:</span>
@@ -1172,7 +1187,7 @@
 
 <span class="sd">        If None, then all the features will be treated as continuous</span>
 <span class="sd">        </span>
-<span class="sd">    pruning : bool. default=True</span>
+<span class="sd">    pruning : bool. default=False</span>
 <span class="sd">        Whether to perform pruning for the base sim estimators</span>
 
 <span class="sd">    val_ratio : float, optional. default=0.2</span>
@@ -1182,12 +1197,12 @@
 <span class="sd">        Random seed</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_estimators</span><span class="p">,</span> <span class="n">stein_method</span><span class="o">=</span><span class="s2">&quot;first_order&quot;</span><span class="p">,</span> <span class="n">spline</span><span class="o">=</span><span class="s2">&quot;a_spline&quot;</span><span class="p">,</span>
-                 <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">reg_lambda</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="s2">&quot;uniform&quot;</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">knot_num</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">ortho_shrink</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                 <span class="n">loss_threshold</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">val_ratio</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">inner_update</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">meta_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pruning</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_estimators</span><span class="p">,</span> <span class="n">prjection_method</span><span class="o">=</span><span class="s2">&quot;marginal_regression&quot;</span><span class="p">,</span> <span class="n">spline</span><span class="o">=</span><span class="s2">&quot;smoothing_spline&quot;</span><span class="p">,</span>
+                 <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">reg_lambda</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="s2">&quot;quantile&quot;</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">knot_num</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">ortho_shrink</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">loss_threshold</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">val_ratio</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">inner_update</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">meta_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pruning</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">SimBoostClassifier</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">n_estimators</span><span class="o">=</span><span class="n">n_estimators</span><span class="p">,</span>
-                                   <span class="n">stein_method</span><span class="o">=</span><span class="n">stein_method</span><span class="p">,</span>
+                                   <span class="n">prjection_method</span><span class="o">=</span><span class="n">prjection_method</span><span class="p">,</span>
                                    <span class="n">spline</span><span class="o">=</span><span class="n">spline</span><span class="p">,</span>
                                    <span class="n">learning_rate</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">,</span>
                                    <span class="n">reg_lambda</span><span class="o">=</span><span class="n">reg_lambda</span><span class="p">,</span>
@@ -1294,7 +1309,7 @@
                 <span class="n">proj_mat</span> <span class="o">=</span> <span class="kc">None</span>
 
             <span class="c1"># fit Sim estimator</span>
-            <span class="n">param_grid</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">stein_method_list</span><span class="p">,</span> 
+            <span class="n">param_grid</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">prjection_method_list</span><span class="p">,</span> 
                       <span class="s2">&quot;reg_lambda&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg_lambda_list</span><span class="p">,</span>
                       <span class="s2">&quot;reg_gamma&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma_list</span><span class="p">}</span>
             <span class="n">grid</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span><span class="n">SimRegressor</span><span class="p">(</span><span class="n">degree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="n">knot_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_num</span><span class="p">,</span> <span class="n">spline</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spline</span><span class="p">,</span>
@@ -1312,7 +1327,7 @@
 
             <span class="c1"># update</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_update</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">sim_estimator</span><span class="p">[</span><span class="s2">&quot;sim&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">fit_inner_update</span><span class="p">(</span><span class="n">x</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nfeature_index_list_</span><span class="p">],</span> <span class="n">z</span><span class="p">,</span> 
+                <span class="n">sim_estimator</span><span class="p">[</span><span class="s2">&quot;sim&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">fit_inner_update</span><span class="p">(</span><span class="n">x</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nfeature_index_list_</span><span class="p">],</span> <span class="n">z</span><span class="p">,</span>
                         <span class="n">sample_weight</span><span class="o">=</span><span class="n">sample_weight</span><span class="p">,</span> <span class="n">proj_mat</span><span class="o">=</span><span class="n">proj_mat</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">inner_update</span><span class="p">,</span>
                         <span class="n">batch_size</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.2</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">)),</span> <span class="n">val_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">val_ratio</span><span class="p">)</span>
             <span class="n">pred_train</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">learning_rates</span><span class="p">[</span><span class="n">indice</span><span class="p">]</span> <span class="o">*</span> <span class="n">sim_estimator</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tr_idx</span><span class="p">])</span>
@@ -1388,12 +1403,12 @@
 <span class="sd">            containing the input dataset</span>
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        np.array of shape (n_samples,)</span>
+<span class="sd">        np.array of shape (n_samples, 2)</span>
 <span class="sd">            containing probability prediction</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decision_function</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">pred_proba</span> <span class="o">=</span> <span class="n">softmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="o">-</span><span class="n">pred</span><span class="p">,</span> <span class="n">pred</span><span class="p">])</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">pred_proba</span> <span class="o">=</span> <span class="n">softmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="o">-</span><span class="n">pred</span><span class="p">,</span> <span class="n">pred</span><span class="p">])</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">pred_proba</span>
 
     <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
@@ -1410,7 +1425,7 @@
 <span class="sd">            containing binary prediction</span>
 <span class="sd">        &quot;&quot;&quot;</span>  
 
-        <span class="n">pred_proba</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">pred_proba</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">x</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_label_binarizer</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">pred_proba</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 </pre></div>
 

@@ -31,7 +31,7 @@ Sim for Regression
         y = np.sin(np.pi*(np.dot(x, beta))) + 0.1 * np.random.randn(n_samples)
 
         ## fit sim with hyperparameter tunning
-        param_grid = {"method": ["first_order", "second_order", "first_order_thres", "ols"],
+        param_grid = {"method": ["first_order", "second_order", "first_order_thres", "marginal_regression", "ols"],
                       "knot_dist": ["uniform", "quantile"],
                       "reg_lambda": [0.1, 0.2, 0.3, 0.4, 0.5], 
                       "reg_gamma": [0.2, 0.4, 0.6, 0.8, 1.0]}
@@ -85,7 +85,7 @@ Sim for Classification
         y[y > 0] = 1
         
         ## fit sim with hyperparameter tunning
-        param_grid = {"method": ["first_order", "second_order", "first_order_thres", "ols"],
+        param_grid = {"method": ["first_order", "second_order", "first_order_thres", "marginal_regression", "ols"],
                       "knot_dist": ["uniform", "quantile"],
                       "reg_lambda": [0.1, 0.2, 0.3, 0.4, 0.5], 
                       "reg_gamma": [0.2, 0.4, 0.6, 0.8, 1.0]}
@@ -140,9 +140,9 @@ Sim Boosting
                        3 * (np.dot(x, beta2)) ** 2 + 2.5 * np.sin(np.pi * 1.5 * np.dot(x, beta3)), [-1, 1]) + noise
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2, random_state=random_state)
         
-        clf = SimBoostRegressor(n_estimators=50, knot_num=20, knot_dist="uniform", spline="a_spline", learning_rate=0.5,
+        clf = SimBoostRegressor(n_estimators=50, knot_num=10, knot_dist="quantile", spline="smoothing_spline", learning_rate=1,
                         reg_lambda=[0.1, 0.2, 0.3, 0.4, 0.5],
-                        reg_gamma=[0.1, 1, 10], inner_update="adam", meta_info=None, pruning=True)
+                        reg_gamma=[1e-9, 1e-6, 1e-3], inner_update="bfgs", meta_info=None, pruning=False)
         clf.fit(train_x, train_y)
         
         clf.visualize()
