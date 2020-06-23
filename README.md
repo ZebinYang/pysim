@@ -1,4 +1,4 @@
-# Sparse Single-index Model based on Stein's Identity
+# Sparse Single-index Model
 
 **To install**:
     
