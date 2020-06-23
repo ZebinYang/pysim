@@ -59,14 +59,15 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         if isinstance(self.prjection_method, list):
             for val in self.prjection_method:
-                if val not in ["first_order", "second_order", "first_order_thres", "marginal_regression", "ols"]:
+                if val not in ["first_order", "second_order", "first_order_thres", "marginal_regression", "marginal_regression", "ols"]:
                     raise ValueError("method must be an element of [first_order, second_order,\
                                 first_order_thres, marginal_regression, ols], got %s." % 
                                  self.prjection_method)
             self.prjection_method_list = self.prjection_method  
         elif isinstance(self.prjection_method, str):
-            if self.prjection_method not in ["first_order", "second_order", "first_order_thres"]:
-                raise ValueError("method must be an element of [first_order, second_order, first_order_thres, ols], got %s." % 
+            if self.prjection_method not in ["first_order", "second_order", "first_order_thres", "marginal_regression", "ols"]:
+                raise ValueError("method must be an element of [first_order, second_order, first_order_thres,\
+                                 marginal_regression, ols], got %s." % 
                                  self.prjection_method)
             self.prjection_method_list = [self.prjection_method]
 
