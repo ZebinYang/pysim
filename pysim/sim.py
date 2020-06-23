@@ -282,7 +282,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             self.beta_ = self._second_order(x, y, sample_weight, proj_mat)
         elif self.method == "ols":
             self.beta_ = self._ols(x, y, sample_weight, proj_mat)
-        elif self.method = "marginal_regression":
+        elif self.method == "marginal_regression":
             self.beta_ = self._marginal_regression(x, y, sample_weight, proj_mat)
         
         if len(self.beta_[np.abs(self.beta_) > 0]) > 0:
