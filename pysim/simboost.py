@@ -806,7 +806,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
     def _fit(self, x, y, sample_weight=None):
    
-       """fit the SimBoost model
+        """fit the SimBoost model
 
         Parameters
         ---------
