@@ -116,7 +116,9 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("knot_dist must be an element of [uniform, quantile], got %s." % self.knot_dist)
 
         if self.middle_update is None:
-            self.middle_update = {}
+            self.middle_update = {"method":"bfgs",
+                           "max_middle_iter":0,
+                           "max_inner_iter":0}
         else:
             if not isinstance(self.middle_update, dict):
                 raise ValueError("middle_update must be None or a dict containing middle_update %s." % self.middle_update)
@@ -804,7 +806,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
     def _fit(self, x, y, sample_weight=None):
    
-        """fit the SimBoost model
+       """fit the SimBoost model
 
         Parameters
         ---------
@@ -1181,7 +1183,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             # update
             sim_estimator["sim"].fit_middle_update(x[:, self.nfeature_index_list_], z, 
-                    sample_weight=sample_weight, proj_mat=proj_mat, val_ratio=self.val_ratio, **self.middle_update)
+            sample_weight=sample_weight, proj_mat=proj_mat, val_ratio=self.val_ratio, **self.middle_update)
             pred_train += self.learning_rates[indice] * sim_estimator.predict(x[self.tr_idx])
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
             pred_val += self.learning_rates[indice] * sim_estimator.predict(x[self.val_idx])
