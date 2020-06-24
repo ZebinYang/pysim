@@ -505,7 +505,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             else:
                 no_inner_iter_change = 0
             if val_loss < val_loss_inner_iter_best:
-                self = self_copy
+                self.beta_ = self_copy.beta_
+                self.shape_fit_ = self_copy.shape_fit_
                 val_loss_inner_iter_best = val_loss
             if no_inner_iter_change >= n_inner_iter_no_change:
                 break
@@ -618,13 +619,12 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             else:
                 no_inner_iter_change = 0
             if val_loss < val_loss_inner_iter_best:
-                self = self_copy
+                self.beta_ = self_copy.beta_
+                self.shape_fit_ = self_copy.shape_fit_
                 val_loss_inner_iter_best = val_loss
             if no_inner_iter_change >= n_inner_iter_no_change:
                 break
                 
-        self = deepcopy(self_copy)
-
     def decision_function(self, x):
 
         """output f(beta^T x) for given samples
