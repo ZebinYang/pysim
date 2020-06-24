@@ -1647,7 +1647,7 @@ component of a nested object.</p>
 <span id="pysim-sim"></span><h1>pysim.sim<a class="headerlink" href="#module-pysim.sim" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="pysim.sim.SimRegressor">
-<em class="property">class </em><code class="sig-prename descclassname">pysim.sim.</code><code class="sig-name descname">SimRegressor</code><span class="sig-paren">(</span><em class="sig-param">method='first_order'</em>, <em class="sig-param">spline='smoothing_spline'</em>, <em class="sig-param">reg_lambda=0.1</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">knot_num=10</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">degree=2</em>, <em class="sig-param">random_state=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/sim.html#SimRegressor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysim.sim.SimRegressor" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">pysim.sim.</code><code class="sig-name descname">SimRegressor</code><span class="sig-paren">(</span><em class="sig-param">method='first_order'</em>, <em class="sig-param">spline='smoothing_spline'</em>, <em class="sig-param">reg_lambda=0.1</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">knot_num=10</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">degree=3</em>, <em class="sig-param">random_state=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/sim.html#SimRegressor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysim.sim.SimRegressor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sim regression.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1656,7 +1656,7 @@ component of a nested object.</p>
 <p>”first_order”: First-order Stein’s Identity via sparse PCA solver</p>
 <p>”second_order”: Second-order Stein’s Identity via sparse PCA solver</p>
 <p>”first_order_thres”: First-order Stein’s Identity via hard thresholding (A simplified verison)</p>
-<p>”marginal_regression”: Marginal regression</p>
+<p>”marginal_regression”: Marginal regression subject to hard thresholding</p>
 <p>”ols”: Least squares estimation subject to hard thresholding</p>
 </p></li>
 <li><p><strong>spline</strong> (<em>str</em><em>, </em><em>optional. default=&quot;smoothing_spline&quot;</em>) – <p>The type of spline for fitting the curve</p>
@@ -1671,10 +1671,10 @@ component of a nested object.</p>
 </p></li>
 <li><p><strong>reg_lambda</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – Sparsity strength of projection indice, ranges from 0 to 1</p></li>
 <li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – <p>Roughness penalty strength of the spline algorithm</p>
-<p>For spline=”smoothing_spline”, it ranges from 0 to 1</p>
+<p>For spline=”smoothing_spline”, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to “GCV”.</p>
 <p>For spline=”p_spline”,”mono_p_spline” or “a_spline”, it ranges from 0 to <span class="math notranslate nohighlight">\(+\infty\)</span></p>
 </p></li>
-<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=2</em>) – The order of the spline, not used for spline=”smoothing_spline”</p></li>
+<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=3</em>) – The order of the spline. For spline=”smoothing_spline”, possible values include 1 and 3.</p></li>
 <li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=10</em>) – Number of knots</p></li>
 <li><p><strong>random_state</strong> (<em>int</em><em>, </em><em>optional. default=0</em>) – Random seed</p></li>
 </ul>
@@ -1887,9 +1887,9 @@ component of a nested object.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysim.sim.SimRegressor.fit_inner_update">
-<code class="sig-name descname">fit_inner_update</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">method='adam'</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_inner_iter=3</em>, <em class="sig-param">n_inner_iter_no_change=3</em>, <em class="sig-param">max_epoches=100</em>, <em class="sig-param">n_epoch_no_change=5</em>, <em class="sig-param">batch_size=100</em>, <em class="sig-param">learning_rate=0.0001</em>, <em class="sig-param">beta_1=0.9</em>, <em class="sig-param">beta_2=0.999</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimRegressor.fit_inner_update" title="Permalink to this definition">¶</a></dt>
-<dd><p>fine tune the fitted Sim model using inner update method</p>
+<dt id="pysim.sim.SimRegressor.fit_middle_update">
+<code class="sig-name descname">fit_middle_update</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">method='adam'</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_middle_iter=3</em>, <em class="sig-param">n_middle_iter_no_change=3</em>, <em class="sig-param">max_inner_iter=100</em>, <em class="sig-param">n_inner_iter_no_change=5</em>, <em class="sig-param">batch_size=100</em>, <em class="sig-param">learning_rate=0.001</em>, <em class="sig-param">beta_1=0.9</em>, <em class="sig-param">beta_2=0.999</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimRegressor.fit_middle_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>fine tune the fitted Sim model using middle update method</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1900,12 +1900,12 @@ component of a nested object.</p>
 <li><p><strong>method</strong> (<em>std</em><em>, </em><em>optional</em><em>, </em><em>default=&quot;adam&quot;</em>) – the inner update method, including “adam” and “bfgs”</p></li>
 <li><p><strong>val_ratio</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.2</em>) – the split ratio for validation set</p></li>
 <li><p><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.0001</em>) – the tolerance for early stopping</p></li>
-<li><p><strong>max_inner_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the maximal number of inner update iteration</p></li>
-<li><p><strong>n_inner_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the tolerance of non-improving inner iterations</p></li>
-<li><p><strong>max_epoches</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the maximal number of epoches for “adam” optimizer</p></li>
-<li><p><strong>n_epoch_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=5</em>) – the tolerance of non-improving epoches for adam optimizer</p></li>
+<li><p><strong>max_middle_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the maximal number of middle iteration</p></li>
+<li><p><strong>n_middle_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the tolerance of non-improving middle iterations</p></li>
+<li><p><strong>max_inner_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the maximal number of inner iteration for “adam” optimizer</p></li>
+<li><p><strong>n_inner_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=5</em>) – the tolerance of non-improving inner iteration for adam optimizer</p></li>
 <li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the batch_size for adam optimizer</p></li>
-<li><p><strong>learning_rate</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=1e-4</em>) – the learning rate for adam optimizer</p></li>
+<li><p><strong>learning_rate</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=1e-3</em>) – the learning rate for adam optimizer</p></li>
 <li><p><strong>beta_1</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.9</em>) – the beta_1 parameter for adam optimizer</p></li>
 <li><p><strong>beta_2</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.999</em>) – the beta_1 parameter for adam optimizer</p></li>
 <li><p><strong>stratify</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default=True</em>) – whether to stratify the target variable when splitting the validation set</p></li>
@@ -1916,9 +1916,9 @@ component of a nested object.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysim.sim.SimRegressor.fit_inner_update_adam">
-<code class="sig-name descname">fit_inner_update_adam</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_inner_iter=3</em>, <em class="sig-param">n_inner_iter_no_change=3</em>, <em class="sig-param">max_epoches=100</em>, <em class="sig-param">n_epoch_no_change=5</em>, <em class="sig-param">batch_size=100</em>, <em class="sig-param">learning_rate=0.0001</em>, <em class="sig-param">beta_1=0.9</em>, <em class="sig-param">beta_2=0.999</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimRegressor.fit_inner_update_adam" title="Permalink to this definition">¶</a></dt>
-<dd><p>fine tune the fitted Sim model using inner update method (adam)</p>
+<dt id="pysim.sim.SimRegressor.fit_middle_update_adam">
+<code class="sig-name descname">fit_middle_update_adam</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_middle_iter=3</em>, <em class="sig-param">n_middle_iter_no_change=3</em>, <em class="sig-param">max_inner_iter=100</em>, <em class="sig-param">n_inner_iter_no_change=5</em>, <em class="sig-param">batch_size=100</em>, <em class="sig-param">learning_rate=0.001</em>, <em class="sig-param">beta_1=0.9</em>, <em class="sig-param">beta_2=0.999</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimRegressor.fit_middle_update_adam" title="Permalink to this definition">¶</a></dt>
+<dd><p>fine tune the fitted Sim model using middle update method (adam)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1928,10 +1928,10 @@ component of a nested object.</p>
 <li><p><strong>proj_mat</strong> (<em>array-like of shape</em><em> (</em><em>n_features</em><em>, </em><em>n_features</em><em>)</em><em>, </em><em>optional</em>) – to project the projection indice for enhancing orthogonality</p></li>
 <li><p><strong>val_ratio</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.2</em>) – the split ratio for validation set</p></li>
 <li><p><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.0001</em>) – the tolerance for early stopping</p></li>
-<li><p><strong>max_inner_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the maximal number of inner update iteration</p></li>
-<li><p><strong>n_inner_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the tolerance of non-improving inner iterations</p></li>
-<li><p><strong>max_epoches</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the maximal number of epoches for “adam” optimizer</p></li>
-<li><p><strong>n_epoch_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=5</em>) – the tolerance of non-improving epoches for adam optimizer</p></li>
+<li><p><strong>max_middle_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the maximal number of middle iteration</p></li>
+<li><p><strong>n_middle_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the tolerance of non-improving middle iterations</p></li>
+<li><p><strong>max_inner_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the maximal number of inner iteration (epoch) for “adam” optimizer</p></li>
+<li><p><strong>n_inner_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=5</em>) – the tolerance of non-improving inner iteration for adam optimizer</p></li>
 <li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the batch_size for adam optimizer</p></li>
 <li><p><strong>learning_rate</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=1e-4</em>) – the learning rate for adam optimizer</p></li>
 <li><p><strong>beta_1</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.9</em>) – the beta_1 parameter for adam optimizer</p></li>
@@ -1944,8 +1944,8 @@ component of a nested object.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysim.sim.SimRegressor.fit_inner_update_bfgs">
-<code class="sig-name descname">fit_inner_update_bfgs</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_inner_iter=3</em>, <em class="sig-param">n_inner_iter_no_change=3</em>, <em class="sig-param">max_epoches=100</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimRegressor.fit_inner_update_bfgs" title="Permalink to this definition">¶</a></dt>
+<dt id="pysim.sim.SimRegressor.fit_middle_update_bfgs">
+<code class="sig-name descname">fit_middle_update_bfgs</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_middle_iter=3</em>, <em class="sig-param">n_middle_iter_no_change=3</em>, <em class="sig-param">max_inner_iter=100</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimRegressor.fit_middle_update_bfgs" title="Permalink to this definition">¶</a></dt>
 <dd><p>fine tune the fitted Sim model using inner update method (bfgs)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1956,9 +1956,9 @@ component of a nested object.</p>
 <li><p><strong>proj_mat</strong> (<em>array-like of shape</em><em> (</em><em>n_features</em><em>, </em><em>n_features</em><em>)</em><em>, </em><em>optional</em>) – to project the projection indice for enhancing orthogonality</p></li>
 <li><p><strong>val_ratio</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.2</em>) – the split ratio for validation set</p></li>
 <li><p><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.0001</em>) – the tolerance for early stopping</p></li>
-<li><p><strong>max_inner_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the maximal number of inner update iteration</p></li>
-<li><p><strong>n_inner_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the tolerance of non-improving inner iterations</p></li>
-<li><p><strong>max_epoches</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the maximal number of epoches for “bfgs” optimizer</p></li>
+<li><p><strong>max_middle_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the maximal number of middle iteration</p></li>
+<li><p><strong>n_middle_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the tolerance of non-improving middle iterations</p></li>
+<li><p><strong>max_inner_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the maximal number of inner iteration for “adam” optimizer</p></li>
 <li><p><strong>stratify</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default=True</em>) – whether to stratify the target variable when splitting the validation set</p></li>
 <li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – whether to show the training history</p></li>
 </ul>
@@ -2074,7 +2074,7 @@ component of a nested object.</p>
 
 <dl class="class">
 <dt>
-<em class="property">class </em><code class="sig-prename descclassname">pysim.sim.</code><code class="sig-name descname">SimRegressor</code><span class="sig-paren">(</span><em class="sig-param">method='first_order'</em>, <em class="sig-param">spline='smoothing_spline'</em>, <em class="sig-param">reg_lambda=0.1</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">knot_num=10</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">degree=2</em>, <em class="sig-param">random_state=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/sim.html#SimRegressor"><span class="viewcode-link">[source]</span></a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">pysim.sim.</code><code class="sig-name descname">SimRegressor</code><span class="sig-paren">(</span><em class="sig-param">method='first_order'</em>, <em class="sig-param">spline='smoothing_spline'</em>, <em class="sig-param">reg_lambda=0.1</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">knot_num=10</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">degree=3</em>, <em class="sig-param">random_state=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/sim.html#SimRegressor"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Sim regression.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2083,7 +2083,7 @@ component of a nested object.</p>
 <p>”first_order”: First-order Stein’s Identity via sparse PCA solver</p>
 <p>”second_order”: Second-order Stein’s Identity via sparse PCA solver</p>
 <p>”first_order_thres”: First-order Stein’s Identity via hard thresholding (A simplified verison)</p>
-<p>”marginal_regression”: Marginal regression</p>
+<p>”marginal_regression”: Marginal regression subject to hard thresholding</p>
 <p>”ols”: Least squares estimation subject to hard thresholding</p>
 </p></li>
 <li><p><strong>spline</strong> (<em>str</em><em>, </em><em>optional. default=&quot;smoothing_spline&quot;</em>) – <p>The type of spline for fitting the curve</p>
@@ -2098,10 +2098,10 @@ component of a nested object.</p>
 </p></li>
 <li><p><strong>reg_lambda</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – Sparsity strength of projection indice, ranges from 0 to 1</p></li>
 <li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – <p>Roughness penalty strength of the spline algorithm</p>
-<p>For spline=”smoothing_spline”, it ranges from 0 to 1</p>
+<p>For spline=”smoothing_spline”, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to “GCV”.</p>
 <p>For spline=”p_spline”,”mono_p_spline” or “a_spline”, it ranges from 0 to <span class="math notranslate nohighlight">\(+\infty\)</span></p>
 </p></li>
-<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=2</em>) – The order of the spline, not used for spline=”smoothing_spline”</p></li>
+<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=3</em>) – The order of the spline. For spline=”smoothing_spline”, possible values include 1 and 3.</p></li>
 <li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=10</em>) – Number of knots</p></li>
 <li><p><strong>random_state</strong> (<em>int</em><em>, </em><em>optional. default=0</em>) – Random seed</p></li>
 </ul>
@@ -2315,8 +2315,8 @@ component of a nested object.</p>
 
 <dl class="method">
 <dt>
-<code class="sig-name descname">fit_inner_update</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">method='adam'</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_inner_iter=3</em>, <em class="sig-param">n_inner_iter_no_change=3</em>, <em class="sig-param">max_epoches=100</em>, <em class="sig-param">n_epoch_no_change=5</em>, <em class="sig-param">batch_size=100</em>, <em class="sig-param">learning_rate=0.0001</em>, <em class="sig-param">beta_1=0.9</em>, <em class="sig-param">beta_2=0.999</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span></dt>
-<dd><p>fine tune the fitted Sim model using inner update method</p>
+<code class="sig-name descname">fit_middle_update</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">method='adam'</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_middle_iter=3</em>, <em class="sig-param">n_middle_iter_no_change=3</em>, <em class="sig-param">max_inner_iter=100</em>, <em class="sig-param">n_inner_iter_no_change=5</em>, <em class="sig-param">batch_size=100</em>, <em class="sig-param">learning_rate=0.001</em>, <em class="sig-param">beta_1=0.9</em>, <em class="sig-param">beta_2=0.999</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span></dt>
+<dd><p>fine tune the fitted Sim model using middle update method</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -2327,12 +2327,12 @@ component of a nested object.</p>
 <li><p><strong>method</strong> (<em>std</em><em>, </em><em>optional</em><em>, </em><em>default=&quot;adam&quot;</em>) – the inner update method, including “adam” and “bfgs”</p></li>
 <li><p><strong>val_ratio</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.2</em>) – the split ratio for validation set</p></li>
 <li><p><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.0001</em>) – the tolerance for early stopping</p></li>
-<li><p><strong>max_inner_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the maximal number of inner update iteration</p></li>
-<li><p><strong>n_inner_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the tolerance of non-improving inner iterations</p></li>
-<li><p><strong>max_epoches</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the maximal number of epoches for “adam” optimizer</p></li>
-<li><p><strong>n_epoch_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=5</em>) – the tolerance of non-improving epoches for adam optimizer</p></li>
+<li><p><strong>max_middle_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the maximal number of middle iteration</p></li>
+<li><p><strong>n_middle_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the tolerance of non-improving middle iterations</p></li>
+<li><p><strong>max_inner_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the maximal number of inner iteration for “adam” optimizer</p></li>
+<li><p><strong>n_inner_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=5</em>) – the tolerance of non-improving inner iteration for adam optimizer</p></li>
 <li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the batch_size for adam optimizer</p></li>
-<li><p><strong>learning_rate</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=1e-4</em>) – the learning rate for adam optimizer</p></li>
+<li><p><strong>learning_rate</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=1e-3</em>) – the learning rate for adam optimizer</p></li>
 <li><p><strong>beta_1</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.9</em>) – the beta_1 parameter for adam optimizer</p></li>
 <li><p><strong>beta_2</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.999</em>) – the beta_1 parameter for adam optimizer</p></li>
 <li><p><strong>stratify</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default=True</em>) – whether to stratify the target variable when splitting the validation set</p></li>
@@ -2344,8 +2344,8 @@ component of a nested object.</p>
 
 <dl class="method">
 <dt>
-<code class="sig-name descname">fit_inner_update_adam</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_inner_iter=3</em>, <em class="sig-param">n_inner_iter_no_change=3</em>, <em class="sig-param">max_epoches=100</em>, <em class="sig-param">n_epoch_no_change=5</em>, <em class="sig-param">batch_size=100</em>, <em class="sig-param">learning_rate=0.0001</em>, <em class="sig-param">beta_1=0.9</em>, <em class="sig-param">beta_2=0.999</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span></dt>
-<dd><p>fine tune the fitted Sim model using inner update method (adam)</p>
+<code class="sig-name descname">fit_middle_update_adam</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_middle_iter=3</em>, <em class="sig-param">n_middle_iter_no_change=3</em>, <em class="sig-param">max_inner_iter=100</em>, <em class="sig-param">n_inner_iter_no_change=5</em>, <em class="sig-param">batch_size=100</em>, <em class="sig-param">learning_rate=0.001</em>, <em class="sig-param">beta_1=0.9</em>, <em class="sig-param">beta_2=0.999</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span></dt>
+<dd><p>fine tune the fitted Sim model using middle update method (adam)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -2355,10 +2355,10 @@ component of a nested object.</p>
 <li><p><strong>proj_mat</strong> (<em>array-like of shape</em><em> (</em><em>n_features</em><em>, </em><em>n_features</em><em>)</em><em>, </em><em>optional</em>) – to project the projection indice for enhancing orthogonality</p></li>
 <li><p><strong>val_ratio</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.2</em>) – the split ratio for validation set</p></li>
 <li><p><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.0001</em>) – the tolerance for early stopping</p></li>
-<li><p><strong>max_inner_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the maximal number of inner update iteration</p></li>
-<li><p><strong>n_inner_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the tolerance of non-improving inner iterations</p></li>
-<li><p><strong>max_epoches</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the maximal number of epoches for “adam” optimizer</p></li>
-<li><p><strong>n_epoch_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=5</em>) – the tolerance of non-improving epoches for adam optimizer</p></li>
+<li><p><strong>max_middle_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the maximal number of middle iteration</p></li>
+<li><p><strong>n_middle_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the tolerance of non-improving middle iterations</p></li>
+<li><p><strong>max_inner_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the maximal number of inner iteration (epoch) for “adam” optimizer</p></li>
+<li><p><strong>n_inner_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=5</em>) – the tolerance of non-improving inner iteration for adam optimizer</p></li>
 <li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the batch_size for adam optimizer</p></li>
 <li><p><strong>learning_rate</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=1e-4</em>) – the learning rate for adam optimizer</p></li>
 <li><p><strong>beta_1</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.9</em>) – the beta_1 parameter for adam optimizer</p></li>
@@ -2372,7 +2372,7 @@ component of a nested object.</p>
 
 <dl class="method">
 <dt>
-<code class="sig-name descname">fit_inner_update_bfgs</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_inner_iter=3</em>, <em class="sig-param">n_inner_iter_no_change=3</em>, <em class="sig-param">max_epoches=100</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span></dt>
+<code class="sig-name descname">fit_middle_update_bfgs</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_middle_iter=3</em>, <em class="sig-param">n_middle_iter_no_change=3</em>, <em class="sig-param">max_inner_iter=100</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span></dt>
 <dd><p>fine tune the fitted Sim model using inner update method (bfgs)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2383,9 +2383,9 @@ component of a nested object.</p>
 <li><p><strong>proj_mat</strong> (<em>array-like of shape</em><em> (</em><em>n_features</em><em>, </em><em>n_features</em><em>)</em><em>, </em><em>optional</em>) – to project the projection indice for enhancing orthogonality</p></li>
 <li><p><strong>val_ratio</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.2</em>) – the split ratio for validation set</p></li>
 <li><p><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default=0.0001</em>) – the tolerance for early stopping</p></li>
-<li><p><strong>max_inner_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the maximal number of inner update iteration</p></li>
-<li><p><strong>n_inner_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the tolerance of non-improving inner iterations</p></li>
-<li><p><strong>max_epoches</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the maximal number of epoches for “bfgs” optimizer</p></li>
+<li><p><strong>max_middle_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the maximal number of middle iteration</p></li>
+<li><p><strong>n_middle_iter_no_change</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=3</em>) – the tolerance of non-improving middle iterations</p></li>
+<li><p><strong>max_inner_iter</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default=100</em>) – the maximal number of inner iteration for “adam” optimizer</p></li>
 <li><p><strong>stratify</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default=True</em>) – whether to stratify the target variable when splitting the validation set</p></li>
 <li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – whether to show the training history</p></li>
 </ul>
@@ -2504,7 +2504,7 @@ component of a nested object.</p>
 <span id="pysim-simboost"></span><h1>pysim.simboost<a class="headerlink" href="#module-pysim.simboost" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="pysim.simboost.SimBoostRegressor">
-<em class="property">class </em><code class="sig-prename descclassname">pysim.simboost.</code><code class="sig-name descname">SimBoostRegressor</code><span class="sig-paren">(</span><em class="sig-param">n_estimators</em>, <em class="sig-param">prjection_method='marginal_regression'</em>, <em class="sig-param">spline='smoothing_spline'</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">learning_rate=1.0</em>, <em class="sig-param">reg_lambda=0.1</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">degree=2</em>, <em class="sig-param">knot_num=10</em>, <em class="sig-param">ortho_shrink=1</em>, <em class="sig-param">loss_threshold=0.01</em>, <em class="sig-param">inner_update=None</em>, <em class="sig-param">meta_info=None</em>, <em class="sig-param">pruning=False</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">random_state=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/simboost.html#SimBoostRegressor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysim.simboost.SimBoostRegressor" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">pysim.simboost.</code><code class="sig-name descname">SimBoostRegressor</code><span class="sig-paren">(</span><em class="sig-param">n_estimators</em>, <em class="sig-param">prjection_method='marginal_regression'</em>, <em class="sig-param">spline='smoothing_spline'</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">learning_rate=1.0</em>, <em class="sig-param">reg_lambda=0.1</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">degree=3</em>, <em class="sig-param">knot_num=10</em>, <em class="sig-param">ortho_shrink=1</em>, <em class="sig-param">loss_threshold=0.01</em>, <em class="sig-param">meta_info=None</em>, <em class="sig-param">pruning=False</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">middle_update=None</em>, <em class="sig-param">random_state=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/simboost.html#SimBoostRegressor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysim.simboost.SimBoostRegressor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base class for sim boost regression (residual boosting).</p>
 <p>Training Steps:</p>
 <ol class="arabic simple">
@@ -2527,7 +2527,7 @@ component of a nested object.</p>
 <p>”first_order”: First-order Stein’s Identity via sparse PCA solver</p>
 <p>”second_order”: Second-order Stein’s Identity via sparse PCA solver</p>
 <p>”first_order_thres”: First-order Stein’s Identity via hard thresholding (A simplified verison)</p>
-<p>”marginal_regression”: Marginal regression</p>
+<p>”marginal_regression”: Marginal regression subject to hard thresholding</p>
 <p>”ols”: Least squares estimation subject to hard thresholding.</p>
 </p></li>
 <li><p><strong>spline</strong> (<em>str</em><em>, </em><em>optional. default=&quot;smoothing_spline&quot;</em>) – <p>The type of spline for fitting the curve</p>
@@ -2542,11 +2542,11 @@ component of a nested object.</p>
 </p></li>
 <li><p><strong>learning_rate</strong> (<em>float</em><em>, </em><em>optional. default=1.0</em>) – The learning rate controling the shrinkage when performing boosting, ranges from 0 to 1</p></li>
 <li><p><strong>reg_lambda</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – The sparsity strength of projection inidce, ranges from 0 to 1</p></li>
-<li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – <p>The roughness penalty strength of the spline algorithm</p>
-<p>For spline=”smoothing_spline”, it ranges from 0 to 1</p>
+<li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – <p>Roughness penalty strength of the spline algorithm</p>
+<p>For spline=”smoothing_spline”, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to “GCV”.</p>
 <p>For spline=”p_spline”,”mono_p_spline” or “a_spline”, it ranges from 0 to <span class="math notranslate nohighlight">\(+\infty\)</span></p>
 </p></li>
-<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=2</em>) – The order of the spline, not used for spline=”smoothing_spline”</p></li>
+<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=3</em>) – The order of the spline, not used for spline=”smoothing_spline”</p></li>
 <li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=10</em>) – Number of knots</p></li>
 <li><p><strong>ortho_shrink</strong> (<em>float</em><em>, </em><em>optional. default=1</em>) – Shrinkage strength for orthogonal enhancement, ranges from 0 to 1, valid when learning_rage=1.0</p></li>
 <li><p><strong>loss_threshold</strong> (<em>float</em><em>, </em><em>optional. default=0.01</em>) – This parameter is used for post-hoc pruning, ranges from 0 to 1, only used when pruning=True
@@ -2900,7 +2900,7 @@ component of a nested object.</p>
 
 <dl class="class">
 <dt>
-<em class="property">class </em><code class="sig-prename descclassname">pysim.simboost.</code><code class="sig-name descname">SimBoostRegressor</code><span class="sig-paren">(</span><em class="sig-param">n_estimators</em>, <em class="sig-param">prjection_method='marginal_regression'</em>, <em class="sig-param">spline='smoothing_spline'</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">learning_rate=1.0</em>, <em class="sig-param">reg_lambda=0.1</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">degree=2</em>, <em class="sig-param">knot_num=10</em>, <em class="sig-param">ortho_shrink=1</em>, <em class="sig-param">loss_threshold=0.01</em>, <em class="sig-param">inner_update=None</em>, <em class="sig-param">meta_info=None</em>, <em class="sig-param">pruning=False</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">random_state=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/simboost.html#SimBoostRegressor"><span class="viewcode-link">[source]</span></a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">pysim.simboost.</code><code class="sig-name descname">SimBoostRegressor</code><span class="sig-paren">(</span><em class="sig-param">n_estimators</em>, <em class="sig-param">prjection_method='marginal_regression'</em>, <em class="sig-param">spline='smoothing_spline'</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">learning_rate=1.0</em>, <em class="sig-param">reg_lambda=0.1</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">degree=3</em>, <em class="sig-param">knot_num=10</em>, <em class="sig-param">ortho_shrink=1</em>, <em class="sig-param">loss_threshold=0.01</em>, <em class="sig-param">meta_info=None</em>, <em class="sig-param">pruning=False</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">middle_update=None</em>, <em class="sig-param">random_state=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/simboost.html#SimBoostRegressor"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Base class for sim boost regression (residual boosting).</p>
 <p>Training Steps:</p>
 <ol class="arabic simple">
@@ -2923,7 +2923,7 @@ component of a nested object.</p>
 <p>”first_order”: First-order Stein’s Identity via sparse PCA solver</p>
 <p>”second_order”: Second-order Stein’s Identity via sparse PCA solver</p>
 <p>”first_order_thres”: First-order Stein’s Identity via hard thresholding (A simplified verison)</p>
-<p>”marginal_regression”: Marginal regression</p>
+<p>”marginal_regression”: Marginal regression subject to hard thresholding</p>
 <p>”ols”: Least squares estimation subject to hard thresholding.</p>
 </p></li>
 <li><p><strong>spline</strong> (<em>str</em><em>, </em><em>optional. default=&quot;smoothing_spline&quot;</em>) – <p>The type of spline for fitting the curve</p>
@@ -2938,11 +2938,11 @@ component of a nested object.</p>
 </p></li>
 <li><p><strong>learning_rate</strong> (<em>float</em><em>, </em><em>optional. default=1.0</em>) – The learning rate controling the shrinkage when performing boosting, ranges from 0 to 1</p></li>
 <li><p><strong>reg_lambda</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – The sparsity strength of projection inidce, ranges from 0 to 1</p></li>
-<li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – <p>The roughness penalty strength of the spline algorithm</p>
-<p>For spline=”smoothing_spline”, it ranges from 0 to 1</p>
+<li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – <p>Roughness penalty strength of the spline algorithm</p>
+<p>For spline=”smoothing_spline”, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to “GCV”.</p>
 <p>For spline=”p_spline”,”mono_p_spline” or “a_spline”, it ranges from 0 to <span class="math notranslate nohighlight">\(+\infty\)</span></p>
 </p></li>
-<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=2</em>) – The order of the spline, not used for spline=”smoothing_spline”</p></li>
+<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=3</em>) – The order of the spline, not used for spline=”smoothing_spline”</p></li>
 <li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=10</em>) – Number of knots</p></li>
 <li><p><strong>ortho_shrink</strong> (<em>float</em><em>, </em><em>optional. default=1</em>) – Shrinkage strength for orthogonal enhancement, ranges from 0 to 1, valid when learning_rage=1.0</p></li>
 <li><p><strong>loss_threshold</strong> (<em>float</em><em>, </em><em>optional. default=0.01</em>) – This parameter is used for post-hoc pruning, ranges from 0 to 1, only used when pruning=True

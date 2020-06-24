@@ -268,7 +268,7 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
             sample_weight = np.round(sample_weight / np.sum(sample_weight) * n_samples, 4)
         
         # The minimal value of sample weight in bigsplines is 0.005.
-        sample_weight[sample_weight < 0.005] = 0.005
+        sample_weight[sample_weight <= 0.005] = 0.0051
         if self.knot_dist == "uniform":
             knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32))[1:-1]
             knot_idx = [(np.abs(x - i)).argmin() + 1 for i in knots]
@@ -424,7 +424,7 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
             sample_weight = np.round(sample_weight / np.sum(sample_weight) * n_samples, 4)
         
         # The minimal value of sample weight in bigsplines is 0.005.
-        sample_weight[sample_weight < 0.005] = 0.005
+        sample_weight[sample_weight <= 0.005] = 0.0051
         if self.knot_dist == "uniform":
             knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32))[1:-1]
             knot_idx = [(np.abs(x - i)).argmin() + 1 for i in knots]

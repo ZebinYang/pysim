@@ -193,7 +193,7 @@
 
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;first_order&quot;</span><span class="p">,</span> <span class="n">spline</span><span class="o">=</span><span class="s2">&quot;smoothing_spline&quot;</span><span class="p">,</span> <span class="n">reg_lambda</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
-                 <span class="n">knot_num</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="s2">&quot;quantile&quot;</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+                 <span class="n">knot_num</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="s2">&quot;quantile&quot;</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="o">=</span> <span class="n">spline</span>
@@ -231,10 +231,9 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;spline must be an element of [a_spline, smoothing_spline, p_spline, mono_p_spline], got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> 
                          <span class="bp">self</span><span class="o">.</span><span class="n">spline</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_lambda</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_lambda</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;reg_lambda must be &gt;= 0 and &lt;=1, got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg_lambda</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;reg_gamma must be &gt;= 0, got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_lambda</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_lambda</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;reg_lambda must be &gt;= 0 and &lt;=1, got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg_lambda</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_validate_sample_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">):</span>
         
@@ -441,10 +440,10 @@
         <span class="k">return</span> <span class="bp">self</span>
     
     
-    <span class="k">def</span> <span class="nf">fit_inner_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">proj_mat</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">,</span> <span class="n">val_ratio</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span>
-                      <span class="n">max_inner_iter</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">n_inner_iter_no_change</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">max_epoches</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-                      <span class="n">n_epoch_no_change</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span> <span class="n">beta_1</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">beta_2</span><span class="o">=</span><span class="mf">0.999</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;fine tune the fitted Sim model using inner update method</span>
+    <span class="k">def</span> <span class="nf">fit_middle_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">proj_mat</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">,</span> <span class="n">val_ratio</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span>
+                  <span class="n">max_middle_iter</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">n_middle_iter_no_change</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">max_inner_iter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">n_inner_iter_no_change</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                  <span class="n">batch_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">beta_1</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">beta_2</span><span class="o">=</span><span class="mf">0.999</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;fine tune the fitted Sim model using middle update method</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ---------</span>
@@ -462,17 +461,17 @@
 <span class="sd">            the split ratio for validation set</span>
 <span class="sd">        tol : float, optional, default=0.0001</span>
 <span class="sd">            the tolerance for early stopping</span>
-<span class="sd">        max_inner_iter : int, optional, default=3</span>
-<span class="sd">            the maximal number of inner update iteration</span>
-<span class="sd">        n_inner_iter_no_change : int, optional, default=3</span>
-<span class="sd">            the tolerance of non-improving inner iterations</span>
-<span class="sd">        max_epoches : int, optional, default=100</span>
-<span class="sd">            the maximal number of epoches for &quot;adam&quot; optimizer</span>
-<span class="sd">        n_epoch_no_change : int, optional, default=5</span>
-<span class="sd">            the tolerance of non-improving epoches for adam optimizer</span>
+<span class="sd">        max_middle_iter : int, optional, default=3</span>
+<span class="sd">            the maximal number of middle iteration</span>
+<span class="sd">        n_middle_iter_no_change : int, optional, default=3</span>
+<span class="sd">            the tolerance of non-improving middle iterations</span>
+<span class="sd">        max_inner_iter : int, optional, default=100</span>
+<span class="sd">            the maximal number of inner iteration for &quot;adam&quot; optimizer</span>
+<span class="sd">        n_inner_iter_no_change : int, optional, default=5</span>
+<span class="sd">            the tolerance of non-improving inner iteration for adam optimizer</span>
 <span class="sd">        batch_size : int, optional, default=100</span>
 <span class="sd">            the batch_size for adam optimizer</span>
-<span class="sd">        learning_rate : float, optional, default=1e-4</span>
+<span class="sd">        learning_rate : float, optional, default=1e-3</span>
 <span class="sd">            the learning rate for adam optimizer</span>
 <span class="sd">        beta_1 : float, optional, default=0.9</span>
 <span class="sd">            the beta_1 parameter for adam optimizer</span>
@@ -485,18 +484,18 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;adam&quot;</span><span class="p">:</span>                
-            <span class="bp">self</span><span class="o">.</span><span class="n">fit_inner_update_adam</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">,</span> <span class="n">proj_mat</span><span class="p">,</span> <span class="n">val_ratio</span><span class="p">,</span> <span class="n">tol</span><span class="p">,</span>
-                      <span class="n">max_inner_iter</span><span class="p">,</span> <span class="n">n_inner_iter_no_change</span><span class="p">,</span> <span class="n">max_epoches</span><span class="p">,</span>
-                      <span class="n">n_epoch_no_change</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">beta_1</span><span class="p">,</span> <span class="n">beta_2</span><span class="p">,</span> <span class="n">stratify</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_middle_update_adam</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">,</span> <span class="n">proj_mat</span><span class="p">,</span> <span class="n">val_ratio</span><span class="p">,</span> <span class="n">tol</span><span class="p">,</span>
+                      <span class="n">max_middle_iter</span><span class="p">,</span> <span class="n">n_middle_iter_no_change</span><span class="p">,</span> <span class="n">max_inner_iter</span><span class="p">,</span>
+                      <span class="n">n_inner_iter_no_change</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">beta_1</span><span class="p">,</span> <span class="n">beta_2</span><span class="p">,</span> <span class="n">stratify</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;bfgs&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">fit_inner_update_bfgs</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">,</span> <span class="n">proj_mat</span><span class="p">,</span> <span class="n">val_ratio</span><span class="p">,</span> <span class="n">tol</span><span class="p">,</span> 
-                      <span class="n">max_inner_iter</span><span class="p">,</span> <span class="n">n_inner_iter_no_change</span><span class="p">,</span> <span class="n">max_epoches</span><span class="p">,</span> <span class="n">stratify</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_middle_update_bfgs</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">,</span> <span class="n">proj_mat</span><span class="p">,</span> <span class="n">val_ratio</span><span class="p">,</span> <span class="n">tol</span><span class="p">,</span> 
+                      <span class="n">max_middle_iter</span><span class="p">,</span> <span class="n">n_middle_iter_no_change</span><span class="p">,</span> <span class="n">max_inner_iter</span><span class="p">,</span> <span class="n">stratify</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">fit_inner_update_adam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">proj_mat</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">val_ratio</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span>
-                      <span class="n">max_inner_iter</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">n_inner_iter_no_change</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">max_epoches</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-                      <span class="n">n_epoch_no_change</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span> <span class="n">beta_1</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">beta_2</span><span class="o">=</span><span class="mf">0.999</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">fit_middle_update_adam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">proj_mat</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">val_ratio</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span>
+                      <span class="n">max_middle_iter</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">n_middle_iter_no_change</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">max_inner_iter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">n_inner_iter_no_change</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                      <span class="n">batch_size</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">beta_1</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">beta_2</span><span class="o">=</span><span class="mf">0.999</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 
-        <span class="sd">&quot;&quot;&quot;fine tune the fitted Sim model using inner update method (adam)</span>
+        <span class="sd">&quot;&quot;&quot;fine tune the fitted Sim model using middle update method (adam)</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ---------</span>
@@ -512,14 +511,14 @@
 <span class="sd">            the split ratio for validation set</span>
 <span class="sd">        tol : float, optional, default=0.0001</span>
 <span class="sd">            the tolerance for early stopping</span>
-<span class="sd">        max_inner_iter : int, optional, default=3</span>
-<span class="sd">            the maximal number of inner update iteration</span>
-<span class="sd">        n_inner_iter_no_change : int, optional, default=3</span>
-<span class="sd">            the tolerance of non-improving inner iterations</span>
-<span class="sd">        max_epoches : int, optional, default=100</span>
-<span class="sd">            the maximal number of epoches for &quot;adam&quot; optimizer</span>
-<span class="sd">        n_epoch_no_change : int, optional, default=5</span>
-<span class="sd">            the tolerance of non-improving epoches for adam optimizer</span>
+<span class="sd">        max_middle_iter : int, optional, default=3</span>
+<span class="sd">            the maximal number of middle iteration</span>
+<span class="sd">        n_middle_iter_no_change : int, optional, default=3</span>
+<span class="sd">            the tolerance of non-improving middle iterations</span>
+<span class="sd">        max_inner_iter : int, optional, default=100</span>
+<span class="sd">            the maximal number of inner iteration (epoch) for &quot;adam&quot; optimizer</span>
+<span class="sd">        n_inner_iter_no_change : int, optional, default=5</span>
+<span class="sd">            the tolerance of non-improving inner iteration for adam optimizer</span>
 <span class="sd">        batch_size : int, optional, default=100</span>
 <span class="sd">            the batch_size for adam optimizer</span>
 <span class="sd">        learning_rate : float, optional, default=1e-4</span>
@@ -559,18 +558,18 @@
             <span class="n">val_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">get_loss</span><span class="p">(</span><span class="n">val_y</span><span class="p">,</span> <span class="n">val_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">[</span><span class="n">idx2</span><span class="p">])</span>
 
         <span class="n">self_copy</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="n">no_inner_iter_change</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">val_loss_inner_iter_best</span> <span class="o">=</span> <span class="n">val_loss</span>
-        <span class="k">for</span> <span class="n">inner_iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_inner_iter</span><span class="p">):</span>
+        <span class="n">no_middle_iter_change</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">val_loss_middle_iter_best</span> <span class="o">=</span> <span class="n">val_loss</span>
+        <span class="k">for</span> <span class="n">middle_iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_middle_iter</span><span class="p">):</span>
 
             <span class="n">m_t</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># moving average of the gradient</span>
             <span class="n">v_t</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># moving average of the gradient square</span>
             <span class="n">num_updates</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">no_epoch_change</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">no_inner_iter_change</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">theta_0</span> <span class="o">=</span> <span class="n">self_copy</span><span class="o">.</span><span class="n">beta_</span> 
             <span class="n">train_size</span> <span class="o">=</span> <span class="n">tr_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">val_loss_epoch_best</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
-            <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_epoches</span><span class="p">):</span>
+            <span class="n">val_loss_inner_iter_best</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+            <span class="k">for</span> <span class="n">inner_iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_inner_iter</span><span class="p">):</span>
 
                 <span class="n">shuffle_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">tr_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">shuffle_index</span><span class="p">)</span>
@@ -614,16 +613,16 @@
                     <span class="n">val_pred</span> <span class="o">=</span> <span class="n">self_copy</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">val_xb</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
                     <span class="n">val_loss</span> <span class="o">=</span> <span class="n">self_copy</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">get_loss</span><span class="p">(</span><span class="n">val_y</span><span class="p">,</span> <span class="n">val_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">[</span><span class="n">idx2</span><span class="p">])</span>
                 <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Inner iter:&quot;</span><span class="p">,</span> <span class="n">inner_iter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;epoch:&quot;</span><span class="p">,</span> <span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;with validation loss:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">val_loss</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Middle iter:&quot;</span><span class="p">,</span> <span class="n">middle_iter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Inner iter:&quot;</span><span class="p">,</span> <span class="n">inner_iter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;with validation loss:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">val_loss</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
                 <span class="c1"># stop criterion</span>
-                <span class="k">if</span> <span class="n">val_loss</span> <span class="o">&gt;</span> <span class="n">val_loss_epoch_best</span> <span class="o">-</span> <span class="n">tol</span><span class="p">:</span>
-                    <span class="n">no_epoch_change</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">val_loss</span> <span class="o">&gt;</span> <span class="n">val_loss_inner_iter_best</span> <span class="o">-</span> <span class="n">tol</span><span class="p">:</span>
+                    <span class="n">no_inner_iter_change</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">no_epoch_change</span> <span class="o">=</span> <span class="mi">0</span>
-                <span class="k">if</span> <span class="n">val_loss</span> <span class="o">&lt;</span> <span class="n">val_loss_epoch_best</span><span class="p">:</span>
-                    <span class="n">val_loss_epoch_best</span> <span class="o">=</span> <span class="n">val_loss</span>
+                    <span class="n">no_inner_iter_change</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">if</span> <span class="n">val_loss</span> <span class="o">&lt;</span> <span class="n">val_loss_inner_iter_best</span><span class="p">:</span>
+                    <span class="n">val_loss_inner_iter_best</span> <span class="o">=</span> <span class="n">val_loss</span>
                 
-                <span class="k">if</span> <span class="n">no_epoch_change</span> <span class="o">&gt;=</span> <span class="n">n_epoch_no_change</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">no_inner_iter_change</span> <span class="o">&gt;=</span> <span class="n">n_inner_iter_no_change</span><span class="p">:</span>
                     <span class="k">break</span>
   
             <span class="c1">## thresholding and normalization</span>
@@ -649,18 +648,21 @@
                 <span class="n">val_pred</span> <span class="o">=</span> <span class="n">self_copy</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">val_xb</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
                 <span class="n">val_loss</span> <span class="o">=</span> <span class="n">self_copy</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">get_loss</span><span class="p">(</span><span class="n">val_y</span><span class="p">,</span> <span class="n">val_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">[</span><span class="n">idx2</span><span class="p">])</span>
 
-            <span class="k">if</span> <span class="n">val_loss</span> <span class="o">&gt;</span> <span class="n">val_loss_inner_iter_best</span> <span class="o">-</span> <span class="n">tol</span><span class="p">:</span>
-                <span class="n">no_inner_iter_change</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">val_loss</span> <span class="o">&gt;</span> <span class="n">val_loss_middle_iter_best</span> <span class="o">-</span> <span class="n">tol</span><span class="p">:</span>
+                <span class="n">no_middle_iter_change</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">no_inner_iter_change</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">if</span> <span class="n">val_loss</span> <span class="o">&lt;</span> <span class="n">val_loss_inner_iter_best</span><span class="p">:</span>
-                <span class="bp">self</span> <span class="o">=</span> <span class="n">self_copy</span>
-                <span class="n">val_loss_inner_iter_best</span> <span class="o">=</span> <span class="n">val_loss</span>
-            <span class="k">if</span> <span class="n">no_inner_iter_change</span> <span class="o">&gt;=</span> <span class="n">n_inner_iter_no_change</span><span class="p">:</span>
+                <span class="n">no_middle_iter_change</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">val_loss</span> <span class="o">&lt;</span> <span class="n">val_loss_middle_iter_best</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">beta_</span> <span class="o">=</span> <span class="n">self_copy</span><span class="o">.</span><span class="n">beta_</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span> <span class="o">=</span> <span class="n">self_copy</span><span class="o">.</span><span class="n">shape_fit_</span>
+                <span class="n">val_loss_middle_iter_best</span> <span class="o">=</span> <span class="n">val_loss</span>
+            <span class="k">if</span> <span class="n">no_middle_iter_change</span> <span class="o">&gt;=</span> <span class="n">n_middle_iter_no_change</span><span class="p">:</span>
                 <span class="k">break</span>
+                
+        <span class="bp">self</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">self_copy</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">fit_inner_update_bfgs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">proj_mat</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">val_ratio</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span> 
-                      <span class="n">max_inner_iter</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">n_inner_iter_no_change</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">max_epoches</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">fit_middle_update_bfgs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">proj_mat</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">val_ratio</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span> 
+                      <span class="n">max_middle_iter</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">n_middle_iter_no_change</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">max_inner_iter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 
         <span class="sd">&quot;&quot;&quot;fine tune the fitted Sim model using inner update method (bfgs)</span>
 
@@ -678,12 +680,12 @@
 <span class="sd">            the split ratio for validation set</span>
 <span class="sd">        tol : float, optional, default=0.0001</span>
 <span class="sd">            the tolerance for early stopping</span>
-<span class="sd">        max_inner_iter : int, optional, default=3</span>
-<span class="sd">            the maximal number of inner update iteration</span>
-<span class="sd">        n_inner_iter_no_change : int, optional, default=3</span>
-<span class="sd">            the tolerance of non-improving inner iterations</span>
-<span class="sd">        max_epoches : int, optional, default=100</span>
-<span class="sd">            the maximal number of epoches for &quot;bfgs&quot; optimizer</span>
+<span class="sd">        max_middle_iter : int, optional, default=3</span>
+<span class="sd">            the maximal number of middle iteration</span>
+<span class="sd">        n_middle_iter_no_change : int, optional, default=3</span>
+<span class="sd">            the tolerance of non-improving middle iterations</span>
+<span class="sd">        max_inner_iter : int, optional, default=100</span>
+<span class="sd">            the maximal number of inner iteration for &quot;adam&quot; optimizer</span>
 <span class="sd">        stratify : bool, optional, default=True</span>
 <span class="sd">            whether to stratify the target variable when splitting the validation set</span>
 <span class="sd">        verbose : bool, optional, default=False</span>
@@ -713,9 +715,9 @@
             <span class="n">val_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">get_loss</span><span class="p">(</span><span class="n">val_y</span><span class="p">,</span> <span class="n">val_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">[</span><span class="n">idx2</span><span class="p">])</span>
 
         <span class="n">self_copy</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="n">no_inner_iter_change</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">val_loss_inner_iter_best</span> <span class="o">=</span> <span class="n">val_loss</span>
-        <span class="k">for</span> <span class="n">inner_iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_inner_iter</span><span class="p">):</span>
+        <span class="n">no_middle_iter_change</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">val_loss_middle_iter_best</span> <span class="o">=</span> <span class="n">val_loss</span>
+        <span class="k">for</span> <span class="n">middle_iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_middle_iter</span><span class="p">):</span>
             
             <span class="n">theta_0</span> <span class="o">=</span> <span class="n">self_copy</span><span class="o">.</span><span class="n">beta_</span> 
             <span class="k">def</span> <span class="nf">loss_func</span><span class="p">(</span><span class="n">beta</span><span class="p">):</span>
@@ -733,7 +735,7 @@
                             <span class="n">weights</span><span class="o">=</span><span class="n">sample_weight</span><span class="p">[</span><span class="n">idx1</span><span class="p">])</span>
                 <span class="k">return</span> <span class="n">g_t</span>
 
-            <span class="n">theta_0</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">loss_func</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="n">theta_0</span><span class="p">,</span> <span class="n">jac</span><span class="o">=</span><span class="n">grad</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;BFGS&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;maxiter&#39;</span><span class="p">:</span><span class="n">max_epoches</span><span class="p">})</span><span class="o">.</span><span class="n">x</span>
+            <span class="n">theta_0</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">loss_func</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="n">theta_0</span><span class="p">,</span> <span class="n">jac</span><span class="o">=</span><span class="n">grad</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;BFGS&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;maxiter&#39;</span><span class="p">:</span><span class="n">max_inner_iter</span><span class="p">})</span><span class="o">.</span><span class="n">x</span>
             
             <span class="c1">## thresholding and normalization</span>
             <span class="k">if</span> <span class="n">proj_mat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -758,18 +760,19 @@
                 <span class="n">val_pred</span> <span class="o">=</span> <span class="n">self_copy</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">val_xb</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
                 <span class="n">val_loss</span> <span class="o">=</span> <span class="n">self_copy</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">get_loss</span><span class="p">(</span><span class="n">val_y</span><span class="p">,</span> <span class="n">val_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">[</span><span class="n">idx2</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Inner iter:&quot;</span><span class="p">,</span> <span class="n">inner_iter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;with validation loss:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">val_loss</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Middle iter:&quot;</span><span class="p">,</span> <span class="n">middle_iter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;with validation loss:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">val_loss</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 
-            <span class="k">if</span> <span class="n">val_loss</span> <span class="o">&gt;</span> <span class="n">val_loss_inner_iter_best</span> <span class="o">-</span> <span class="n">tol</span><span class="p">:</span>
-                <span class="n">no_inner_iter_change</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">val_loss</span> <span class="o">&gt;</span> <span class="n">val_loss_middle_iter_best</span> <span class="o">-</span> <span class="n">tol</span><span class="p">:</span>
+                <span class="n">no_middle_iter_change</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">no_inner_iter_change</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">if</span> <span class="n">val_loss</span> <span class="o">&lt;</span> <span class="n">val_loss_inner_iter_best</span><span class="p">:</span>
-                <span class="bp">self</span> <span class="o">=</span> <span class="n">self_copy</span>
-                <span class="n">val_loss_inner_iter_best</span> <span class="o">=</span> <span class="n">val_loss</span>
-            <span class="k">if</span> <span class="n">no_inner_iter_change</span> <span class="o">&gt;=</span> <span class="n">n_inner_iter_no_change</span><span class="p">:</span>
+                <span class="n">no_middle_iter_change</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">val_loss</span> <span class="o">&lt;</span> <span class="n">val_loss_middle_iter_best</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">beta_</span> <span class="o">=</span> <span class="n">self_copy</span><span class="o">.</span><span class="n">beta_</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span> <span class="o">=</span> <span class="n">self_copy</span><span class="o">.</span><span class="n">shape_fit_</span>
+                <span class="n">val_loss_middle_iter_best</span> <span class="o">=</span> <span class="n">val_loss</span>
+            <span class="k">if</span> <span class="n">no_middle_iter_change</span> <span class="o">&gt;=</span> <span class="n">n_middle_iter_no_change</span><span class="p">:</span>
                 <span class="k">break</span>
-
+                
     <span class="k">def</span> <span class="nf">decision_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
 
         <span class="sd">&quot;&quot;&quot;output f(beta^T x) for given samples</span>
@@ -869,7 +872,7 @@
 
 <span class="sd">        &quot;first_order_thres&quot;: First-order Stein&#39;s Identity via hard thresholding (A simplified verison)     </span>
 
-<span class="sd">        &quot;marginal_regression&quot;: Marginal regression</span>
+<span class="sd">        &quot;marginal_regression&quot;: Marginal regression subject to hard thresholding</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;ols&quot;: Least squares estimation subject to hard thresholding</span>
 
@@ -897,12 +900,12 @@
 <span class="sd">    reg_gamma : float, optional. default=0.1</span>
 <span class="sd">        Roughness penalty strength of the spline algorithm</span>
 <span class="sd">    </span>
-<span class="sd">        For spline=&quot;smoothing_spline&quot;, it ranges from 0 to 1 </span>
+<span class="sd">        For spline=&quot;smoothing_spline&quot;, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to &quot;GCV&quot;.</span>
 
 <span class="sd">        For spline=&quot;p_spline&quot;,&quot;mono_p_spline&quot; or &quot;a_spline&quot;, it ranges from 0 to :math:`+\infty`</span>
 <span class="sd">    </span>
-<span class="sd">    degree : int, optional. default=2</span>
-<span class="sd">        The order of the spline, not used for spline=&quot;smoothing_spline&quot;</span>
+<span class="sd">    degree : int, optional. default=3</span>
+<span class="sd">        The order of the spline. For spline=&quot;smoothing_spline&quot;, possible values include 1 and 3.</span>
 <span class="sd">    </span>
 <span class="sd">    knot_num : int, optional. default=10</span>
 <span class="sd">        Number of knots</span>
@@ -912,7 +915,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;first_order&quot;</span><span class="p">,</span> <span class="n">spline</span><span class="o">=</span><span class="s2">&quot;smoothing_spline&quot;</span><span class="p">,</span> <span class="n">reg_lambda</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
-                 <span class="n">knot_num</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="s2">&quot;quantile&quot;</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+                 <span class="n">knot_num</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="s2">&quot;quantile&quot;</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">SimRegressor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
                                 <span class="n">spline</span><span class="o">=</span><span class="n">spline</span><span class="p">,</span>
@@ -995,7 +998,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="o">==</span> <span class="s2">&quot;smoothing_spline&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span> <span class="o">=</span> <span class="n">SMSplineRegressor</span><span class="p">(</span><span class="n">knot_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_num</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_dist</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span><span class="p">,</span>
-                                    <span class="n">xmin</span><span class="o">=</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax</span><span class="p">)</span>
+                                    <span class="n">xmin</span><span class="o">=</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="o">==</span> <span class="s2">&quot;p_spline&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span> <span class="o">=</span> <span class="n">PSplineRegressor</span><span class="p">(</span><span class="n">knot_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_num</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span><span class="p">,</span>
@@ -1039,7 +1042,7 @@
 
 <span class="sd">        &quot;first_order_thres&quot;: First-order Stein&#39;s Identity via hard thresholding (A simplified verison)     </span>
 
-<span class="sd">        &quot;marginal_regression&quot;: Marginal regression</span>
+<span class="sd">        &quot;marginal_regression&quot;: Marginal regression subject to hard thresholding</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;ols&quot;: Least squares estimation subject to hard thresholding</span>
 
@@ -1067,13 +1070,14 @@
 <span class="sd">    reg_gamma : float, optional. default=0.1</span>
 <span class="sd">        Roughness penalty strength of the spline algorithm</span>
 <span class="sd">    </span>
-<span class="sd">        For spline=&quot;smoothing_spline&quot;, it ranges from 0 to 1 </span>
+<span class="sd">        For spline=&quot;smoothing_spline&quot;, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to &quot;GCV&quot;.</span>
 
 <span class="sd">        For spline=&quot;p_spline&quot;,&quot;mono_p_spline&quot; or &quot;a_spline&quot;, it ranges from 0 to :math:`+\infty`</span>
 <span class="sd">    </span>
-<span class="sd">    degree : int, optional. default=2</span>
-<span class="sd">        The order of the spline, not used for spline=&quot;smoothing_spline&quot;</span>
+<span class="sd">    degree : int, optional. default=3</span>
+<span class="sd">        The order of the spline. For spline=&quot;smoothing_spline&quot;, possible values include 1 and 3.</span>
 <span class="sd">    </span>
+
 <span class="sd">    knot_num : int, optional. default=10</span>
 <span class="sd">        Number of knots</span>
 
@@ -1082,7 +1086,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;first_order&quot;</span><span class="p">,</span> <span class="n">reg_lambda</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">spline</span><span class="o">=</span><span class="s2">&quot;smoothing_spline&quot;</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
-                 <span class="n">knot_num</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="s2">&quot;quantile&quot;</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+                 <span class="n">knot_num</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="s2">&quot;quantile&quot;</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">SimClassifier</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
                                 <span class="n">reg_lambda</span><span class="o">=</span><span class="n">reg_lambda</span><span class="p">,</span>
@@ -1173,9 +1177,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="o">==</span> <span class="s2">&quot;smoothing_spline&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span> <span class="o">=</span> <span class="n">SMSplineClassifier</span><span class="p">(</span><span class="n">knot_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_num</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_dist</span><span class="p">,</span>
-                                     <span class="n">xmin</span><span class="o">=</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax</span><span class="p">)</span>
+                                     <span class="n">xmin</span><span class="o">=</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
-            
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="o">==</span> <span class="s2">&quot;p_spline&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span> <span class="o">=</span> <span class="n">PSplineClassifier</span><span class="p">(</span><span class="n">knot_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_num</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span><span class="p">,</span>
                                     <span class="n">xmin</span><span class="o">=</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span>
