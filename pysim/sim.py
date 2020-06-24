@@ -345,7 +345,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
     def fit_inner_update_adam(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001,
                       max_inner_iter=3, n_inner_iter_no_change=3, max_epoches=100,
-                      n_epoch_no_change=5, batch_size=100, learning_rate=1e-4, beta_1=0.9, beta_2=0.999, stratify=True, verbose=False):
+                      n_epoch_no_change=5, batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, stratify=True, verbose=False):
 
         """fine tune the fitted Sim model using inner update method (adam)
 
@@ -510,7 +510,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             if no_inner_iter_change >= n_inner_iter_no_change:
                 break
                 
-        self = self_copy
+        self = deepcopy(self_copy)
 
     def fit_inner_update_bfgs(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001, 
                       max_inner_iter=3, n_inner_iter_no_change=3, max_epoches=100, stratify=True, verbose=False):
@@ -623,7 +623,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             if no_inner_iter_change >= n_inner_iter_no_change:
                 break
                 
-        self = self_copy
+        self = deepcopy(self_copy)
 
     def decision_function(self, x):
 
