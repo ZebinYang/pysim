@@ -509,6 +509,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 val_loss_inner_iter_best = val_loss
             if no_inner_iter_change >= n_inner_iter_no_change:
                 break
+                
+        self = self_copy
 
     def fit_inner_update_bfgs(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001, 
                       max_inner_iter=3, n_inner_iter_no_change=3, max_epoches=100, stratify=True, verbose=False):
@@ -620,6 +622,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 val_loss_inner_iter_best = val_loss
             if no_inner_iter_change >= n_inner_iter_no_change:
                 break
+                
+        self = self_copy
 
     def decision_function(self, x):
 
