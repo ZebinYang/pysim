@@ -438,13 +438,13 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
             while not exit:
                 try:
                     if not isinstance(self.reg_gamma, str):
-                        if self.reg_gamma + 10 ** (i - 9) > 1:
+                        if self.reg_gamma > 1:
                             break
                         
                     kwargs = {"formula": Formula('y ~ x'),
                            "family": "binomial",
                            "nknots": knot_idx, 
-                           "lambdas": ro.r("NULL") if self.reg_gamma == "GCV" else self.reg_gamma + 10 ** (i - 9),
+                           "lambdas": ro.r("NULL") if self.reg_gamma == "GCV" else self.reg_gamma,
                            "rparm": 1e-6,
                            "type": "lin" if self.degree==1 else "cub",
                            "data": pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
@@ -452,9 +452,8 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
                     self.sm_ = bigsplines.bigssg(**kwargs)
                     exit = True
                 except rpy2.rinterface_lib.embedded.RRuntimeError:
+                    self.reg_gamma += 10 ** (i - 9) if not isinstance(self.reg_gamma, str)
                     i += 1
-            if not isinstance(self.reg_gamma, str):
-                self.reg_gamma += 10 ** (i - 9)
         return self
     
     def predict_proba(self, x):
