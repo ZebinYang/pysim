@@ -513,7 +513,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 
         self = deepcopy(self_copy)
 
-    def fit_inner_update_bfgs(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001, 
+    def fit_middle_update_bfgs(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001, 
                       max_middle_iter=3, n_middle_iter_no_change=3, max_inner_iter=100, stratify=True, verbose=False):
 
         """fine tune the fitted Sim model using inner update method (bfgs)
