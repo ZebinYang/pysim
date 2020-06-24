@@ -27,7 +27,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
     @abstractmethod
     def __init__(self, n_estimators, prjection_method="marginal_regression", spline="smoothing_spline", knot_dist="quantile",
                  learning_rate=1.0, reg_lambda=0.1, reg_gamma="GCV", degree=3, knot_num=10,
-                 ortho_shrink=1, loss_threshold=0.01, inner_update=None, meta_info=None, pruning=False, val_ratio=0.2, random_state=0):
+                 ortho_shrink=1, loss_threshold=0.01, meta_info=None, pruning=False, val_ratio=0.2, middle_update=None, random_state=0):
 
         self.n_estimators = n_estimators
         self.prjection_method = prjection_method
@@ -41,7 +41,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
         self.ortho_shrink = ortho_shrink
         self.loss_threshold = loss_threshold
-        self.inner_update = inner_update
+        self.middle_update = middle_update
         self.meta_info = meta_info
         self.pruning = pruning
         self.val_ratio = val_ratio
@@ -115,13 +115,15 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         if self.knot_dist not in ["uniform", "quantile"]:
             raise ValueError("knot_dist must be an element of [uniform, quantile], got %s." % self.knot_dist)
 
-        if self.inner_update is not None: 
-            if self.inner_update not in ["adam", "bfgs"]:
-                raise ValueError("inner_update must be None or an element of [adam, bfgs], got %s." % self.inner_update)
+        if self.middle_update is None:
+            self.middle_update = {}
+        else:
+            if not isinstance(self.middle_update, dict):
+                raise ValueError("middle_update must be None or a dict containing middle_update %s." % self.middle_update)
 
         if self.meta_info is not None:
             if not isinstance(self.meta_info, dict):
-                raise ValueError("meta_info must be a dict, got %s." % self.meta_info)
+                raise ValueError("meta_info must be None or a dict, got %s." % self.meta_info)
 
         if not isinstance(self.pruning, bool):
             raise ValueError("pruning must be a bool, got %s." % self.pruning)
@@ -772,7 +774,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
     def __init__(self, n_estimators, prjection_method="marginal_regression", spline="smoothing_spline", knot_dist="quantile",
                  learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, degree=3, knot_num=10,
-                 ortho_shrink=1, loss_threshold=0.01, inner_update=None, meta_info=None, pruning=False, val_ratio=0.2, random_state=0):
+                 ortho_shrink=1, loss_threshold=0.01, meta_info=None, pruning=False, val_ratio=0.2, middle_update=None, random_state=0):
 
         super(SimBoostRegressor, self).__init__(n_estimators=n_estimators,
                                    prjection_method=prjection_method,
@@ -785,10 +787,10 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                                    knot_num=knot_num,
                                    ortho_shrink=ortho_shrink,
                                    loss_threshold=loss_threshold,
-                                   inner_update=inner_update,
                                    meta_info=meta_info,
                                    pruning=pruning,
                                    val_ratio=val_ratio,
+                                   middle_update=middle_update,
                                    random_state=random_state)
 
     def _validate_input(self, x, y):
@@ -862,8 +864,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                        sim__sample_weight=sample_weight[self.tr_idx], sim__proj_mat=proj_mat)
             if self.inner_update is not None:
                 sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z, 
-                        sample_weight=sample_weight, proj_mat=proj_mat, method=self.inner_update,
-                        batch_size=min(200, int(0.2 * n_samples)), val_ratio=self.val_ratio)
+                        sample_weight=sample_weight, proj_mat=proj_mat, val_ratio=self.val_ratio, **self.middle_update)
             # update
             z = z - self.learning_rates[indice] * sim_estimator.predict(x)
             self.sim_estimators_.append(sim_estimator)
@@ -1053,7 +1054,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
     def __init__(self, n_estimators, prjection_method="marginal_regression", spline="smoothing_spline",
                  learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, knot_dist="quantile", degree=3, knot_num=10, ortho_shrink=1,
-                 loss_threshold=0.01, val_ratio=0.2, inner_update=None, meta_info=None, pruning=False, random_state=0):
+                 loss_threshold=0.01, val_ratio=0.2, meta_info=None, pruning=False, middle_update=None, random_state=0):
 
         super(SimBoostClassifier, self).__init__(n_estimators=n_estimators,
                                    prjection_method=prjection_method,
@@ -1066,10 +1067,10 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                                    knot_num=knot_num,
                                    ortho_shrink=ortho_shrink,
                                    loss_threshold=loss_threshold,
-                                   inner_update=inner_update,
                                    meta_info=meta_info,
                                    pruning=pruning,
                                    val_ratio=val_ratio,
+                                   middle_update=middle_update,
                                    random_state=random_state)
 
     def _validate_input(self, x, y):
@@ -1181,9 +1182,8 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             # update
             if self.inner_update is not None:
-                sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z,
-                        sample_weight=sample_weight, proj_mat=proj_mat, method=self.inner_update,
-                        batch_size=min(200, int(0.2 * n_samples)), val_ratio=self.val_ratio)
+                sim_estimator["sim"].fit_inner_update(x[:, self.nfeature_index_list_], z, 
+                        sample_weight=sample_weight, proj_mat=proj_mat, val_ratio=self.val_ratio, **self.middle_update)
             pred_train += self.learning_rates[indice] * sim_estimator.predict(x[self.tr_idx])
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
             pred_val += self.learning_rates[indice] * sim_estimator.predict(x[self.val_idx])
