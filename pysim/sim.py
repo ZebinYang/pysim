@@ -292,10 +292,10 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         return self
     
     
-    def fit_inner_update(self, x, y, sample_weight=None, proj_mat=None, method="adam", val_ratio=0.2, tol=0.0001,
-                      max_inner_iter=3, n_inner_iter_no_change=3, max_epoches=100,
-                      n_epoch_no_change=5, batch_size=100, learning_rate=1e-4, beta_1=0.9, beta_2=0.999, stratify=True, verbose=False):
-        """fine tune the fitted Sim model using inner update method
+    def fit_middle_update(self, x, y, sample_weight=None, proj_mat=None, method="adam", val_ratio=0.2, tol=0.0001,
+                  max_middle_iter=3, n_middle_iter_no_change=3, max_inner_iter=100, n_inner_iter_no_change=5,
+                  batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, stratify=True, verbose=False):
+        """fine tune the fitted Sim model using middle update method
 
         Parameters
         ---------
@@ -313,17 +313,17 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             the split ratio for validation set
         tol : float, optional, default=0.0001
             the tolerance for early stopping
-        max_inner_iter : int, optional, default=3
-            the maximal number of inner update iteration
-        n_inner_iter_no_change : int, optional, default=3
-            the tolerance of non-improving inner iterations
-        max_epoches : int, optional, default=100
-            the maximal number of epoches for "adam" optimizer
-        n_epoch_no_change : int, optional, default=5
-            the tolerance of non-improving epoches for adam optimizer
+        max_middle_iter : int, optional, default=3
+            the maximal number of middle iteration
+        n_middle_iter_no_change : int, optional, default=3
+            the tolerance of non-improving middle iterations
+        max_inner_iter : int, optional, default=100
+            the maximal number of inner iteration for "adam" optimizer
+        n_inner_iter_no_change : int, optional, default=5
+            the tolerance of non-improving inner iteration for adam optimizer
         batch_size : int, optional, default=100
             the batch_size for adam optimizer
-        learning_rate : float, optional, default=1e-4
+        learning_rate : float, optional, default=1e-3
             the learning rate for adam optimizer
         beta_1 : float, optional, default=0.9
             the beta_1 parameter for adam optimizer
@@ -337,17 +337,17 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
         if method == "adam":                
             self.fit_inner_update_adam(x, y, sample_weight, proj_mat, val_ratio, tol,
-                      max_inner_iter, n_inner_iter_no_change, max_epoches,
-                      n_epoch_no_change, batch_size, learning_rate, beta_1, beta_2, stratify, verbose)
+                      max_middle_iter, n_middle_iter_no_change, max_inner_iter,
+                      n_inner_iter_no_change, batch_size, learning_rate, beta_1, beta_2, stratify, verbose)
         elif method == "bfgs":
             self.fit_inner_update_bfgs(x, y, sample_weight, proj_mat, val_ratio, tol, 
-                      max_inner_iter, n_inner_iter_no_change, max_epoches, stratify, verbose)
+                      max_middle_iter, n_middle_iter_no_change, max_inner_iter, stratify, verbose)
 
-    def fit_inner_update_adam(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001,
-                      max_inner_iter=3, n_inner_iter_no_change=3, max_epoches=100,
-                      n_epoch_no_change=5, batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, stratify=True, verbose=False):
+    def fit_middle_update_adam(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001,
+                      max_middle_iter=3, n_middle_iter_no_change=3, max_inner_iter=100, n_inner_iter_no_change=5,
+                      batch_size=100, learning_rate=1e-3, beta_1=0.9, beta_2=0.999, stratify=True, verbose=False):
 
-        """fine tune the fitted Sim model using inner update method (adam)
+        """fine tune the fitted Sim model using middle update method (adam)
 
         Parameters
         ---------
@@ -363,14 +363,14 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             the split ratio for validation set
         tol : float, optional, default=0.0001
             the tolerance for early stopping
-        max_inner_iter : int, optional, default=3
-            the maximal number of inner update iteration
-        n_inner_iter_no_change : int, optional, default=3
-            the tolerance of non-improving inner iterations
-        max_epoches : int, optional, default=100
-            the maximal number of epoches for "adam" optimizer
-        n_epoch_no_change : int, optional, default=5
-            the tolerance of non-improving epoches for adam optimizer
+        max_middle_iter : int, optional, default=3
+            the maximal number of middle iteration
+        n_middle_iter_no_change : int, optional, default=3
+            the tolerance of non-improving middle iterations
+        max_inner_iter : int, optional, default=100
+            the maximal number of inner iteration (epoch) for "adam" optimizer
+        n_inner_iter_no_change : int, optional, default=5
+            the tolerance of non-improving inner iteration for adam optimizer
         batch_size : int, optional, default=100
             the batch_size for adam optimizer
         learning_rate : float, optional, default=1e-4
@@ -410,18 +410,18 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
 
         self_copy = deepcopy(self)
-        no_inner_iter_change = 0
-        val_loss_inner_iter_best = val_loss
-        for inner_iter in range(max_inner_iter):
+        no_middle_iter_change = 0
+        val_loss_middle_iter_best = val_loss
+        for middle_iter in range(max_middle_iter):
 
             m_t = 0 # moving average of the gradient
             v_t = 0 # moving average of the gradient square
             num_updates = 0
-            no_epoch_change = 0
+            no_inner_iter_change = 0
             theta_0 = self_copy.beta_ 
             train_size = tr_x.shape[0]
-            val_loss_epoch_best = np.inf
-            for epoch in range(max_epoches):
+            val_loss_inner_iter_best = np.inf
+            for inner_iter in range(max_inner_iter):
 
                 shuffle_index = np.arange(tr_x.shape[0])
                 np.random.shuffle(shuffle_index)
@@ -465,16 +465,16 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                     val_pred = self_copy.shape_fit_.predict_proba(val_xb)[:, 1]
                     val_loss = self_copy.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
                 if verbose:
-                    print("Inner iter:", inner_iter + 1, "epoch:", epoch + 1, "with validation loss:", np.round(val_loss, 5))
+                    print("Middle iter:", middle_iter + 1, "Inner iter:", inner_iter + 1, "with validation loss:", np.round(val_loss, 5))
                 # stop criterion
-                if val_loss > val_loss_epoch_best - tol:
-                    no_epoch_change += 1
+                if val_loss > val_loss_inner_iter_best - tol:
+                    no_inner_iter_change += 1
                 else:
-                    no_epoch_change = 0
-                if val_loss < val_loss_epoch_best:
-                    val_loss_epoch_best = val_loss
+                    no_inner_iter_change = 0
+                if val_loss < val_loss_inner_iter_best:
+                    val_loss_inner_iter_best = val_loss
                 
-                if no_epoch_change >= n_epoch_no_change:
+                if no_inner_iter_change >= n_inner_iter_no_change:
                     break
   
             ## thresholding and normalization
@@ -500,21 +500,21 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 val_pred = self_copy.shape_fit_.predict_proba(val_xb)[:, 1]
                 val_loss = self_copy.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
 
-            if val_loss > val_loss_inner_iter_best - tol:
-                no_inner_iter_change += 1
+            if val_loss > val_loss_middle_iter_best - tol:
+                no_middle_iter_change += 1
             else:
-                no_inner_iter_change = 0
-            if val_loss < val_loss_inner_iter_best:
+                no_middle_iter_change = 0
+            if val_loss < val_loss_middle_iter_best:
                 self.beta_ = self_copy.beta_
                 self.shape_fit_ = self_copy.shape_fit_
-                val_loss_inner_iter_best = val_loss
-            if no_inner_iter_change >= n_inner_iter_no_change:
+                val_loss_middle_iter_best = val_loss
+            if no_middle_iter_change >= n_middle_iter_no_change:
                 break
                 
         self = deepcopy(self_copy)
 
     def fit_inner_update_bfgs(self, x, y, sample_weight=None, proj_mat=None, val_ratio=0.2, tol=0.0001, 
-                      max_inner_iter=3, n_inner_iter_no_change=3, max_epoches=100, stratify=True, verbose=False):
+                      max_middle_iter=3, n_middle_iter_no_change=3, max_inner_iter=100, stratify=True, verbose=False):
 
         """fine tune the fitted Sim model using inner update method (bfgs)
 
@@ -532,12 +532,12 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             the split ratio for validation set
         tol : float, optional, default=0.0001
             the tolerance for early stopping
-        max_inner_iter : int, optional, default=3
-            the maximal number of inner update iteration
-        n_inner_iter_no_change : int, optional, default=3
-            the tolerance of non-improving inner iterations
-        max_epoches : int, optional, default=100
-            the maximal number of epoches for "bfgs" optimizer
+        max_middle_iter : int, optional, default=3
+            the maximal number of middle iteration
+        n_middle_iter_no_change : int, optional, default=3
+            the tolerance of non-improving middle iterations
+        max_inner_iter : int, optional, default=100
+            the maximal number of inner iteration for "adam" optimizer
         stratify : bool, optional, default=True
             whether to stratify the target variable when splitting the validation set
         verbose : bool, optional, default=False
@@ -567,9 +567,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             val_loss = self.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
 
         self_copy = deepcopy(self)
-        no_inner_iter_change = 0
-        val_loss_inner_iter_best = val_loss
-        for inner_iter in range(max_inner_iter):
+        no_middle_iter_change = 0
+        val_loss_middle_iter_best = val_loss
+        for middle_iter in range(max_middle_iter):
             
             theta_0 = self_copy.beta_ 
             def loss_func(beta):
@@ -587,7 +587,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                             weights=sample_weight[idx1])
                 return g_t
 
-            theta_0 = scipy.optimize.minimize(loss_func, x0=theta_0, jac=grad, method='BFGS', options={'maxiter':max_epoches}).x
+            theta_0 = scipy.optimize.minimize(loss_func, x0=theta_0, jac=grad, method='BFGS', options={'maxiter':max_inner_iter}).x
             
             ## thresholding and normalization
             if proj_mat is not None:
@@ -612,17 +612,17 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 val_pred = self_copy.shape_fit_.predict_proba(val_xb)[:, 1]
                 val_loss = self_copy.shape_fit_.get_loss(val_y, val_pred, sample_weight[idx2])
             if verbose:
-                print("Inner iter:", inner_iter + 1, "with validation loss:", np.round(val_loss, 5))
+                print("Middle iter:", middle_iter + 1, "with validation loss:", np.round(val_loss, 5))
 
-            if val_loss > val_loss_inner_iter_best - tol:
-                no_inner_iter_change += 1
+            if val_loss > val_loss_middle_iter_best - tol:
+                no_middle_iter_change += 1
             else:
-                no_inner_iter_change = 0
-            if val_loss < val_loss_inner_iter_best:
+                no_middle_iter_change = 0
+            if val_loss < val_loss_middle_iter_best:
                 self.beta_ = self_copy.beta_
                 self.shape_fit_ = self_copy.shape_fit_
-                val_loss_inner_iter_best = val_loss
-            if no_inner_iter_change >= n_inner_iter_no_change:
+                val_loss_middle_iter_best = val_loss
+            if no_middle_iter_change >= n_middle_iter_no_change:
                 break
                 
     def decision_function(self, x):
