@@ -452,7 +452,10 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
                     self.sm_ = bigsplines.bigssg(**kwargs)
                     exit = True
                 except rpy2.rinterface_lib.embedded.RRuntimeError:
-                    self.reg_gamma += 10 ** (i - 9) if not isinstance(self.reg_gamma, str)
+                    if not isinstance(self.reg_gamma, str):
+                        self.reg_gamma += 10 ** (i - 9)
+                    else:
+                        break
                     i += 1
         return self
     
