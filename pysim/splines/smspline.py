@@ -87,7 +87,7 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
     def diff(self, x, order=1):
              
         """method to calculate derivatives of the fitted adaptive spline to the input
-        
+
         Parameters
         ---------
         x : array-like of shape (n_samples, 1)

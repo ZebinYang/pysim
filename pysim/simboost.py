@@ -19,32 +19,37 @@ from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin, is_clas
 
 from .sim import SimRegressor, SimClassifier
 
-__all__ = ["SimBoostRegressor", "SimBoostRegressor"]
+__all__ = ["SimBoostRegressor", "SimBoostClassifier"]
 
 
 class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     @abstractmethod
-    def __init__(self, n_estimators, prjection_method="marginal_regression", spline="smoothing_spline", knot_dist="quantile",
-                 learning_rate=1.0, reg_lambda=0.1, reg_gamma="GCV", degree=3, knot_num=10,
-                 ortho_shrink=1, loss_threshold=0.01, meta_info=None, pruning=False, val_ratio=0.2, middle_update=None, random_state=0):
+    def __init__(self, n_estimators, meta_info=None, prjection_method="marginal_regression", spline="smoothing_spline", knot_dist="quantile",
+                 reg_lambda=0.1, reg_gamma="GCV", degree=3, knot_num=10, middle_update=None,
+                 val_ratio=0.2, learning_rate=1.0, ortho_shrink=1,
+                 early_stop_thres=np.inf, pruning=False, loss_threshold=0.01, random_state=0):
 
         self.n_estimators = n_estimators
-        self.prjection_method = prjection_method
+        self.meta_info = meta_info
+
         self.spline = spline
-        self.learning_rate = learning_rate
+        self.prjection_method = prjection_method
         self.reg_lambda = reg_lambda
         self.reg_gamma = reg_gamma
         self.knot_dist = knot_dist
         self.degree = degree
         self.knot_num = knot_num
-
-        self.ortho_shrink = ortho_shrink
-        self.loss_threshold = loss_threshold
         self.middle_update = middle_update
-        self.meta_info = meta_info
-        self.pruning = pruning
+
         self.val_ratio = val_ratio
+        self.ortho_shrink = ortho_shrink
+        self.learning_rate = learning_rate
+        
+        self.pruning = pruning
+        self.loss_threshold = loss_threshold
+        self.early_stop_thres = early_stop_thres
+
         self.random_state = random_state        
 
     def _validate_hyperparameters(self):
@@ -57,6 +62,14 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         elif self.n_estimators < 0:
             raise ValueError("n_estimators must be >= 0, got" % self.n_estimators)
 
+        if self.meta_info is not None:
+            if not isinstance(self.meta_info, dict):
+                raise ValueError("meta_info must be None or a dict, got %s." % self.meta_info)
+
+        if self.spline not in ["a_spline", "smoothing_spline", "p_spline", "mono_p_spline"]:
+            raise ValueError("spline must be an element of [a_spline, smoothing_spline, p_spline, mono_p_spline], got %s." % 
+                         self.spline)
+        
         if isinstance(self.prjection_method, list):
             for val in self.prjection_method:
                 if val not in ["first_order", "second_order", "first_order_thres", "marginal_regression", "marginal_regression", "ols"]:
@@ -70,15 +83,6 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                                  marginal_regression, ols], got %s." % 
                                  self.prjection_method)
             self.prjection_method_list = [self.prjection_method]
-
-        if self.spline not in ["a_spline", "smoothing_spline", "p_spline", "mono_p_spline"]:
-            raise ValueError("spline must be an element of [a_spline, smoothing_spline, p_spline, mono_p_spline], got %s." % 
-                         self.spline)
-        
-        if self.learning_rate <= 0:
-            raise ValueError("learning_rate must be > 0, got" % self.learning_rate)
-        elif self.learning_rate > 1:
-            raise ValueError("learning_rate must be <= 1, got" % self.learning_rate)
 
         if isinstance(self.reg_lambda, list):
             for val in self.reg_lambda:
@@ -123,18 +127,30 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             if not isinstance(self.middle_update, dict):
                 raise ValueError("middle_update must be None or a dict containing middle_update %s." % self.middle_update)
 
-        if self.meta_info is not None:
-            if not isinstance(self.meta_info, dict):
-                raise ValueError("meta_info must be None or a dict, got %s." % self.meta_info)
-
-        if not isinstance(self.pruning, bool):
-            raise ValueError("pruning must be a bool, got %s." % self.pruning)
-
         if self.val_ratio <= 0:
             raise ValueError("val_ratio must be > 0, got" % self.val_ratio)
         elif self.val_ratio >= 1:
             raise ValueError("val_ratio must be < 1, got %s." % self.val_ratio)
+
+        if self.learning_rate <= 0:
+            raise ValueError("learning_rate must be > 0, got" % self.learning_rate)
+        elif self.learning_rate > 1:
+            raise ValueError("learning_rate must be <= 1, got" % self.learning_rate)
   
+        if self.ortho_shrink <= 0:
+            raise ValueError("ortho_shrink must be > 0, got" % self.ortho_shrink)
+        elif self.ortho_shrink > 1:
+            raise ValueError("ortho_shrink must be <= 1, got" % self.ortho_shrink)
+
+        if not isinstance(self.pruning, bool):
+            raise ValueError("pruning must be a bool, got %s." % self.pruning)
+
+        if not isinstance(self.loss_threshold, float):
+            raise ValueError("pruning must be a float, got %s." % self.loss_threshold)
+
+        if self.early_stop_thres < 1:
+            raise ValueError("early_stop_thres must be greater than 1, got %s." % self.early_stop_thres)
+            
     @property
     def importance_ratios_(self):
         """return the estimator importance ratios (the higher, the more important the feature)
@@ -563,7 +579,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             
             unique, counts = np.unique(x[:, feature_indice], return_counts=True)
             density = np.zeros((len(self.dummy_values_[feature_name])))
-            density[unique.astype(int)] = counts / x.shape[0]
+            density[unique.round().astype(int)] = counts / x.shape[0]
             self.dummy_density_.update({feature_name:{"density":{"values":self.dummy_values_[feature_name],
                                                                  "scores":density}}})
 
@@ -693,6 +709,28 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     n_estimators : int
         The maximum number of estimators for boosing
 
+    meta_info : None or a dict with features' information. default=None
+        Features are classified as:
+
+        continuous:
+            Specify `Type` as `continuous`, and include the keys of `Range` (a list with lower-upper elements pair) and
+            `Wrapper`, a callable function for wrapping the values
+        categorical:
+            Specify `Type` as `categorical`, and include the keys of `Mapping` (a list with all the possible categories)
+
+        If None, then all the features will be treated as continuous
+        
+    spline : str, optional. default="smoothing_spline"
+        The type of spline for fitting the curve
+      
+        "smoothing_spline": Smoothing spline
+
+        "p_spline": P-spline
+
+        "mono_p_spline": P-spline with monotonic constraint
+
+        "a_spline": Adaptive B-spline
+
     prjection_method : str, optional. default="marginal_regression"
         The base method for estimating the projection coefficients in sparse SIM
         
@@ -706,26 +744,12 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         
         "ols": Least squares estimation subject to hard thresholding.
 
-    spline : str, optional. default="smoothing_spline"
-        The type of spline for fitting the curve
-      
-        "smoothing_spline": Smoothing spline
-
-        "p_spline": P-spline
-
-        "mono_p_spline": P-spline with monotonic constraint
-
-        "a_spline": Adaptive B-spline
-
     knot_dist : str, optional. default="quantile"
         Distribution of knots
       
         "uniform": uniformly over the domain
 
         "quantile": uniform quantiles of the given input data (not available when spline="p_spline" or "mono_p_spline")
-
-    learning_rate : float, optional. default=1.0
-        The learning rate controling the shrinkage when performing boosting, ranges from 0 to 1
 
     reg_lambda : float, optional. default=0.1
         The sparsity strength of projection inidce, ranges from 0 to 1 
@@ -743,56 +767,53 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     knot_num : int, optional. default=10
         Number of knots
     
+    middle_update : None or str, optional. default=None
+        The inner update method for each base learner, can be None, "adam" or "bfgs"
+   
+    val_ratio : float, optional. default=0.2
+        The split ratio of validation set, which is used for post-hoc pruning
+
     ortho_shrink : float, optional. default=1
         Shrinkage strength for orthogonal enhancement, ranges from 0 to 1, valid when learning_rage=1.0
+    
+    learning_rate : float, optional. default=1.0
+        The learning rate controling the shrinkage when performing boosting, ranges from 0 to 1
 
-    loss_threshold : float, optional. default=0.01
-        This parameter is used for post-hoc pruning, ranges from 0 to 1, only used when pruning=True
-        To reduce model complexity, we prefer to use fewer base learners, which is as accurate as (1 - loss_threshold) of the best performance)
-
-    inner_update : None or str, optional. default=None
-        The inner update method for each base learner, can be None, "adam" or "bfgs"
-
-    meta_info : None or a dict with features' information. default=None
-        Features are classified as:
-
-        continuous:
-            Specify `Type` as `continuous`, and include the keys of `Range` (a list with lower-upper elements pair) and
-            `Wrapper`, a callable function for wrapping the values
-        categorical:
-            Specify `Type` as `categorical`, and include the keys of `Mapping` (a list with all the possible categories)
-
-        If None, then all the features will be treated as continuous
+    early_stop_thres : float. default=np.inf
+        The boosting algorithm will be stopped if the validation performance does not get improved for early_stop_thres estimators.
         
     pruning : bool. default=False
         Whether to perform pruning for the base sim estimators
     
-    val_ratio : float, optional. default=0.2
-        The split ratio of validation set, which is used for post-hoc pruning
+    loss_threshold : float, optional. default=0.01
+        This parameter is used for post-hoc pruning, ranges from 0 to 1, only used when pruning=True
+        To reduce model complexity, we prefer to use fewer base learners, which is as accurate as (1 - loss_threshold) of the best performance)
 
     random_state : int, optional. default=0
         Random seed
     """
 
-    def __init__(self, n_estimators, prjection_method="marginal_regression", spline="smoothing_spline", knot_dist="quantile",
-                 learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, degree=3, knot_num=10,
-                 ortho_shrink=1, loss_threshold=0.01, meta_info=None, pruning=False, val_ratio=0.2, middle_update=None, random_state=0):
+
+    def __init__(self, n_estimators, meta_info=None, prjection_method="marginal_regression", spline="smoothing_spline", knot_dist="quantile",
+                 reg_lambda=0.1, reg_gamma="GCV", degree=3, knot_num=10, middle_update=None,
+                 val_ratio=0.2, learning_rate=1.0, ortho_shrink=1,
+                 early_stop_thres=np.inf, pruning=False, loss_threshold=0.01, random_state=0):
 
         super(SimBoostRegressor, self).__init__(n_estimators=n_estimators,
-                                   prjection_method=prjection_method,
+                                   meta_info=meta_info,
                                    spline=spline,
-                                   learning_rate=learning_rate,
+                                   prjection_method=prjection_method,
                                    reg_lambda=reg_lambda,
                                    reg_gamma=reg_gamma,
                                    knot_dist=knot_dist,
                                    degree=degree,
                                    knot_num=knot_num,
-                                   ortho_shrink=ortho_shrink,
-                                   loss_threshold=loss_threshold,
-                                   meta_info=meta_info,
-                                   pruning=pruning,
-                                   val_ratio=val_ratio,
                                    middle_update=middle_update,
+                                   val_ratio=val_ratio,
+                                   learning_rate=learning_rate,
+                                   ortho_shrink=ortho_shrink,
+                                   pruning=pruning,
+                                   loss_threshold=loss_threshold,
                                    random_state=random_state)
 
     def _validate_input(self, x, y):
@@ -836,6 +857,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         if self.nfeature_num_ == 0:
             return 
         
+        mse_opt = np.inf
+        early_stop_count = 0
         for indice in range(self.n_estimators):
 
             # projection matrix
@@ -868,6 +891,16 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                     sample_weight=sample_weight, proj_mat=proj_mat, val_ratio=self.val_ratio, **self.middle_update)
             # update
             z = z - self.learning_rates[indice] * sim_estimator.predict(x)
+            mse_new = np.mean(z[self.val_idx] ** 2)
+            if mse_opt > mse_new:           
+                mse_opt = mse_new
+                early_stop_count = 0
+            else:
+                early_stop_count += 1
+
+            if early_stop_count >= self.early_stop_thres:
+                break
+
             self.sim_estimators_.append(sim_estimator)
 
     def _pruning(self, x, y):
@@ -972,6 +1005,28 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
     n_estimators : int
         The maximum number of estimators for boosing
 
+    meta_info : None or a dict with features' information. default=None
+        Features are classified as:
+
+        continuous:
+            Specify `Type` as `continuous`, and include the keys of `Range` (a list with lower-upper elements pair) and
+            `Wrapper`, a callable function for wrapping the values
+        categorical:
+            Specify `Type` as `categorical`, and include the keys of `Mapping` (a list with all the possible categories)
+
+        If None, then all the features will be treated as continuous
+        
+    spline : str, optional. default="smoothing_spline"
+        The type of spline for fitting the curve
+      
+        "smoothing_spline": Smoothing spline
+
+        "p_spline": P-spline
+
+        "mono_p_spline": P-spline with monotonic constraint
+
+        "a_spline": Adaptive B-spline
+
     prjection_method : str, optional. default="marginal_regression"
         The base method for estimating the projection coefficients in sparse SIM
         
@@ -985,26 +1040,12 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         
         "ols": Least squares estimation subject to hard thresholding.
 
-    spline : str, optional. default="smoothing_spline"
-        The type of spline for fitting the curve
-      
-        "smoothing_spline": Smoothing spline
-
-        "p_spline": P-spline
-
-        "mono_p_spline": P-spline with monotonic constraint
-
-        "a_spline": Adaptive B-spline
-
     knot_dist : str, optional. default="quantile"
         Distribution of knots
       
         "uniform": uniformly over the domain
 
         "quantile": uniform quantiles of the given input data (not available when spline="p_spline" or "mono_p_spline")
-
-    learning_rate : float, optional. default=1.0
-        The learning rate controling the shrinkage when performing boosting, ranges from 0 to 1
 
     reg_lambda : float, optional. default=0.1
         The sparsity strength of projection inidce, ranges from 0 to 1 
@@ -1022,57 +1063,54 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
     knot_num : int, optional. default=10
         Number of knots
     
+    middle_update : None or str, optional. default=None
+        The inner update method for each base learner, can be None, "adam" or "bfgs"
+   
+    val_ratio : float, optional. default=0.2
+        The split ratio of validation set, which is used for post-hoc pruning
+
     ortho_shrink : float, optional. default=1
         Shrinkage strength for orthogonal enhancement, ranges from 0 to 1, valid when learning_rage=1.0
+    
+    learning_rate : float, optional. default=1.0
+        The learning rate controling the shrinkage when performing boosting, ranges from 0 to 1
 
-    loss_threshold : float, optional. default=0.01
-        This parameter is used for post-hoc pruning, ranges from 0 to 1, only used when pruning=True
-        To reduce model complexity, we prefer to use fewer base learners, which is as accurate as (1 - loss_threshold) of the best performance)
-        
-    inner_update : None or str, optional. default=None
-        The inner update method for each base learner, can be None, "adam" or "bfgs"
-
-    meta_info : None or a dict with features' information. default=None
-        Features are classified as:
-
-        continuous:
-            Specify `Type` as `continuous`, and include the keys of `Range` (a list with lower-upper elements pair) and
-            `Wrapper`, a callable function for wrapping the values
-        categorical:
-            Specify `Type` as `categorical`, and include the keys of `Mapping` (a list with all the possible categories)
-
-        If None, then all the features will be treated as continuous
+    early_stop_thres : float. default=np.inf
+        The boosting algorithm will be stopped if the validation performance does not get improved for early_stop_thres estimators.
         
     pruning : bool. default=False
         Whether to perform pruning for the base sim estimators
-
-    val_ratio : float, optional. default=0.2
-        The split ratio of validation set, which is used for post-hoc pruning
+    
+    loss_threshold : float, optional. default=0.01
+        This parameter is used for post-hoc pruning, ranges from 0 to 1, only used when pruning=True
+        To reduce model complexity, we prefer to use fewer base learners, which is as accurate as (1 - loss_threshold) of the best performance)
 
     random_state : int, optional. default=0
         Random seed
     """
 
-    def __init__(self, n_estimators, prjection_method="marginal_regression", spline="smoothing_spline",
-                 learning_rate=1.0, reg_lambda=0.1, reg_gamma=0.1, knot_dist="quantile", degree=3, knot_num=10, ortho_shrink=1,
-                 loss_threshold=0.01, val_ratio=0.2, meta_info=None, pruning=False, middle_update=None, random_state=0):
+    def __init__(self, n_estimators, meta_info=None, prjection_method="marginal_regression", spline="smoothing_spline", knot_dist="quantile",
+                 reg_lambda=0.1, reg_gamma="GCV", degree=3, knot_num=10, middle_update=None,
+                 val_ratio=0.2, learning_rate=1.0, ortho_shrink=1,
+                 early_stop_thres=np.inf, pruning=False, loss_threshold=0.01, random_state=0):
 
         super(SimBoostClassifier, self).__init__(n_estimators=n_estimators,
-                                   prjection_method=prjection_method,
-                                   spline=spline,
-                                   learning_rate=learning_rate,
-                                   reg_lambda=reg_lambda,
-                                   reg_gamma=reg_gamma,
-                                   knot_dist=knot_dist,
-                                   degree=degree,
-                                   knot_num=knot_num,
-                                   ortho_shrink=ortho_shrink,
-                                   loss_threshold=loss_threshold,
-                                   meta_info=meta_info,
-                                   pruning=pruning,
-                                   val_ratio=val_ratio,
-                                   middle_update=middle_update,
-                                   random_state=random_state)
+                                    meta_info=meta_info,
+                                    spline=spline,
+                                    prjection_method=prjection_method,
+                                    reg_lambda=reg_lambda,
+                                    reg_gamma=reg_gamma,
+                                    knot_dist=knot_dist,
+                                    degree=degree,
+                                    knot_num=knot_num,
+                                    middle_update=middle_update,
+                                    val_ratio=val_ratio,
+                                    learning_rate=learning_rate,
+                                    ortho_shrink=ortho_shrink,
+                                    early_stop_thres=early_stop_thres,
+                                    pruning=pruning,
+                                    loss_threshold=loss_threshold,
+                                    random_state=random_state)
 
     def _validate_input(self, x, y):
         
@@ -1143,6 +1181,8 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         if self.nfeature_num_ == 0:
             return 
 
+        auc_opt = 0
+        early_stop_count = 0
         for indice in range(self.n_estimators):
             sample_weight[self.tr_idx] = proba_train * (1 - proba_train)
             sample_weight[self.tr_idx] /= np.sum(sample_weight[self.tr_idx])
@@ -1183,11 +1223,23 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
             # update
             sim_estimator["sim"].fit_middle_update(x[:, self.nfeature_index_list_], z, 
-            sample_weight=sample_weight, proj_mat=proj_mat, val_ratio=self.val_ratio, **self.middle_update)
+                           sample_weight=sample_weight, proj_mat=proj_mat, val_ratio=self.val_ratio, **self.middle_update)
+                        
             pred_train += self.learning_rates[indice] * sim_estimator.predict(x[self.tr_idx])
             proba_train = 1 / (1 + np.exp(-pred_train.ravel()))
             pred_val += self.learning_rates[indice] * sim_estimator.predict(x[self.val_idx])
             proba_val = 1 / (1 + np.exp(-pred_val.ravel()))
+
+            auc_new = roc_auc_score(y[self.val_idx], proba_val)
+            if auc_opt < auc_new:           
+                auc_opt = auc_new
+                early_stop_count = 0
+            else:
+                early_stop_count += 1
+
+            if early_stop_count >= self.early_stop_thres:
+                break
+
             self.sim_estimators_.append(sim_estimator)
     
     def _pruning(self, x, y):
