@@ -812,6 +812,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                                    val_ratio=val_ratio,
                                    learning_rate=learning_rate,
                                    ortho_shrink=ortho_shrink,
+                                   early_stop_thres=early_stop_thres,
                                    pruning=pruning,
                                    loss_threshold=loss_threshold,
                                    random_state=random_state)
