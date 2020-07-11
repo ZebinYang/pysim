@@ -279,7 +279,7 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
             self.sm_ = np.mean(y)
         else:
             if self.reg_gamma == "GCV":
-                kwargs = {"formula": Formula('y ~ s(x, bs="bs", k=' + str(knot_num + self.degree + 1) + \
+                kwargs = {"formula": Formula('y ~ s(x, bs="bs", k=' + str(self.knot_num + self.degree + 1) + \
                                     ', m=c(' + str(self.degree) + ', 2))'),
                        "family": "gaussian",
                        "knots": pd.DataFrame({"x":knots}), 
@@ -287,7 +287,7 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
                        "data": pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
                        "weights": pd.DataFrame({"w":sample_weight})["w"]}
             else:
-                kwargs = {"formula": Formula('y ~ s(x, bs="bs", k=' + str(knot_num + self.degree + 1) + \
+                kwargs = {"formula": Formula('y ~ s(x, bs="bs", k=' + str(self.knot_num + self.degree + 1) + \
                                     ', m=c(' + str(self.degree) + ', 2), sp=' + str(reg.reg_gamma) + ')'),
                        "family": "gaussian",
                        "knots": pd.DataFrame({"x":knots}), 
@@ -445,7 +445,7 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
                 self.sm_ = np.mean(y)
             else:
                 if self.reg_gamma == "GCV":
-                    kwargs = {"formula": Formula('y ~ s(x, bs="bs", k=' + str(knot_num + self.degree + 1) + \
+                    kwargs = {"formula": Formula('y ~ s(x, bs="bs", k=' + str(self.knot_num + self.degree + 1) + \
                                     ', m=c(' + str(self.degree) + ', 2))'),
                            "family": "binomial",
                            "knots": pd.DataFrame({"x":knots}), 
@@ -453,7 +453,7 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
                            "data": pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
                            "weights": pd.DataFrame({"w":sample_weight})["w"]}
                 else:
-                    kwargs = {"formula": Formula('y ~ s(x, bs="bs", k=' + str(knot_num + self.degree + 1) + \
+                    kwargs = {"formula": Formula('y ~ s(x, bs="bs", k=' + str(self.knot_num + self.degree + 1) + \
                                     ', m=c(' + str(self.degree) + ', 2), sp=' + str(reg.reg_gamma) + ')'),
                            "family": "binomial",
                            "knots": pd.DataFrame({"x":knots}), 

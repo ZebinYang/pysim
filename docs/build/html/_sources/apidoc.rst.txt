@@ -9,6 +9,12 @@ ______________________________
   :members:
   :inherited-members:
 
+
+.. automodule:: splines.smspline_mgcv
+  :members:
+  :inherited-members:
+
+
 .. automodule:: splines.pspline
   :members:
   :inherited-members:
