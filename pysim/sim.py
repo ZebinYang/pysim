@@ -16,8 +16,9 @@ from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin, is_clas
 from abc import ABCMeta, abstractmethod
 
 from .splines.aspline import ASplineClassifier, ASplineRegressor
-from .splines.smspline import SMSplineClassifier, SMSplineRegressor
 from .splines.pspline import PSplineClassifier, PSplineRegressor
+# from .splines.smspline import SMSplineClassifier, SMSplineRegressor
+from .splines.smspline_mgcv import SMSplineClassifier, SMSplineRegressor
 
 from rpy2 import robjects as ro
 from rpy2.robjects import numpy2ri

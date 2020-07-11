@@ -20,11 +20,11 @@ numpy2ri.activate()
 pandas2ri.activate()
 
 try:
-    bigsplines = importr("bigsplines")
+    mgcv = importr("mgcv")
 except:
     utils = importr("utils")
-    utils.install_packages("bigsplines")
-    bigsplines = importr("bigsplines")
+    utils.install_packages("mgcv")
+    mgcv = importr("mgcv")
 
 EPSILON = 1e-7
 
@@ -72,8 +72,8 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
 
         if not isinstance(self.degree, int):
             raise ValueError("degree must be an integer, got %s." % self.degree)
-        elif self.degree not in [1, 3]:
-            raise ValueError("degree must be 1 or 3, got" % self.degree)
+        elif self.degree <= 2:
+            raise ValueError("degree greater than 2, got" % self.degree)
 
         if not isinstance(self.reg_gamma, str):
             if (self.reg_gamma < 0) or (self.reg_gamma > 1):
@@ -95,12 +95,16 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         order : int
             order of derivative
         """
-        modelspec = self.sm_[int(np.where(self.sm_.names == "modelspec")[0][0])]
-        knots = np.array(modelspec[0])
-        coefs = np.array(modelspec[11]).reshape(-1, 1)
-        basis = bigsplines.ssBasis((x - self.xmin) / (self.xmax - self.xmin), knots, d=order,
-                           xmin=0, xmax=1, periodic=False, intercept=True)
-        derivative = np.dot(basis[0], coefs).ravel()
+        if order == 1:
+            x1 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x), type = 'lpmatrix')
+            x2 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x + EPSILON), type = 'lpmatrix')
+            derivative = np.dot((x2 - x1) / eps, sm_[0]).ravel()
+            
+        elif order == 2:
+            x1 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x - EPSILON), type = 'lpmatrix')
+            x2 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x), type = 'lpmatrix')
+            x3 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x + EPSILON), type = 'lpmatrix')
+            derivative = np.dot((x3 + x1 - 2 * x2) / eps, sm_[0]).ravel()
         return derivative
 
     def visualize(self):
@@ -149,14 +153,11 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         x[x > self.xmax] = self.xmax
         if isinstance(self.sm_, np.ndarray):
             pred = self.sm_ * np.ones(x.shape[0])
-            
+
         elif isinstance(self.sm_, float):
             pred = self.sm_ * np.ones(x.shape[0])
         else:
-            if "family" in self.sm_.names:
-                pred = bigsplines.predict_bigssg(self.sm_, ro.r("data.frame")(x=x))[1]
-            if "family" not in self.sm_.names:
-                pred = bigsplines.predict_bigssa(self.sm_, ro.r("data.frame")(x=x))
+            pred = mgcv.predict_gam(sm_, ro.r("data.frame")(x=x))
         return pred
 
 
@@ -181,10 +182,10 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
         "quantile": uniform quantiles of the given input data
 
     degree : int, optional. default=3
-          the order of the spline, possible values include 1 and 3
+          the order of the spline, must be larger than 2
 
     reg_gamma : float, optional. default=0.1
-            the roughness penalty strength of the spline algorithm, range from 0 to 1; it can also be set to "GCV".
+            the roughness penalty strength of the spline algorithm; it can also be set to "GCV".
     
     xmin : float, optional. default=-1
         the min boundary of the input
@@ -267,27 +268,33 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
         else:
             sample_weight = np.round(sample_weight / np.sum(sample_weight) * n_samples, 4)
         
-        # The minimal value of sample weight in bigsplines is 0.005.
-        sample_weight[sample_weight <= 0.005] = 0.0051
         if self.knot_dist == "uniform":
             knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32))[1:-1]
-            knot_idx = [(np.abs(x - i)).argmin() + 1 for i in knots]
         elif self.knot_dist == "quantile":
             knots = np.quantile(x, list(np.linspace(0, 1, self.knot_num + 2, dtype=np.float32)))[1:-1]
-            knot_idx = [(np.abs(x - i)).argmin() + 1 for i in knots]
+        knots = [-1] * 4 + knots + [1] * 4
 
         unique_num = len(np.unique(x.round(decimals=6)))
         if unique_num <= 1:
             self.sm_ = np.mean(y)
         else:
-            kwargs = {"formula": Formula('y ~ x'),
-                   "nknots": knot_idx, 
-                   "lambdas": ro.r("NULL") if self.reg_gamma == "GCV" else self.reg_gamma,
-                   "rparm": 1e-6,
-                   "type": "lin" if self.degree==1 else "cub",
-                   "data": pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
-                   "weights": pd.DataFrame({"w":sample_weight})["w"]}
-            self.sm_ = bigsplines.bigssa(**kwargs)
+            if self.reg_gamma == "GCV":
+                kwargs = {"formula": Formula('y ~ s(x, bs="bs", k=' + str(knot_num + self.degree + 1) + \
+                                    ', m=c(' + str(self.degree) + ', 2))'),
+                       "family": "gaussian",
+                       "knots": pd.DataFrame({"x":knots}), 
+                       "method": "GCV.Cp",
+                       "data": pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
+                       "weights": pd.DataFrame({"w":sample_weight})["w"]}
+            else:
+                kwargs = {"formula": Formula('y ~ s(x, bs="bs", k=' + str(knot_num + self.degree + 1) + \
+                                    ', m=c(' + str(self.degree) + ', 2), sp=' + str(reg.reg_gamma) + ')'),
+                       "family": "gaussian",
+                       "knots": pd.DataFrame({"x":knots}), 
+                       "data": pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
+                       "weights": pd.DataFrame({"w":sample_weight})["w"]}
+
+            self.sm_ = mgcv.gam(**kwargs)
         return self
 
     def predict(self, x):
@@ -330,10 +337,10 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
         "quantile": uniform quantiles of the given input data
 
     degree : int, optional. default=3
-          the order of the spline, possible values include 1 and 3
+          the order of the spline, must be larger than 2
 
     reg_gamma : float, optional. default=0.1
-            the roughness penalty strength of the spline algorithm, range from 0 to 1; it can also be set to "GCV".
+            the roughness penalty strength of the spline algorithm; it can also be set to "GCV".
     
     xmin : float, optional. default=-1
         the min boundary of the input
@@ -423,44 +430,37 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
         else:
             sample_weight = np.round(sample_weight / np.sum(sample_weight) * n_samples, 4)
         
-        # The minimal value of sample weight in bigsplines is 0.005.
-        sample_weight[sample_weight <= 0.005] = 0.0051
         if self.knot_dist == "uniform":
             knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32))[1:-1]
-            knot_idx = [(np.abs(x - i)).argmin() + 1 for i in knots]
         elif self.knot_dist == "quantile":
             knots = np.quantile(x, list(np.linspace(0, 1, self.knot_num + 2, dtype=np.float32)))[1:-1]
-            knot_idx = [(np.abs(x - i)).argmin() + 1 for i in knots]
 
+        knots = [-1] * 4 + knots + [1] * 4
         unique_num = len(np.unique(x.round(decimals=6)))
         if unique_num <= 1:
             p = np.clip(np.mean(y), EPSILON, 1. - EPSILON)
             self.sm_ = np.log(p / (1 - p))
         else:
-            i = 0
-            exit = False
-            while not exit:
-                try:
-                    if not isinstance(self.reg_gamma, str):
-                        if self.reg_gamma > 1:
-                            break
-                        
-                    kwargs = {"formula": Formula('y ~ x'),
+            if unique_num <= 1:
+                self.sm_ = np.mean(y)
+            else:
+                if self.reg_gamma == "GCV":
+                    kwargs = {"formula": Formula('y ~ s(x, bs="bs", k=' + str(knot_num + self.degree + 1) + \
+                                    ', m=c(' + str(self.degree) + ', 2))'),
                            "family": "binomial",
-                           "nknots": knot_idx, 
-                           "lambdas": ro.r("NULL") if self.reg_gamma == "GCV" else self.reg_gamma,
-                           "rparm": 1e-6,
-                           "type": "lin" if self.degree==1 else "cub",
+                           "knots": pd.DataFrame({"x":knots}), 
+                           "method": "GCV.Cp",
                            "data": pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
                            "weights": pd.DataFrame({"w":sample_weight})["w"]}
-                    self.sm_ = bigsplines.bigssg(**kwargs)
-                    exit = True
-                except rpy2.rinterface_lib.embedded.RRuntimeError:
-                    if not isinstance(self.reg_gamma, str):
-                        self.reg_gamma += 10 ** (i - 9)
-                    else:
-                        break
-                    i += 1
+                else:
+                kwargs = {"formula": Formula('y ~ s(x, bs="bs", k=' + str(knot_num + self.degree + 1) + \
+                                    ', m=c(' + str(self.degree) + ', 2), sp=' + str(reg.reg_gamma) + ')'),
+                           "family": "binomial",
+                           "knots": pd.DataFrame({"x":knots}), 
+                           "data": pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
+                           "weights": pd.DataFrame({"w":sample_weight})["w"]}
+
+                self.sm_ = mgcv.gam(**kwargs)
         return self
     
     def predict_proba(self, x):
