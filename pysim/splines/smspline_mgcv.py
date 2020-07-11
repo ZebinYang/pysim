@@ -272,7 +272,7 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
             knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32))[1:-1]
         elif self.knot_dist == "quantile":
             knots = np.quantile(x, list(np.linspace(0, 1, self.knot_num + 2, dtype=np.float32)))[1:-1]
-        knots = [-1] * 4 + knots + [1] * 4
+        knots = [self.xmin] * 4 + knots + [self.xmax] * 4
 
         unique_num = len(np.unique(x.round(decimals=6)))
         if unique_num <= 1:
@@ -435,7 +435,7 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
         elif self.knot_dist == "quantile":
             knots = np.quantile(x, list(np.linspace(0, 1, self.knot_num + 2, dtype=np.float32)))[1:-1]
 
-        knots = [-1] * 4 + knots + [1] * 4
+        knots = [self.xmin] * 4 + knots + [self.xmax] * 4
         unique_num = len(np.unique(x.round(decimals=6)))
         if unique_num <= 1:
             p = np.clip(np.mean(y), EPSILON, 1. - EPSILON)
@@ -448,7 +448,7 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
                     kwargs = {"formula": Formula('y ~ s(x, bs="bs", k=' + str(self.knot_num + self.degree + 1) + \
                                     ', m=c(' + str(self.degree) + ', 2))'),
                            "family": "binomial",
-                           "knots": pd.DataFrame({"x":knots}), 
+                           "knots": pd.DataFrame({"x":knots}),
                            "method": "GCV.Cp",
                            "data": pd.DataFrame({"x":x.ravel(), "y":y.ravel()}),
                            "weights": pd.DataFrame({"w":sample_weight})["w"]}
