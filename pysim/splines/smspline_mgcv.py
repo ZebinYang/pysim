@@ -271,7 +271,7 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
         if self.knot_dist == "uniform":
             knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32))[1:-1]
         elif self.knot_dist == "quantile":
-            knots = np.quantile(x, list(np.linspace(0, 1, self.knot_num + 2, dtype=np.float32)))[1:-1]
+            knots = np.quantile(x, list(np.linspace(0, 1, self.knot_num + 2, dtype=np.float32)))[1:-1].tolist()
         
         knots = [self.xmin] * (self.degree + 1) + knots + [self.xmax] * (self.degree + 1)
         unique_num = len(np.unique(x.round(decimals=6)))
@@ -433,7 +433,7 @@ class SMSplineClassifier(BaseSMSpline, ClassifierMixin):
         if self.knot_dist == "uniform":
             knots = list(np.linspace(self.xmin, self.xmax, self.knot_num + 2, dtype=np.float32))[1:-1]
         elif self.knot_dist == "quantile":
-            knots = np.quantile(x, list(np.linspace(0, 1, self.knot_num + 2, dtype=np.float32)))[1:-1]
+            knots = np.quantile(x, list(np.linspace(0, 1, self.knot_num + 2, dtype=np.float32)))[1:-1].tolist()
 
         knots = [self.xmin] * (self.degree + 1) + knots + [self.xmax] * (self.degree + 1)
         unique_num = len(np.unique(x.round(decimals=6)))
