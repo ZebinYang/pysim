@@ -98,13 +98,13 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         if order == 1:
             x1 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x), type = 'lpmatrix')
             x2 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x + EPSILON), type = 'lpmatrix')
-            derivative = np.dot((x2 - x1) / eps, sm_[0]).ravel()
+            derivative = np.dot((x2 - x1) / EPSILON, sm_[0]).ravel()
             
         elif order == 2:
             x1 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x - EPSILON), type = 'lpmatrix')
             x2 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x), type = 'lpmatrix')
             x3 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x + EPSILON), type = 'lpmatrix')
-            derivative = np.dot((x3 + x1 - 2 * x2) / eps, sm_[0]).ravel()
+            derivative = np.dot((x3 + x1 - 2 * x2) / EPSILON ** 2, sm_[0]).ravel()
         return derivative
 
     def visualize(self):
