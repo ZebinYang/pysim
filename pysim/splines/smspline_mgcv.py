@@ -157,7 +157,7 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         elif isinstance(self.sm_, float):
             pred = self.sm_ * np.ones(x.shape[0])
         else:
-            pred = mgcv.predict_gam(sm_, ro.r("data.frame")(x=x))
+            pred = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x))
         return pred
 
 
