@@ -43,7 +43,7 @@ __all__ = ["SimRegressor", "SimClassifier"]
 class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
     @abstractmethod
-    def __init__(self, method="first_order", spline="smoothing_spline", reg_lambda=0.1, reg_gamma=0.1,
+    def __init__(self, method="first_order", spline="smoothing_spline_mgcv", reg_lambda=0.1, reg_gamma=0.1,
                  knot_num=10, knot_dist="quantile", degree=3, random_state=0):
 
         self.method = method
@@ -777,7 +777,7 @@ class SimRegressor(BaseSim, RegressorMixin):
         Random seed
     """
 
-    def __init__(self, method="first_order", spline="smoothing_spline", reg_lambda=0.1, reg_gamma=0.1,
+    def __init__(self, method="first_order", spline="smoothing_spline_mgcv", reg_lambda=0.1, reg_gamma=0.1,
                  knot_num=10, knot_dist="quantile", degree=3, random_state=0):
 
         super(SimRegressor, self).__init__(method=method,
@@ -962,7 +962,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
         Random seed
     """
 
-    def __init__(self, method="first_order", reg_lambda=0.1, spline="smoothing_spline", reg_gamma=0.1,
+    def __init__(self, method="first_order", reg_lambda=0.1, spline="smoothing_spline_mgcv", reg_gamma=0.1,
                  knot_num=10, knot_dist="quantile", degree=3, random_state=0):
 
         super(SimClassifier, self).__init__(method=method,

@@ -842,599 +842,6 @@ component of a nested object.</p>
 
 </dd></dl>
 
-<span class="target" id="module-splines.smspline"></span><dl class="class">
-<dt id="splines.smspline.SMSplineRegressor">
-<em class="property">class </em><code class="sig-prename descclassname">splines.smspline.</code><code class="sig-name descname">SMSplineRegressor</code><span class="sig-paren">(</span><em class="sig-param">knot_num=10</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">degree=3</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">xmin=-1</em>, <em class="sig-param">xmax=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/smspline.html#SMSplineRegressor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.smspline.SMSplineRegressor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Base class for Smoothing Spline regression.</p>
-<p>Details:
-1. This is an API for the well-known R package <cite>bigsplines</cite>, and we call the function bigssa through rpy2 interface.
-2. During prediction, the data which is outside of the given <cite>xmin</cite> and <cite>xmax</cite> will be clipped to the boundary.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=10</em>) – the number of knots</p></li>
-<li><p><strong>knot_dist</strong> (<em>str</em><em>, </em><em>optional. default=&quot;quantile&quot;</em>) – <p>the distribution of knots</p>
-<p>”uniform”: uniformly over the domain</p>
-<p>”quantile”: uniform quantiles of the given input data</p>
-</p></li>
-<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=3</em>) – the order of the spline, possible values include 1 and 3</p></li>
-<li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – the roughness penalty strength of the spline algorithm, range from 0 to 1; it can also be set to “GCV”.</p></li>
-<li><p><strong>xmin</strong> (<em>float</em><em>, </em><em>optional. default=-1</em>) – the min boundary of the input</p></li>
-<li><p><strong>xmax</strong> (<em>float</em><em>, </em><em>optional. default=1</em>) – the max boundary of the input</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor._check_n_features">
-<code class="sig-name descname">_check_n_features</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">reset</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineRegressor._check_n_features" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the <cite>n_features_in_</cite> attribute, or check against it.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<em>{ndarray</em><em>, </em><em>sparse matrix} of shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – The input samples.</p></li>
-<li><p><strong>reset</strong> (<em>bool</em>) – If True, the <cite>n_features_in_</cite> attribute is set to <cite>X.shape[1]</cite>.
-Else, the attribute must already exist and the function checks
-that it is equal to <cite>X.shape[1]</cite>.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor._estimate_density">
-<code class="sig-name descname">_estimate_density</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineRegressor._estimate_density" title="Permalink to this definition">¶</a></dt>
-<dd><p>method to estimate the density of input data</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – containing the input dataset</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor._get_param_names">
-<em class="property">classmethod </em><code class="sig-name descname">_get_param_names</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineRegressor._get_param_names" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get parameter names for the estimator</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor._repr_html_inner">
-<code class="sig-name descname">_repr_html_inner</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineRegressor._repr_html_inner" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function is returned by the &#64;property <cite>_repr_html_</cite> to make
-<cite>hasattr(estimator, “_repr_html_”) return `True</cite> or <cite>False</cite> depending
-on <cite>get_config()[“display”]</cite>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor._repr_mimebundle_">
-<code class="sig-name descname">_repr_mimebundle_</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineRegressor._repr_mimebundle_" title="Permalink to this definition">¶</a></dt>
-<dd><p>Mime bundle used by jupyter kernels to display estimator</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor._validate_data">
-<code class="sig-name descname">_validate_data</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">y=None</em>, <em class="sig-param">reset=True</em>, <em class="sig-param">validate_separately=False</em>, <em class="sig-param">**check_params</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineRegressor._validate_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Validate input data and set or check the <cite>n_features_in_</cite> attribute.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<em>{array-like</em><em>, </em><em>sparse matrix</em><em>, </em><em>dataframe} of shape</em><em>                 (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – The input samples.</p></li>
-<li><p><strong>y</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em><em>, </em><em>default=None</em>) – The targets. If None, <cite>check_array</cite> is called on <cite>X</cite> and
-<cite>check_X_y</cite> is called otherwise.</p></li>
-<li><p><strong>reset</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to reset the <cite>n_features_in_</cite> attribute.
-If False, the input will be checked for consistency with data
-provided when reset was last True.</p></li>
-<li><p><strong>validate_separately</strong> (<em>False</em><em> or </em><em>tuple of dicts</em><em>, </em><em>default=False</em>) – Only used if y is not None.
-If False, call validate_X_y(). Else, it must be a tuple of kwargs
-to be used for calling check_array() on X and y respectively.</p></li>
-<li><p><strong>**check_params</strong> (<em>kwargs</em>) – Parameters passed to <code class="xref py py-func docutils literal notranslate"><span class="pre">sklearn.utils.check_array()</span></code> or
-<code class="xref py py-func docutils literal notranslate"><span class="pre">sklearn.utils.check_X_y()</span></code>. Ignored if validate_separately
-is not False.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>out</strong> – The validated input. A tuple is returned if <cite>y</cite> is not None.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>{ndarray, sparse matrix} or tuple of these</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor._validate_hyperparameters">
-<code class="sig-name descname">_validate_hyperparameters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineRegressor._validate_hyperparameters" title="Permalink to this definition">¶</a></dt>
-<dd><p>method to validate model parameters</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor._validate_input">
-<code class="sig-name descname">_validate_input</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/smspline.html#SMSplineRegressor._validate_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.smspline.SMSplineRegressor._validate_input" title="Permalink to this definition">¶</a></dt>
-<dd><p>method to validate data</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>1</em><em>)</em>) – containing the input dataset</p></li>
-<li><p><strong>y</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em>) – containing the output dataset</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor.decision_function">
-<code class="sig-name descname">decision_function</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineRegressor.decision_function" title="Permalink to this definition">¶</a></dt>
-<dd><p>output f(x) for given samples</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>1</em><em>)</em>) – containing the input dataset</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>containing f(x)</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>np.array of shape (n_samples,)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor.diff">
-<code class="sig-name descname">diff</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">order=1</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineRegressor.diff" title="Permalink to this definition">¶</a></dt>
-<dd><p>method to calculate derivatives of the fitted adaptive spline to the input</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>1</em><em>)</em>) – containing the input dataset</p></li>
-<li><p><strong>order</strong> (<em>int</em>) – order of derivative</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor.fit">
-<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/smspline.html#SMSplineRegressor.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.smspline.SMSplineRegressor.fit" title="Permalink to this definition">¶</a></dt>
-<dd><p>fit the smoothing spline</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – containing the input dataset</p></li>
-<li><p><strong>y</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em>) – containing target values</p></li>
-<li><p><strong>sample_weight</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em><em>, </em><em>optional</em>) – containing sample weights</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>self : Estimator instance.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>object</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor.get_loss">
-<code class="sig-name descname">get_loss</code><span class="sig-paren">(</span><em class="sig-param">label</em>, <em class="sig-param">pred</em>, <em class="sig-param">sample_weight=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/smspline.html#SMSplineRegressor.get_loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.smspline.SMSplineRegressor.get_loss" title="Permalink to this definition">¶</a></dt>
-<dd><p>method to calculate the cross entropy loss</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>label</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em>) – containing the input dataset</p></li>
-<li><p><strong>pred</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em>) – containing the output dataset</p></li>
-<li><p><strong>sample_weight</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em><em>, </em><em>optional</em>) – containing sample weights</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>the cross entropy loss</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor.get_params">
-<code class="sig-name descname">get_params</code><span class="sig-paren">(</span><em class="sig-param">deep=True</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineRegressor.get_params" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get parameters for this estimator.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>deep</strong> (<em>bool</em><em>, </em><em>default=True</em>) – If True, will return the parameters for this estimator and
-contained subobjects that are estimators.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>params</strong> – Parameter names mapped to their values.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>mapping of string to any</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor.predict">
-<code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/smspline.html#SMSplineRegressor.predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.smspline.SMSplineRegressor.predict" title="Permalink to this definition">¶</a></dt>
-<dd><p>output f(x) for given samples</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>1</em><em>)</em>) – containing the input dataset</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>containing f(x)</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>np.array of shape (n_samples,)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor.score">
-<code class="sig-name descname">score</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineRegressor.score" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the coefficient of determination R^2 of the prediction.</p>
-<p>The coefficient R^2 is defined as (1 - u/v), where u is the residual
-sum of squares ((y_true - y_pred) ** 2).sum() and v is the total
-sum of squares ((y_true - y_true.mean()) ** 2).sum().
-The best possible score is 1.0 and it can be negative (because the
-model can be arbitrarily worse). A constant model that always
-predicts the expected value of y, disregarding the input features,
-would get a R^2 score of 0.0.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Test samples. For some estimators this may be a
-precomputed kernel matrix or a list of generic objects instead,
-shape = (n_samples, n_samples_fitted),
-where n_samples_fitted is the number of
-samples used in the fitting for the estimator.</p></li>
-<li><p><strong>y</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>) or </em><em>(</em><em>n_samples</em><em>, </em><em>n_outputs</em><em>)</em>) – True values for X.</p></li>
-<li><p><strong>sample_weight</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em><em>, </em><em>default=None</em>) – Sample weights.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>score</strong> – R^2 of self.predict(X) wrt. y.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>The R2 score used when calling <code class="docutils literal notranslate"><span class="pre">score</span></code> on a regressor uses
-<code class="docutils literal notranslate"><span class="pre">multioutput='uniform_average'</span></code> from version 0.23 to keep consistent
-with default value of <code class="xref py py-func docutils literal notranslate"><span class="pre">r2_score()</span></code>.
-This influences the <code class="docutils literal notranslate"><span class="pre">score</span></code> method of all the multioutput
-regressors (except for
-<code class="xref py py-class docutils literal notranslate"><span class="pre">MultiOutputRegressor</span></code>).</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor.set_params">
-<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param">**params</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineRegressor.set_params" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the parameters of this estimator.</p>
-<p>The method works on simple estimators as well as on nested objects
-(such as pipelines). The latter have parameters of the form
-<code class="docutils literal notranslate"><span class="pre">&lt;component&gt;__&lt;parameter&gt;</span></code> so that it’s possible to update each
-component of a nested object.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>**params</strong> (<em>dict</em>) – Estimator parameters.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>self</strong> – Estimator instance.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>object</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineRegressor.visualize">
-<code class="sig-name descname">visualize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineRegressor.visualize" title="Permalink to this definition">¶</a></dt>
-<dd><p>draw the fitted shape function</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="splines.smspline.SMSplineClassifier">
-<em class="property">class </em><code class="sig-prename descclassname">splines.smspline.</code><code class="sig-name descname">SMSplineClassifier</code><span class="sig-paren">(</span><em class="sig-param">knot_num=10</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">degree=3</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">xmin=-1</em>, <em class="sig-param">xmax=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/smspline.html#SMSplineClassifier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.smspline.SMSplineClassifier" title="Permalink to this definition">¶</a></dt>
-<dd><p>Base class for Smoothing Spline classification.</p>
-<p>Details:
-1. This is an API for the well-known R package <cite>bigsplines</cite>, and we call the function bigssg through rpy2 interface.
-2. During prediction, the data which is outside of the given <cite>xmin</cite> and <cite>xmax</cite> will be clipped to the boundary.
-3. reg_gamma will be increased if the current value is too small</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=10</em>) – the number of knots</p></li>
-<li><p><strong>knot_dist</strong> (<em>str</em><em>, </em><em>optional. default=&quot;quantile&quot;</em>) – <p>the distribution of knots</p>
-<p>”uniform”: uniformly over the domain</p>
-<p>”quantile”: uniform quantiles of the given input data</p>
-</p></li>
-<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=3</em>) – the order of the spline, possible values include 1 and 3</p></li>
-<li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – the roughness penalty strength of the spline algorithm, range from 0 to 1; it can also be set to “GCV”.</p></li>
-<li><p><strong>xmin</strong> (<em>float</em><em>, </em><em>optional. default=-1</em>) – the min boundary of the input</p></li>
-<li><p><strong>xmax</strong> (<em>float</em><em>, </em><em>optional. default=1</em>) – the max boundary of the input</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier._check_n_features">
-<code class="sig-name descname">_check_n_features</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">reset</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineClassifier._check_n_features" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the <cite>n_features_in_</cite> attribute, or check against it.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<em>{ndarray</em><em>, </em><em>sparse matrix} of shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – The input samples.</p></li>
-<li><p><strong>reset</strong> (<em>bool</em>) – If True, the <cite>n_features_in_</cite> attribute is set to <cite>X.shape[1]</cite>.
-Else, the attribute must already exist and the function checks
-that it is equal to <cite>X.shape[1]</cite>.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier._estimate_density">
-<code class="sig-name descname">_estimate_density</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineClassifier._estimate_density" title="Permalink to this definition">¶</a></dt>
-<dd><p>method to estimate the density of input data</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – containing the input dataset</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier._get_param_names">
-<em class="property">classmethod </em><code class="sig-name descname">_get_param_names</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineClassifier._get_param_names" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get parameter names for the estimator</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier._repr_html_inner">
-<code class="sig-name descname">_repr_html_inner</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineClassifier._repr_html_inner" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function is returned by the &#64;property <cite>_repr_html_</cite> to make
-<cite>hasattr(estimator, “_repr_html_”) return `True</cite> or <cite>False</cite> depending
-on <cite>get_config()[“display”]</cite>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier._repr_mimebundle_">
-<code class="sig-name descname">_repr_mimebundle_</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineClassifier._repr_mimebundle_" title="Permalink to this definition">¶</a></dt>
-<dd><p>Mime bundle used by jupyter kernels to display estimator</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier._validate_data">
-<code class="sig-name descname">_validate_data</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">y=None</em>, <em class="sig-param">reset=True</em>, <em class="sig-param">validate_separately=False</em>, <em class="sig-param">**check_params</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineClassifier._validate_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Validate input data and set or check the <cite>n_features_in_</cite> attribute.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<em>{array-like</em><em>, </em><em>sparse matrix</em><em>, </em><em>dataframe} of shape</em><em>                 (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – The input samples.</p></li>
-<li><p><strong>y</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em><em>, </em><em>default=None</em>) – The targets. If None, <cite>check_array</cite> is called on <cite>X</cite> and
-<cite>check_X_y</cite> is called otherwise.</p></li>
-<li><p><strong>reset</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to reset the <cite>n_features_in_</cite> attribute.
-If False, the input will be checked for consistency with data
-provided when reset was last True.</p></li>
-<li><p><strong>validate_separately</strong> (<em>False</em><em> or </em><em>tuple of dicts</em><em>, </em><em>default=False</em>) – Only used if y is not None.
-If False, call validate_X_y(). Else, it must be a tuple of kwargs
-to be used for calling check_array() on X and y respectively.</p></li>
-<li><p><strong>**check_params</strong> (<em>kwargs</em>) – Parameters passed to <code class="xref py py-func docutils literal notranslate"><span class="pre">sklearn.utils.check_array()</span></code> or
-<code class="xref py py-func docutils literal notranslate"><span class="pre">sklearn.utils.check_X_y()</span></code>. Ignored if validate_separately
-is not False.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>out</strong> – The validated input. A tuple is returned if <cite>y</cite> is not None.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>{ndarray, sparse matrix} or tuple of these</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier._validate_hyperparameters">
-<code class="sig-name descname">_validate_hyperparameters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineClassifier._validate_hyperparameters" title="Permalink to this definition">¶</a></dt>
-<dd><p>method to validate model parameters</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier._validate_input">
-<code class="sig-name descname">_validate_input</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/smspline.html#SMSplineClassifier._validate_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.smspline.SMSplineClassifier._validate_input" title="Permalink to this definition">¶</a></dt>
-<dd><p>method to validate data</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>1</em><em>)</em>) – containing the input dataset</p></li>
-<li><p><strong>y</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em>) – containing the output dataset</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier.decision_function">
-<code class="sig-name descname">decision_function</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineClassifier.decision_function" title="Permalink to this definition">¶</a></dt>
-<dd><p>output f(x) for given samples</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>1</em><em>)</em>) – containing the input dataset</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>containing f(x)</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>np.array of shape (n_samples,)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier.diff">
-<code class="sig-name descname">diff</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">order=1</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineClassifier.diff" title="Permalink to this definition">¶</a></dt>
-<dd><p>method to calculate derivatives of the fitted adaptive spline to the input</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>1</em><em>)</em>) – containing the input dataset</p></li>
-<li><p><strong>order</strong> (<em>int</em>) – order of derivative</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier.fit">
-<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/smspline.html#SMSplineClassifier.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.smspline.SMSplineClassifier.fit" title="Permalink to this definition">¶</a></dt>
-<dd><p>fit the smoothing spline</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – containing the input dataset</p></li>
-<li><p><strong>y</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em>) – containing target values</p></li>
-<li><p><strong>sample_weight</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em><em>, </em><em>optional</em>) – containing sample weights</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>self : Estimator instance.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>object</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier.get_loss">
-<code class="sig-name descname">get_loss</code><span class="sig-paren">(</span><em class="sig-param">label</em>, <em class="sig-param">pred</em>, <em class="sig-param">sample_weight=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/smspline.html#SMSplineClassifier.get_loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.smspline.SMSplineClassifier.get_loss" title="Permalink to this definition">¶</a></dt>
-<dd><p>method to calculate the cross entropy loss</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>label</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em>) – containing the input dataset</p></li>
-<li><p><strong>pred</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em>) – containing the output dataset</p></li>
-<li><p><strong>sample_weight</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em><em>, </em><em>optional</em>) – containing sample weights</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>the cross entropy loss</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier.get_params">
-<code class="sig-name descname">get_params</code><span class="sig-paren">(</span><em class="sig-param">deep=True</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineClassifier.get_params" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get parameters for this estimator.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>deep</strong> (<em>bool</em><em>, </em><em>default=True</em>) – If True, will return the parameters for this estimator and
-contained subobjects that are estimators.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>params</strong> – Parameter names mapped to their values.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>mapping of string to any</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier.predict">
-<code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/smspline.html#SMSplineClassifier.predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.smspline.SMSplineClassifier.predict" title="Permalink to this definition">¶</a></dt>
-<dd><p>output binary prediction for given samples</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – containing the input dataset</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>containing binary prediction</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>np.array of shape (n_samples,)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier.predict_proba">
-<code class="sig-name descname">predict_proba</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/smspline.html#SMSplineClassifier.predict_proba"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.smspline.SMSplineClassifier.predict_proba" title="Permalink to this definition">¶</a></dt>
-<dd><p>output probability prediction for given samples</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – containing the input dataset</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>containing probability prediction</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>np.array of shape (n_samples, 2)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier.score">
-<code class="sig-name descname">score</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineClassifier.score" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the mean accuracy on the given test data and labels.</p>
-<p>In multi-label classification, this is the subset accuracy
-which is a harsh metric since you require for each sample that
-each label set be correctly predicted.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Test samples.</p></li>
-<li><p><strong>y</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>) or </em><em>(</em><em>n_samples</em><em>, </em><em>n_outputs</em><em>)</em>) – True labels for X.</p></li>
-<li><p><strong>sample_weight</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em><em>, </em><em>default=None</em>) – Sample weights.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>score</strong> – Mean accuracy of self.predict(X) wrt. y.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier.set_params">
-<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param">**params</em><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineClassifier.set_params" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the parameters of this estimator.</p>
-<p>The method works on simple estimators as well as on nested objects
-(such as pipelines). The latter have parameters of the form
-<code class="docutils literal notranslate"><span class="pre">&lt;component&gt;__&lt;parameter&gt;</span></code> so that it’s possible to update each
-component of a nested object.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>**params</strong> (<em>dict</em>) – Estimator parameters.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>self</strong> – Estimator instance.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>object</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="splines.smspline.SMSplineClassifier.visualize">
-<code class="sig-name descname">visualize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#splines.smspline.SMSplineClassifier.visualize" title="Permalink to this definition">¶</a></dt>
-<dd><p>draw the fitted shape function</p>
-</dd></dl>
-
-</dd></dl>
-
 <span class="target" id="module-splines.smspline_mgcv"></span><dl class="class">
 <dt id="splines.smspline_mgcv.SMSplineRegressor">
 <em class="property">class </em><code class="sig-prename descclassname">splines.smspline_mgcv.</code><code class="sig-name descname">SMSplineRegressor</code><span class="sig-paren">(</span><em class="sig-param">knot_num=10</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">degree=3</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">xmin=-1</em>, <em class="sig-param">xmax=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/splines/smspline_mgcv.html#SMSplineRegressor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#splines.smspline_mgcv.SMSplineRegressor" title="Permalink to this definition">¶</a></dt>
@@ -2603,8 +2010,9 @@ component of a nested object.</p>
 <p>”marginal_regression”: Marginal regression subject to hard thresholding</p>
 <p>”ols”: Least squares estimation subject to hard thresholding</p>
 </p></li>
-<li><p><strong>spline</strong> (<em>str</em><em>, </em><em>optional. default=&quot;smoothing_spline&quot;</em>) – <p>The type of spline for fitting the curve</p>
-<p>”smoothing_spline”: Smoothing spline</p>
+<li><p><strong>spline</strong> (<em>str</em><em>, </em><em>optional. default=&quot;smoothing_spline_mgcv&quot;</em>) – <p>The type of spline for fitting the curve</p>
+<p>”smoothing_spline_bigsplines”: Smoothing spline based on bigsplines package in R</p>
+<p>”smoothing_spline_mgcv”: Smoothing spline based on mgcv package in R</p>
 <p>”p_spline”: P-spline</p>
 <p>”mono_p_spline”: P-spline with monotonic constraint</p>
 <p>”a_spline”: Adaptive B-spline</p>
@@ -2615,10 +2023,14 @@ component of a nested object.</p>
 </p></li>
 <li><p><strong>reg_lambda</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – Sparsity strength of projection indice, ranges from 0 to 1</p></li>
 <li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – <p>Roughness penalty strength of the spline algorithm</p>
-<p>For spline=”smoothing_spline”, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to “GCV”.</p>
+<p>For spline=”smoothing_spline_bigsplines”, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to “GCV”.</p>
+<p>For spline=”smoothing_spline_mgcv”, it ranges from 0 to <span class="math notranslate nohighlight">\(+\infty\)</span>, and it can be set to “GCV”.</p>
 <p>For spline=”p_spline”,”mono_p_spline” or “a_spline”, it ranges from 0 to <span class="math notranslate nohighlight">\(+\infty\)</span></p>
 </p></li>
-<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=3</em>) – The order of the spline. For spline=”smoothing_spline”, possible values include 1 and 3.</p></li>
+<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=3</em>) – <p>The order of the spline.</p>
+<p>For spline=”smoothing_spline_bigsplines”, possible values include 1 and 3.</p>
+<p>For spline=”smoothing_spline_mgcv”, possible values include 3, 4, ….</p>
+</p></li>
 <li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=10</em>) – Number of knots</p></li>
 <li><p><strong>random_state</strong> (<em>int</em><em>, </em><em>optional. default=0</em>) – Random seed</p></li>
 </ul>
@@ -3074,9 +2486,9 @@ component of a nested object.</p>
 </dd></dl>
 
 <dl class="class">
-<dt>
-<em class="property">class </em><code class="sig-prename descclassname">pysim.sim.</code><code class="sig-name descname">SimRegressor</code><span class="sig-paren">(</span><em class="sig-param">method='first_order'</em>, <em class="sig-param">spline='smoothing_spline'</em>, <em class="sig-param">reg_lambda=0.1</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">knot_num=10</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">degree=3</em>, <em class="sig-param">random_state=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/sim.html#SimRegressor"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Sim regression.</p>
+<dt id="pysim.sim.SimClassifier">
+<em class="property">class </em><code class="sig-prename descclassname">pysim.sim.</code><code class="sig-name descname">SimClassifier</code><span class="sig-paren">(</span><em class="sig-param">method='first_order'</em>, <em class="sig-param">reg_lambda=0.1</em>, <em class="sig-param">spline='smoothing_spline'</em>, <em class="sig-param">reg_gamma=0.1</em>, <em class="sig-param">knot_num=10</em>, <em class="sig-param">knot_dist='quantile'</em>, <em class="sig-param">degree=3</em>, <em class="sig-param">random_state=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/sim.html#SimClassifier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysim.sim.SimClassifier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sim classification.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -3087,8 +2499,9 @@ component of a nested object.</p>
 <p>”marginal_regression”: Marginal regression subject to hard thresholding</p>
 <p>”ols”: Least squares estimation subject to hard thresholding</p>
 </p></li>
-<li><p><strong>spline</strong> (<em>str</em><em>, </em><em>optional. default=&quot;smoothing_spline&quot;</em>) – <p>The type of spline for fitting the curve</p>
-<p>”smoothing_spline”: Smoothing spline</p>
+<li><p><strong>spline</strong> (<em>str</em><em>, </em><em>optional. default=&quot;smoothing_spline_mgcv&quot;</em>) – <p>The type of spline for fitting the curve</p>
+<p>”smoothing_spline_bigsplines”: Smoothing spline based on bigsplines package in R</p>
+<p>”smoothing_spline_mgcv”: Smoothing spline based on mgcv package in R</p>
 <p>”p_spline”: P-spline</p>
 <p>”mono_p_spline”: P-spline with monotonic constraint</p>
 <p>”a_spline”: Adaptive B-spline</p>
@@ -3099,18 +2512,22 @@ component of a nested object.</p>
 </p></li>
 <li><p><strong>reg_lambda</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – Sparsity strength of projection indice, ranges from 0 to 1</p></li>
 <li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – <p>Roughness penalty strength of the spline algorithm</p>
-<p>For spline=”smoothing_spline”, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to “GCV”.</p>
+<p>For spline=”smoothing_spline_bigsplines”, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to “GCV”.</p>
+<p>For spline=”smoothing_spline_mgcv”, it ranges from 0 to <span class="math notranslate nohighlight">\(+\infty\)</span>, and it can be set to “GCV”.</p>
 <p>For spline=”p_spline”,”mono_p_spline” or “a_spline”, it ranges from 0 to <span class="math notranslate nohighlight">\(+\infty\)</span></p>
 </p></li>
-<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=3</em>) – The order of the spline. For spline=”smoothing_spline”, possible values include 1 and 3.</p></li>
+<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=3</em>) – <p>The order of the spline.</p>
+<p>For spline=”smoothing_spline_bigsplines”, possible values include 1 and 3.</p>
+<p>For spline=”smoothing_spline_mgcv”, possible values include 3, 4, ….</p>
+</p></li>
 <li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=10</em>) – Number of knots</p></li>
 <li><p><strong>random_state</strong> (<em>int</em><em>, </em><em>optional. default=0</em>) – Random seed</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="method">
-<dt>
-<code class="sig-name descname">_check_n_features</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">reset</em><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier._check_n_features">
+<code class="sig-name descname">_check_n_features</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">reset</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier._check_n_features" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the <cite>n_features_in_</cite> attribute, or check against it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3125,8 +2542,8 @@ that it is equal to <cite>X.shape[1]</cite>.</p></li>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">_estimate_shape</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">xmin</em>, <em class="sig-param">xmax</em>, <em class="sig-param">sample_weight=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/sim.html#SimRegressor._estimate_shape"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="pysim.sim.SimClassifier._estimate_shape">
+<code class="sig-name descname">_estimate_shape</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">xmin</em>, <em class="sig-param">xmax</em>, <em class="sig-param">sample_weight=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/sim.html#SimClassifier._estimate_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysim.sim.SimClassifier._estimate_shape" title="Permalink to this definition">¶</a></dt>
 <dd><p>estimate the ridge function</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3142,8 +2559,8 @@ that it is equal to <cite>X.shape[1]</cite>.</p></li>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">_first_order</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier._first_order">
+<code class="sig-name descname">_first_order</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier._first_order" title="Permalink to this definition">¶</a></dt>
 <dd><p>calculate the projection indice using the first order stein’s identity using Sparse PCA solver via fps package in R</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3164,8 +2581,8 @@ that it is equal to <cite>X.shape[1]</cite>.</p></li>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">_first_order_thres</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier._first_order_thres">
+<code class="sig-name descname">_first_order_thres</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier._first_order_thres" title="Permalink to this definition">¶</a></dt>
 <dd><p>calculate the projection indice using the first order stein’s identity subject to hard thresholding</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3186,14 +2603,14 @@ that it is equal to <cite>X.shape[1]</cite>.</p></li>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<em class="property">classmethod </em><code class="sig-name descname">_get_param_names</code><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier._get_param_names">
+<em class="property">classmethod </em><code class="sig-name descname">_get_param_names</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier._get_param_names" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get parameter names for the estimator</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">_marginal_regression</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier._marginal_regression">
+<code class="sig-name descname">_marginal_regression</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier._marginal_regression" title="Permalink to this definition">¶</a></dt>
 <dd><p>calculate the projection indice using marginal regression</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3214,9 +2631,9 @@ that it is equal to <cite>X.shape[1]</cite>.</p></li>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">_ols</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/sim.html#SimRegressor._ols"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>calculate the least squares estimation for the projection indices subject to hard thresholding</p>
+<dt id="pysim.sim.SimClassifier._ols">
+<code class="sig-name descname">_ols</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/sim.html#SimClassifier._ols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysim.sim.SimClassifier._ols" title="Permalink to this definition">¶</a></dt>
+<dd><p>calculate the logistic regression estimation for the projection indices subject to hard thresholding</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -3236,22 +2653,22 @@ that it is equal to <cite>X.shape[1]</cite>.</p></li>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">_repr_html_inner</code><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier._repr_html_inner">
+<code class="sig-name descname">_repr_html_inner</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier._repr_html_inner" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function is returned by the &#64;property <cite>_repr_html_</cite> to make
 <cite>hasattr(estimator, “_repr_html_”) return `True</cite> or <cite>False</cite> depending
 on <cite>get_config()[“display”]</cite>.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">_repr_mimebundle_</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier._repr_mimebundle_">
+<code class="sig-name descname">_repr_mimebundle_</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier._repr_mimebundle_" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mime bundle used by jupyter kernels to display estimator</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">_second_order</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier._second_order">
+<code class="sig-name descname">_second_order</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier._second_order" title="Permalink to this definition">¶</a></dt>
 <dd><p>calculate the projection indice using the second order stein’s identity using Sparse PCA solver via fps package in R</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3272,8 +2689,8 @@ on <cite>get_config()[“display”]</cite>.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">_validate_data</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">y=None</em>, <em class="sig-param">reset=True</em>, <em class="sig-param">validate_separately=False</em>, <em class="sig-param">**check_params</em><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier._validate_data">
+<code class="sig-name descname">_validate_data</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">y=None</em>, <em class="sig-param">reset=True</em>, <em class="sig-param">validate_separately=False</em>, <em class="sig-param">**check_params</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier._validate_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Validate input data and set or check the <cite>n_features_in_</cite> attribute.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3302,28 +2719,28 @@ is not False.</p></li>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">_validate_hyperparameters</code><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier._validate_hyperparameters">
+<code class="sig-name descname">_validate_hyperparameters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier._validate_hyperparameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>method to validate model parameters</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">_validate_input</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/sim.html#SimRegressor._validate_input"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="pysim.sim.SimClassifier._validate_input">
+<code class="sig-name descname">_validate_input</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/sim.html#SimClassifier._validate_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysim.sim.SimClassifier._validate_input" title="Permalink to this definition">¶</a></dt>
 <dd><p>method to validate data</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – containing the input dataset</p></li>
-<li><p><strong>y</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em>) – containing the output dataset</p></li>
+<li><p><strong>y</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em>) – containing target values</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">_validate_sample_weight</code><span class="sig-paren">(</span><em class="sig-param">n_samples</em>, <em class="sig-param">sample_weight</em><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier._validate_sample_weight">
+<code class="sig-name descname">_validate_sample_weight</code><span class="sig-paren">(</span><em class="sig-param">n_samples</em>, <em class="sig-param">sample_weight</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier._validate_sample_weight" title="Permalink to this definition">¶</a></dt>
 <dd><p>method to validate sample weight</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3336,8 +2753,8 @@ is not False.</p></li>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">decision_function</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier.decision_function">
+<code class="sig-name descname">decision_function</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier.decision_function" title="Permalink to this definition">¶</a></dt>
 <dd><p>output f(beta^T x) for given samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3353,8 +2770,8 @@ is not False.</p></li>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier.fit" title="Permalink to this definition">¶</a></dt>
 <dd><p>fit the Sim model</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3375,8 +2792,8 @@ is not False.</p></li>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">fit_middle_update</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">method='adam'</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_middle_iter=3</em>, <em class="sig-param">n_middle_iter_no_change=3</em>, <em class="sig-param">max_inner_iter=100</em>, <em class="sig-param">n_inner_iter_no_change=5</em>, <em class="sig-param">batch_size=100</em>, <em class="sig-param">learning_rate=0.001</em>, <em class="sig-param">beta_1=0.9</em>, <em class="sig-param">beta_2=0.999</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier.fit_middle_update">
+<code class="sig-name descname">fit_middle_update</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">method='adam'</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_middle_iter=3</em>, <em class="sig-param">n_middle_iter_no_change=3</em>, <em class="sig-param">max_inner_iter=100</em>, <em class="sig-param">n_inner_iter_no_change=5</em>, <em class="sig-param">batch_size=100</em>, <em class="sig-param">learning_rate=0.001</em>, <em class="sig-param">beta_1=0.9</em>, <em class="sig-param">beta_2=0.999</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier.fit_middle_update" title="Permalink to this definition">¶</a></dt>
 <dd><p>fine tune the fitted Sim model using middle update method</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3404,8 +2821,8 @@ is not False.</p></li>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">fit_middle_update_adam</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_middle_iter=3</em>, <em class="sig-param">n_middle_iter_no_change=3</em>, <em class="sig-param">max_inner_iter=100</em>, <em class="sig-param">n_inner_iter_no_change=5</em>, <em class="sig-param">batch_size=100</em>, <em class="sig-param">learning_rate=0.001</em>, <em class="sig-param">beta_1=0.9</em>, <em class="sig-param">beta_2=0.999</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier.fit_middle_update_adam">
+<code class="sig-name descname">fit_middle_update_adam</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_middle_iter=3</em>, <em class="sig-param">n_middle_iter_no_change=3</em>, <em class="sig-param">max_inner_iter=100</em>, <em class="sig-param">n_inner_iter_no_change=5</em>, <em class="sig-param">batch_size=100</em>, <em class="sig-param">learning_rate=0.001</em>, <em class="sig-param">beta_1=0.9</em>, <em class="sig-param">beta_2=0.999</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier.fit_middle_update_adam" title="Permalink to this definition">¶</a></dt>
 <dd><p>fine tune the fitted Sim model using middle update method (adam)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3432,8 +2849,8 @@ is not False.</p></li>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">fit_middle_update_bfgs</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_middle_iter=3</em>, <em class="sig-param">n_middle_iter_no_change=3</em>, <em class="sig-param">max_inner_iter=100</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier.fit_middle_update_bfgs">
+<code class="sig-name descname">fit_middle_update_bfgs</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em>, <em class="sig-param">proj_mat=None</em>, <em class="sig-param">val_ratio=0.2</em>, <em class="sig-param">tol=0.0001</em>, <em class="sig-param">max_middle_iter=3</em>, <em class="sig-param">n_middle_iter_no_change=3</em>, <em class="sig-param">max_inner_iter=100</em>, <em class="sig-param">stratify=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier.fit_middle_update_bfgs" title="Permalink to this definition">¶</a></dt>
 <dd><p>fine tune the fitted Sim model using inner update method (bfgs)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3455,8 +2872,8 @@ is not False.</p></li>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">get_params</code><span class="sig-paren">(</span><em class="sig-param">deep=True</em><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier.get_params">
+<code class="sig-name descname">get_params</code><span class="sig-paren">(</span><em class="sig-param">deep=True</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier.get_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get parameters for this estimator.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3473,15 +2890,15 @@ contained subobjects that are estimators.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/sim.html#SimRegressor.predict"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>output f(beta^T x) for given samples</p>
+<dt id="pysim.sim.SimClassifier.predict">
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/sim.html#SimClassifier.predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysim.sim.SimClassifier.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>output binary prediction for given samples</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>x</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – containing the input dataset</p>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>containing f(beta^T x)</p>
+<dd class="field-even"><p>containing binary prediction</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.array of shape (n_samples,)</p>
@@ -3490,47 +2907,49 @@ contained subobjects that are estimators.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">score</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em><span class="sig-paren">)</span></dt>
-<dd><p>Return the coefficient of determination R^2 of the prediction.</p>
-<p>The coefficient R^2 is defined as (1 - u/v), where u is the residual
-sum of squares ((y_true - y_pred) ** 2).sum() and v is the total
-sum of squares ((y_true - y_true.mean()) ** 2).sum().
-The best possible score is 1.0 and it can be negative (because the
-model can be arbitrarily worse). A constant model that always
-predicts the expected value of y, disregarding the input features,
-would get a R^2 score of 0.0.</p>
+<dt id="pysim.sim.SimClassifier.predict_proba">
+<code class="sig-name descname">predict_proba</code><span class="sig-paren">(</span><em class="sig-param">x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pysim/sim.html#SimClassifier.predict_proba"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysim.sim.SimClassifier.predict_proba" title="Permalink to this definition">¶</a></dt>
+<dd><p>output probability prediction for given samples</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – containing the input dataset</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>containing probability prediction</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.array of shape (n_samples, 2)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysim.sim.SimClassifier.score">
+<code class="sig-name descname">score</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">y</em>, <em class="sig-param">sample_weight=None</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier.score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the mean accuracy on the given test data and labels.</p>
+<p>In multi-label classification, this is the subset accuracy
+which is a harsh metric since you require for each sample that
+each label set be correctly predicted.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Test samples. For some estimators this may be a
-precomputed kernel matrix or a list of generic objects instead,
-shape = (n_samples, n_samples_fitted),
-where n_samples_fitted is the number of
-samples used in the fitting for the estimator.</p></li>
-<li><p><strong>y</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>) or </em><em>(</em><em>n_samples</em><em>, </em><em>n_outputs</em><em>)</em>) – True values for X.</p></li>
+<li><p><strong>X</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Test samples.</p></li>
+<li><p><strong>y</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>) or </em><em>(</em><em>n_samples</em><em>, </em><em>n_outputs</em><em>)</em>) – True labels for X.</p></li>
 <li><p><strong>sample_weight</strong> (<em>array-like of shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em><em>, </em><em>default=None</em>) – Sample weights.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>score</strong> – R^2 of self.predict(X) wrt. y.</p>
+<dd class="field-even"><p><strong>score</strong> – Mean accuracy of self.predict(X) wrt. y.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
-<p class="rubric">Notes</p>
-<p>The R2 score used when calling <code class="docutils literal notranslate"><span class="pre">score</span></code> on a regressor uses
-<code class="docutils literal notranslate"><span class="pre">multioutput='uniform_average'</span></code> from version 0.23 to keep consistent
-with default value of <code class="xref py py-func docutils literal notranslate"><span class="pre">r2_score()</span></code>.
-This influences the <code class="docutils literal notranslate"><span class="pre">score</span></code> method of all the multioutput
-regressors (except for
-<code class="xref py py-class docutils literal notranslate"><span class="pre">MultiOutputRegressor</span></code>).</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param">**params</em><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier.set_params">
+<code class="sig-name descname">set_params</code><span class="sig-paren">(</span><em class="sig-param">**params</em><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier.set_params" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the parameters of this estimator.</p>
 <p>The method works on simple estimators as well as on nested objects
 (such as pipelines). The latter have parameters of the form
@@ -3550,8 +2969,8 @@ component of a nested object.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<code class="sig-name descname">visualize</code><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
+<dt id="pysim.sim.SimClassifier.visualize">
+<code class="sig-name descname">visualize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pysim.sim.SimClassifier.visualize" title="Permalink to this definition">¶</a></dt>
 <dd><p>draw the fitted projection indices and ridge function</p>
 </dd></dl>
 
@@ -3591,8 +3010,9 @@ component of a nested object.</p>
 </dl>
 <p>If None, then all the features will be treated as continuous</p>
 </p></li>
-<li><p><strong>spline</strong> (<em>str</em><em>, </em><em>optional. default=&quot;smoothing_spline&quot;</em>) – <p>The type of spline for fitting the curve</p>
-<p>”smoothing_spline”: Smoothing spline</p>
+<li><p><strong>spline</strong> (<em>str</em><em>, </em><em>optional. default=&quot;smoothing_spline_mgcv&quot;</em>) – <p>The type of spline for fitting the curve</p>
+<p>”smoothing_spline_bigsplines”: Smoothing spline based on bigsplines package in R</p>
+<p>”smoothing_spline_mgcv”: Smoothing spline based on mgcv package in R</p>
 <p>”p_spline”: P-spline</p>
 <p>”mono_p_spline”: P-spline with monotonic constraint</p>
 <p>”a_spline”: Adaptive B-spline</p>
@@ -3610,10 +3030,14 @@ component of a nested object.</p>
 </p></li>
 <li><p><strong>reg_lambda</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – The sparsity strength of projection inidce, ranges from 0 to 1</p></li>
 <li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – <p>Roughness penalty strength of the spline algorithm</p>
-<p>For spline=”smoothing_spline”, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to “GCV”.</p>
+<p>For spline=”smoothing_spline_bigsplines”, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to “GCV”.</p>
+<p>For spline=”smoothing_spline_mgcv”, it ranges from 0 to <span class="math notranslate nohighlight">\(+\infty\)</span>, and it can be set to “GCV”.</p>
 <p>For spline=”p_spline”,”mono_p_spline” or “a_spline”, it ranges from 0 to <span class="math notranslate nohighlight">\(+\infty\)</span></p>
 </p></li>
-<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=3</em>) – The order of the spline, not used for spline=”smoothing_spline”</p></li>
+<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=3</em>) – <p>The order of the spline.</p>
+<p>For spline=”smoothing_spline_bigsplines”, possible values include 1 and 3.</p>
+<p>For spline=”smoothing_spline_mgcv”, possible values include 3, 4, ….</p>
+</p></li>
 <li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=10</em>) – Number of knots</p></li>
 <li><p><strong>middle_update</strong> (<em>None</em><em> or </em><em>str</em><em>, </em><em>optional. default=None</em>) – The inner update method for each base learner, can be None, “adam” or “bfgs”</p></li>
 <li><p><strong>val_ratio</strong> (<em>float</em><em>, </em><em>optional. default=0.2</em>) – The split ratio of validation set, which is used for post-hoc pruning</p></li>
@@ -4045,8 +3469,9 @@ component of a nested object.</p>
 </dl>
 <p>If None, then all the features will be treated as continuous</p>
 </p></li>
-<li><p><strong>spline</strong> (<em>str</em><em>, </em><em>optional. default=&quot;smoothing_spline&quot;</em>) – <p>The type of spline for fitting the curve</p>
-<p>”smoothing_spline”: Smoothing spline</p>
+<li><p><strong>spline</strong> (<em>str</em><em>, </em><em>optional. default=&quot;smoothing_spline_mgcv&quot;</em>) – <p>The type of spline for fitting the curve</p>
+<p>”smoothing_spline_bigsplines”: Smoothing spline based on bigsplines package in R</p>
+<p>”smoothing_spline_mgcv”: Smoothing spline based on mgcv package in R</p>
 <p>”p_spline”: P-spline</p>
 <p>”mono_p_spline”: P-spline with monotonic constraint</p>
 <p>”a_spline”: Adaptive B-spline</p>
@@ -4064,10 +3489,14 @@ component of a nested object.</p>
 </p></li>
 <li><p><strong>reg_lambda</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – The sparsity strength of projection inidce, ranges from 0 to 1</p></li>
 <li><p><strong>reg_gamma</strong> (<em>float</em><em>, </em><em>optional. default=0.1</em>) – <p>Roughness penalty strength of the spline algorithm</p>
-<p>For spline=”smoothing_spline”, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to “GCV”.</p>
+<p>For spline=”smoothing_spline_bigsplines”, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to “GCV”.</p>
+<p>For spline=”smoothing_spline_mgcv”, it ranges from 0 to <span class="math notranslate nohighlight">\(+\infty\)</span>, and it can be set to “GCV”.</p>
 <p>For spline=”p_spline”,”mono_p_spline” or “a_spline”, it ranges from 0 to <span class="math notranslate nohighlight">\(+\infty\)</span></p>
 </p></li>
-<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=3</em>) – The order of the spline, not used for spline=”smoothing_spline”</p></li>
+<li><p><strong>degree</strong> (<em>int</em><em>, </em><em>optional. default=3</em>) – <p>The order of the spline.</p>
+<p>For spline=”smoothing_spline_bigsplines”, possible values include 1 and 3.</p>
+<p>For spline=”smoothing_spline_mgcv”, possible values include 3, 4, ….</p>
+</p></li>
 <li><p><strong>knot_num</strong> (<em>int</em><em>, </em><em>optional. default=10</em>) – Number of knots</p></li>
 <li><p><strong>middle_update</strong> (<em>None</em><em> or </em><em>str</em><em>, </em><em>optional. default=None</em>) – The inner update method for each base learner, can be None, “adam” or “bfgs”</p></li>
 <li><p><strong>val_ratio</strong> (<em>float</em><em>, </em><em>optional. default=0.2</em>) – The split ratio of validation set, which is used for post-hoc pruning</p></li>

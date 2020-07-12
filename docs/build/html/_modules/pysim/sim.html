@@ -165,8 +165,6 @@
 
 <span class="kn">from</span> <span class="nn">.splines.aspline</span> <span class="k">import</span> <span class="n">ASplineClassifier</span><span class="p">,</span> <span class="n">ASplineRegressor</span>
 <span class="kn">from</span> <span class="nn">.splines.pspline</span> <span class="k">import</span> <span class="n">PSplineClassifier</span><span class="p">,</span> <span class="n">PSplineRegressor</span>
-<span class="c1"># from .splines.smspline import SMSplineClassifier, SMSplineRegressor</span>
-<span class="kn">from</span> <span class="nn">.splines.smspline_mgcv</span> <span class="k">import</span> <span class="n">SMSplineClassifier</span><span class="p">,</span> <span class="n">SMSplineRegressor</span>
 
 <span class="kn">from</span> <span class="nn">rpy2</span> <span class="k">import</span> <span class="n">robjects</span> <span class="k">as</span> <span class="n">ro</span>
 <span class="kn">from</span> <span class="nn">rpy2.robjects</span> <span class="k">import</span> <span class="n">numpy2ri</span>
@@ -187,7 +185,7 @@
     
 <span class="n">numpy2ri</span><span class="o">.</span><span class="n">activate</span><span class="p">()</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;SimRegressor&quot;</span><span class="p">,</span> <span class="s2">&quot;SimRegressor&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;SimRegressor&quot;</span><span class="p">,</span> <span class="s2">&quot;SimClassifier&quot;</span><span class="p">]</span>
 
 
 <span class="k">class</span> <span class="nc">BaseSim</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
@@ -228,13 +226,17 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">knot_dist</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;uniform&quot;</span><span class="p">,</span> <span class="s2">&quot;quantile&quot;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;method must be an element of [uniform, quantile], got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">knot_dist</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;a_spline&quot;</span><span class="p">,</span> <span class="s2">&quot;smoothing_spline&quot;</span><span class="p">,</span> <span class="s2">&quot;p_spline&quot;</span><span class="p">,</span> <span class="s2">&quot;mono_p_spline&quot;</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;spline must be an element of [a_spline, smoothing_spline, p_spline, mono_p_spline], got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> 
-                         <span class="bp">self</span><span class="o">.</span><span class="n">spline</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;a_spline&quot;</span><span class="p">,</span> <span class="s2">&quot;smoothing_spline_mgcv&quot;</span><span class="p">,</span> <span class="s2">&quot;smoothing_spline_bigsplines&quot;</span><span class="p">,</span> <span class="s2">&quot;p_spline&quot;</span><span class="p">,</span> <span class="s2">&quot;mono_p_spline&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;spline must be an element of [a_spline, smoothing_spline_mgcv, smoothing_spline_bigsplines, p_spline, mono_p_spline], got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_lambda</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_lambda</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_lambda</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;reg_lambda must be &gt;= 0 and &lt;=1, got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg_lambda</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;reg_lambda must be &gt;= 0, got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span><span class="p">)</span>
+
 
     <span class="k">def</span> <span class="nf">_validate_sample_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">):</span>
         
@@ -877,10 +879,12 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;ols&quot;: Least squares estimation subject to hard thresholding</span>
 
-<span class="sd">    spline : str, optional. default=&quot;smoothing_spline&quot;</span>
+<span class="sd">    spline : str, optional. default=&quot;smoothing_spline_mgcv&quot;</span>
 <span class="sd">        The type of spline for fitting the curve</span>
 <span class="sd">      </span>
-<span class="sd">        &quot;smoothing_spline&quot;: Smoothing spline</span>
+<span class="sd">        &quot;smoothing_spline_bigsplines&quot;: Smoothing spline based on bigsplines package in R</span>
+
+<span class="sd">        &quot;smoothing_spline_mgcv&quot;: Smoothing spline based on mgcv package in R</span>
 
 <span class="sd">        &quot;p_spline&quot;: P-spline</span>
 
@@ -901,12 +905,18 @@
 <span class="sd">    reg_gamma : float, optional. default=0.1</span>
 <span class="sd">        Roughness penalty strength of the spline algorithm</span>
 <span class="sd">    </span>
-<span class="sd">        For spline=&quot;smoothing_spline&quot;, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to &quot;GCV&quot;.</span>
+<span class="sd">        For spline=&quot;smoothing_spline_bigsplines&quot;, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to &quot;GCV&quot;.</span>
+
+<span class="sd">        For spline=&quot;smoothing_spline_mgcv&quot;, it ranges from 0 to :math:`+\infty`, and it can be set to &quot;GCV&quot;.</span>
 
 <span class="sd">        For spline=&quot;p_spline&quot;,&quot;mono_p_spline&quot; or &quot;a_spline&quot;, it ranges from 0 to :math:`+\infty`</span>
 <span class="sd">    </span>
 <span class="sd">    degree : int, optional. default=3</span>
-<span class="sd">        The order of the spline. For spline=&quot;smoothing_spline&quot;, possible values include 1 and 3.</span>
+<span class="sd">        The order of the spline.</span>
+<span class="sd">        </span>
+<span class="sd">        For spline=&quot;smoothing_spline_bigsplines&quot;, possible values include 1 and 3.</span>
+<span class="sd">    </span>
+<span class="sd">        For spline=&quot;smoothing_spline_mgcv&quot;, possible values include 3, 4, ....</span>
 <span class="sd">    </span>
 <span class="sd">    knot_num : int, optional. default=10</span>
 <span class="sd">        Number of knots</span>
@@ -997,10 +1007,17 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span> <span class="o">=</span> <span class="n">ASplineRegressor</span><span class="p">(</span><span class="n">knot_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_num</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_dist</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span><span class="p">,</span>
                                     <span class="n">xmin</span><span class="o">=</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="o">==</span> <span class="s2">&quot;smoothing_spline&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="o">==</span> <span class="s2">&quot;smoothing_spline_bigsplines&quot;</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">.splines.smspline_bigsplines</span> <span class="k">import</span> <span class="n">SMSplineRegressor</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span> <span class="o">=</span> <span class="n">SMSplineRegressor</span><span class="p">(</span><span class="n">knot_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_num</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_dist</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span><span class="p">,</span>
                                     <span class="n">xmin</span><span class="o">=</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="o">==</span> <span class="s2">&quot;smoothing_spline_mgcv&quot;</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">.splines.smspline_mgcv</span> <span class="k">import</span> <span class="n">SMSplineRegressor</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span> <span class="o">=</span> <span class="n">SMSplineRegressor</span><span class="p">(</span><span class="n">knot_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_num</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_dist</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span><span class="p">,</span>
+                                    <span class="n">xmin</span><span class="o">=</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
+
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="o">==</span> <span class="s2">&quot;p_spline&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span> <span class="o">=</span> <span class="n">PSplineRegressor</span><span class="p">(</span><span class="n">knot_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_num</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span><span class="p">,</span>
                                     <span class="n">xmin</span><span class="o">=</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span>
@@ -1027,7 +1044,7 @@
         <span class="k">return</span> <span class="n">pred</span></div></div>
 
 
-<span class="k">class</span> <span class="nc">SimClassifier</span><span class="p">(</span><span class="n">BaseSim</span><span class="p">,</span> <span class="n">ClassifierMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="SimClassifier"><a class="viewcode-back" href="../../apidoc.html#pysim.sim.SimClassifier">[docs]</a><span class="k">class</span> <span class="nc">SimClassifier</span><span class="p">(</span><span class="n">BaseSim</span><span class="p">,</span> <span class="n">ClassifierMixin</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Sim classification.</span>
@@ -1047,10 +1064,12 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;ols&quot;: Least squares estimation subject to hard thresholding</span>
 
-<span class="sd">    spline : str, optional. default=&quot;smoothing_spline&quot;</span>
+<span class="sd">    spline : str, optional. default=&quot;smoothing_spline_mgcv&quot;</span>
 <span class="sd">        The type of spline for fitting the curve</span>
 <span class="sd">      </span>
-<span class="sd">        &quot;smoothing_spline&quot;: Smoothing spline</span>
+<span class="sd">        &quot;smoothing_spline_bigsplines&quot;: Smoothing spline based on bigsplines package in R</span>
+
+<span class="sd">        &quot;smoothing_spline_mgcv&quot;: Smoothing spline based on mgcv package in R</span>
 
 <span class="sd">        &quot;p_spline&quot;: P-spline</span>
 
@@ -1071,13 +1090,18 @@
 <span class="sd">    reg_gamma : float, optional. default=0.1</span>
 <span class="sd">        Roughness penalty strength of the spline algorithm</span>
 <span class="sd">    </span>
-<span class="sd">        For spline=&quot;smoothing_spline&quot;, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to &quot;GCV&quot;.</span>
+<span class="sd">        For spline=&quot;smoothing_spline_bigsplines&quot;, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to &quot;GCV&quot;.</span>
+
+<span class="sd">        For spline=&quot;smoothing_spline_mgcv&quot;, it ranges from 0 to :math:`+\infty`, and it can be set to &quot;GCV&quot;.</span>
 
 <span class="sd">        For spline=&quot;p_spline&quot;,&quot;mono_p_spline&quot; or &quot;a_spline&quot;, it ranges from 0 to :math:`+\infty`</span>
 <span class="sd">    </span>
 <span class="sd">    degree : int, optional. default=3</span>
-<span class="sd">        The order of the spline. For spline=&quot;smoothing_spline&quot;, possible values include 1 and 3.</span>
+<span class="sd">        The order of the spline.</span>
+<span class="sd">        </span>
+<span class="sd">        For spline=&quot;smoothing_spline_bigsplines&quot;, possible values include 1 and 3.</span>
 <span class="sd">    </span>
+<span class="sd">        For spline=&quot;smoothing_spline_mgcv&quot;, possible values include 3, 4, ....</span>
 
 <span class="sd">    knot_num : int, optional. default=10</span>
 <span class="sd">        Number of knots</span>
@@ -1098,7 +1122,7 @@
                                 <span class="n">degree</span><span class="o">=</span><span class="n">degree</span><span class="p">,</span>
                                 <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_ols</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">proj_mat</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="SimClassifier._ols"><a class="viewcode-back" href="../../apidoc.html#pysim.sim.SimClassifier._ols">[docs]</a>    <span class="k">def</span> <span class="nf">_ols</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">proj_mat</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
                 
         <span class="sd">&quot;&quot;&quot;calculate the logistic regression estimation for the projection indices subject to hard thresholding</span>
 
@@ -1128,9 +1152,9 @@
             <span class="n">beta</span> <span class="o">=</span> <span class="n">zbar</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">zbar</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">beta</span> <span class="o">=</span> <span class="n">zbar</span>
-        <span class="k">return</span> <span class="n">beta</span>
+        <span class="k">return</span> <span class="n">beta</span></div>
 
-    <span class="k">def</span> <span class="nf">_validate_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<div class="viewcode-block" id="SimClassifier._validate_input"><a class="viewcode-back" href="../../apidoc.html#pysim.sim.SimClassifier._validate_input">[docs]</a>    <span class="k">def</span> <span class="nf">_validate_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
         
         <span class="sd">&quot;&quot;&quot;method to validate data</span>
 <span class="sd">        </span>
@@ -1152,9 +1176,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">classes_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_label_binarizer</span><span class="o">.</span><span class="n">classes_</span>
 
         <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_label_binarizer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.0</span>
-        <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="nf">_estimate_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="SimClassifier._estimate_shape"><a class="viewcode-back" href="../../apidoc.html#pysim.sim.SimClassifier._estimate_shape">[docs]</a>    <span class="k">def</span> <span class="nf">_estimate_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
         <span class="sd">&quot;&quot;&quot;estimate the ridge function</span>
 <span class="sd">        </span>
@@ -1177,6 +1201,12 @@
                              <span class="n">xmin</span><span class="o">=</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="o">==</span> <span class="s2">&quot;smoothing_spline&quot;</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">.splines.smspline_bigsplines</span> <span class="k">import</span> <span class="n">SMSplineClassifier</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span> <span class="o">=</span> <span class="n">SMSplineRegressor</span><span class="p">(</span><span class="n">knot_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_num</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_dist</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span><span class="p">,</span>
+                                    <span class="n">xmin</span><span class="o">=</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="o">==</span> <span class="s2">&quot;smoothing_spline_mgcv&quot;</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">.splines.smspline_mgcv</span> <span class="k">import</span> <span class="n">SMSplineClassifier</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span> <span class="o">=</span> <span class="n">SMSplineClassifier</span><span class="p">(</span><span class="n">knot_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_num</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span><span class="p">,</span> <span class="n">knot_dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_dist</span><span class="p">,</span>
                                      <span class="n">xmin</span><span class="o">=</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
@@ -1187,9 +1217,9 @@
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="o">==</span> <span class="s2">&quot;mono_p_spline&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span> <span class="o">=</span> <span class="n">PSplineClassifier</span><span class="p">(</span><span class="n">knot_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knot_num</span><span class="p">,</span> <span class="n">reg_gamma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reg_gamma</span><span class="p">,</span>
                                     <span class="n">xmin</span><span class="o">=</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="n">constraint</span><span class="o">=</span><span class="s2">&quot;mono&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape_fit_</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">predict_proba</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<div class="viewcode-block" id="SimClassifier.predict_proba"><a class="viewcode-back" href="../../apidoc.html#pysim.sim.SimClassifier.predict_proba">[docs]</a>    <span class="k">def</span> <span class="nf">predict_proba</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         
         <span class="sd">&quot;&quot;&quot;output probability prediction for given samples</span>
 <span class="sd">        </span>
@@ -1205,9 +1235,9 @@
 
         <span class="n">pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decision_function</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">pred_proba</span> <span class="o">=</span> <span class="n">softmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="o">-</span><span class="n">pred</span><span class="p">,</span> <span class="n">pred</span><span class="p">])</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">pred_proba</span>
+        <span class="k">return</span> <span class="n">pred_proba</span></div>
 
-    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<div class="viewcode-block" id="SimClassifier.predict"><a class="viewcode-back" href="../../apidoc.html#pysim.sim.SimClassifier.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
             
         <span class="sd">&quot;&quot;&quot;output binary prediction for given samples</span>
 <span class="sd">        </span>
@@ -1222,7 +1252,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>  
 
         <span class="n">pred_proba</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">x</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_label_binarizer</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">pred_proba</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_label_binarizer</span><span class="o">.</span><span class="n">inverse_transform</span><span class="p">(</span><span class="n">pred_proba</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>

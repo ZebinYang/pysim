@@ -214,9 +214,8 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meta_info</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;meta_info must be None or a dict, got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta_info</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;a_spline&quot;</span><span class="p">,</span> <span class="s2">&quot;smoothing_spline&quot;</span><span class="p">,</span> <span class="s2">&quot;p_spline&quot;</span><span class="p">,</span> <span class="s2">&quot;mono_p_spline&quot;</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;spline must be an element of [a_spline, smoothing_spline, p_spline, mono_p_spline], got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> 
-                         <span class="bp">self</span><span class="o">.</span><span class="n">spline</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;a_spline&quot;</span><span class="p">,</span> <span class="s2">&quot;smoothing_spline_mgcv&quot;</span><span class="p">,</span> <span class="s2">&quot;smoothing_spline_bigsplines&quot;</span><span class="p">,</span> <span class="s2">&quot;p_spline&quot;</span><span class="p">,</span> <span class="s2">&quot;mono_p_spline&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;spline must be an element of [a_spline, smoothing_spline_mgcv, smoothing_spline_bigsplines, p_spline, mono_p_spline], got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">spline</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prjection_method</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">prjection_method</span><span class="p">:</span>
@@ -868,10 +867,12 @@
 
 <span class="sd">        If None, then all the features will be treated as continuous</span>
 <span class="sd">        </span>
-<span class="sd">    spline : str, optional. default=&quot;smoothing_spline&quot;</span>
+<span class="sd">    spline : str, optional. default=&quot;smoothing_spline_mgcv&quot;</span>
 <span class="sd">        The type of spline for fitting the curve</span>
 <span class="sd">      </span>
-<span class="sd">        &quot;smoothing_spline&quot;: Smoothing spline</span>
+<span class="sd">        &quot;smoothing_spline_bigsplines&quot;: Smoothing spline based on bigsplines package in R</span>
+
+<span class="sd">        &quot;smoothing_spline_mgcv&quot;: Smoothing spline based on mgcv package in R</span>
 
 <span class="sd">        &quot;p_spline&quot;: P-spline</span>
 
@@ -905,12 +906,18 @@
 <span class="sd">    reg_gamma : float, optional. default=0.1</span>
 <span class="sd">        Roughness penalty strength of the spline algorithm</span>
 <span class="sd">    </span>
-<span class="sd">        For spline=&quot;smoothing_spline&quot;, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to &quot;GCV&quot;.</span>
+<span class="sd">        For spline=&quot;smoothing_spline_bigsplines&quot;, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to &quot;GCV&quot;.</span>
+
+<span class="sd">        For spline=&quot;smoothing_spline_mgcv&quot;, it ranges from 0 to :math:`+\infty`, and it can be set to &quot;GCV&quot;.</span>
 
 <span class="sd">        For spline=&quot;p_spline&quot;,&quot;mono_p_spline&quot; or &quot;a_spline&quot;, it ranges from 0 to :math:`+\infty`</span>
 <span class="sd">    </span>
 <span class="sd">    degree : int, optional. default=3</span>
-<span class="sd">        The order of the spline, not used for spline=&quot;smoothing_spline&quot;</span>
+<span class="sd">        The order of the spline.</span>
+<span class="sd">        </span>
+<span class="sd">        For spline=&quot;smoothing_spline_bigsplines&quot;, possible values include 1 and 3.</span>
+<span class="sd">    </span>
+<span class="sd">        For spline=&quot;smoothing_spline_mgcv&quot;, possible values include 3, 4, ....</span>
 <span class="sd">    </span>
 <span class="sd">    knot_num : int, optional. default=10</span>
 <span class="sd">        Number of knots</span>
@@ -1165,10 +1172,12 @@
 
 <span class="sd">        If None, then all the features will be treated as continuous</span>
 <span class="sd">        </span>
-<span class="sd">    spline : str, optional. default=&quot;smoothing_spline&quot;</span>
+<span class="sd">    spline : str, optional. default=&quot;smoothing_spline_mgcv&quot;</span>
 <span class="sd">        The type of spline for fitting the curve</span>
 <span class="sd">      </span>
-<span class="sd">        &quot;smoothing_spline&quot;: Smoothing spline</span>
+<span class="sd">        &quot;smoothing_spline_bigsplines&quot;: Smoothing spline based on bigsplines package in R</span>
+
+<span class="sd">        &quot;smoothing_spline_mgcv&quot;: Smoothing spline based on mgcv package in R</span>
 
 <span class="sd">        &quot;p_spline&quot;: P-spline</span>
 
@@ -1202,12 +1211,18 @@
 <span class="sd">    reg_gamma : float, optional. default=0.1</span>
 <span class="sd">        Roughness penalty strength of the spline algorithm</span>
 <span class="sd">    </span>
-<span class="sd">        For spline=&quot;smoothing_spline&quot;, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to &quot;GCV&quot;.</span>
+<span class="sd">        For spline=&quot;smoothing_spline_bigsplines&quot;, it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to &quot;GCV&quot;.</span>
+
+<span class="sd">        For spline=&quot;smoothing_spline_mgcv&quot;, it ranges from 0 to :math:`+\infty`, and it can be set to &quot;GCV&quot;.</span>
 
 <span class="sd">        For spline=&quot;p_spline&quot;,&quot;mono_p_spline&quot; or &quot;a_spline&quot;, it ranges from 0 to :math:`+\infty`</span>
 <span class="sd">    </span>
 <span class="sd">    degree : int, optional. default=3</span>
-<span class="sd">        The order of the spline, not used for spline=&quot;smoothing_spline&quot;</span>
+<span class="sd">        The order of the spline.</span>
+<span class="sd">        </span>
+<span class="sd">        For spline=&quot;smoothing_spline_bigsplines&quot;, possible values include 1 and 3.</span>
+<span class="sd">    </span>
+<span class="sd">        For spline=&quot;smoothing_spline_mgcv&quot;, possible values include 3, 4, ....</span>
 <span class="sd">    </span>
 <span class="sd">    knot_num : int, optional. default=10</span>
 <span class="sd">        Number of knots</span>

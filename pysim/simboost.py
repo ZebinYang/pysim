@@ -25,7 +25,7 @@ __all__ = ["SimBoostRegressor", "SimBoostClassifier"]
 class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
 
     @abstractmethod
-    def __init__(self, n_estimators, meta_info=None, prjection_method="marginal_regression", spline="smoothing_spline", knot_dist="quantile",
+    def __init__(self, n_estimators, meta_info=None, prjection_method="marginal_regression", spline="smoothing_spline_mgcv", knot_dist="quantile",
                  reg_lambda=0.1, reg_gamma="GCV", degree=3, knot_num=10, middle_update=None,
                  val_ratio=0.2, learning_rate=1.0, ortho_shrink=1,
                  early_stop_thres=np.inf, pruning=False, loss_threshold=0.01, random_state=0):
@@ -801,7 +801,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     """
 
 
-    def __init__(self, n_estimators, meta_info=None, prjection_method="marginal_regression", spline="smoothing_spline", knot_dist="quantile",
+    def __init__(self, n_estimators, meta_info=None, prjection_method="marginal_regression", spline="smoothing_spline_mgcv", knot_dist="quantile",
                  reg_lambda=0.1, reg_gamma="GCV", degree=3, knot_num=10, middle_update=None,
                  val_ratio=0.2, learning_rate=1.0, ortho_shrink=1,
                  early_stop_thres=np.inf, pruning=False, loss_threshold=0.01, random_state=0):
@@ -1105,7 +1105,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         Random seed
     """
 
-    def __init__(self, n_estimators, meta_info=None, prjection_method="marginal_regression", spline="smoothing_spline", knot_dist="quantile",
+    def __init__(self, n_estimators, meta_info=None, prjection_method="marginal_regression", spline="smoothing_spline_mgcv", knot_dist="quantile",
                  reg_lambda=0.1, reg_gamma="GCV", degree=3, knot_num=10, middle_update=None,
                  val_ratio=0.2, learning_rate=1.0, ortho_shrink=1,
                  early_stop_thres=np.inf, pruning=False, loss_threshold=0.01, random_state=0):
