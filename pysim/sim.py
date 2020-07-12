@@ -84,9 +84,14 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("spline must be an element of [a_spline, smoothing_spline, p_spline, mono_p_spline], got %s." % 
                          self.spline)
 
-        if not isinstance(self.reg_gamma, str):
+        if not isinstance(self.reg_lambda, str):
             if (self.reg_lambda < 0) or (self.reg_lambda > 1):
                 raise ValueError("reg_lambda must be >= 0 and <=1, got %s." % self.reg_lambda)
+
+        if not isinstance(self.reg_gamma, str):
+            if (self.reg_gamma < 0) or (self.reg_gamma > 1):
+                raise ValueError("reg_lambda must be >= 0, got %s." % self.reg_gamma)
+
 
     def _validate_sample_weight(self, n_samples, sample_weight):
         

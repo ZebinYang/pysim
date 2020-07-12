@@ -76,10 +76,10 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("degree greater than 2, got" % self.degree)
 
         if not isinstance(self.reg_gamma, str):
-            if (self.reg_gamma < 0) or (self.reg_gamma > 1):
-                raise ValueError("reg_gamma must be GCV or >= 0 and <1, got %s" % self.reg_gamma)
+            if self.reg_gamma < 0 :
+                raise ValueError("reg_gamma must be GCV or >= 0, got %s" % self.reg_gamma)
         elif self.reg_gamma not in ["GCV"]:
-            raise ValueError("reg_gamma must be GCV or >= 0 and <1, got %s." % self.reg_gamma)
+            raise ValueError("reg_gamma must be GCV or >= 0, got %s." % self.reg_gamma)
 
         if self.xmin > self.xmax:
             raise ValueError("xmin must be <= xmax, got %s and %s." % (self.xmin, self.xmax))
