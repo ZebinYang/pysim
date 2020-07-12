@@ -346,31 +346,23 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 fig.add_subplot(ax1_density)
 
                 ax2 = fig.add_subplot(inner[:, 1])
-                if len(sim.beta_) <= 10:
+                if len(sim.beta_) <= 20:
                     rects = ax2.barh(np.arange(len(sim.beta_)), [beta for beta in sim.beta_.ravel()][::-1])
                     ax2.set_yticks(np.arange(len(sim.beta_)))
-                    ax2.set_yticklabels(["X" + str(self.nfeature_index_list_[idx] + 1) for idx in range(len(sim.beta_.ravel()))][::-1])
+                    ax2.set_yticklabels(["X" + str(idx + 1) for idx in range(len(sim.beta_.ravel()))][::-1])
                     ax2.set_xlim(xlim_min, xlim_max)
                     ax2.set_ylim(-1, len(sim.beta_))
                     ax2.axvline(0, linestyle="dotted", color="black")
                 else:
-                    active_beta = []
-                    active_beta_idx = []
-                    for idx, beta in enumerate(sim.beta_.ravel()):
-                        if np.abs(beta) > 0:
-                            active_beta.append(beta)
-                            active_beta_idx.append(idx)
-                    rects = ax2.barh(np.arange(len(active_beta)), [beta for beta in active_beta][::-1])
-                    if len(active_beta) > 10:
-                        input_ticks = np.linspace(0.1 * len(active_beta), len(active_beta) * 0.9, 4).astype(int)
-                        input_labels = ["X" + str(self.nfeature_index_list_[active_beta_idx[idx]] + 1) for idx in input_ticks][::-1] 
-                        ax2.set_yticks(input_ticks)
-                        ax2.set_yticklabels(input_labels)
-                    else:
-                        ax2.set_yticks(np.arange(len(active_beta)))
-                        ax2.set_yticklabels(["X" + str(self.nfeature_index_list_[idx] + 1) for idx in active_beta_idx][::-1])
+                    right = np.round(np.linspace(0, np.round(len(sim.beta_) * 0.4).astype(int), 5))
+                    left = len(sim.beta_) - 1 - right
+                    input_ticks = np.unique(np.hstack([left, right])).astype(int)
+
+                    rects = plt.barh(np.arange(len(sim.beta_)), [beta for beta in sim.beta_.ravel()][::-1])
+                    ax2.set_yticks(input_ticks)
+                    ax2.set_yticklabels(["X" + str(idx + 1) for idx in input_ticks][::-1])
                     ax2.set_xlim(xlim_min, xlim_max)
-                    ax2.set_ylim(-1, len(active_beta_idx))
+                    ax2.set_ylim(-1, len(sim.beta_))
                     ax2.axvline(0, linestyle="dotted", color="black")
                 fig.add_subplot(ax2)
                 subfig_idx += 1
