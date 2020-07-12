@@ -17,8 +17,6 @@ from abc import ABCMeta, abstractmethod
 
 from .splines.aspline import ASplineClassifier, ASplineRegressor
 from .splines.pspline import PSplineClassifier, PSplineRegressor
-# from .splines.smspline import SMSplineClassifier, SMSplineRegressor
-from .splines.smspline_mgcv import SMSplineClassifier, SMSplineRegressor
 
 from rpy2 import robjects as ro
 from rpy2.robjects import numpy2ri
@@ -39,7 +37,7 @@ except:
     
 numpy2ri.activate()
 
-__all__ = ["SimRegressor", "SimRegressor"]
+__all__ = ["SimRegressor", "SimClassifier"]
 
 
 class BaseSim(BaseEstimator, metaclass=ABCMeta):
@@ -80,10 +78,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         if self.knot_dist not in ["uniform", "quantile"]:
             raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
 
-        if self.spline not in ["a_spline", "smoothing_spline", "p_spline", "mono_p_spline"]:
-            raise ValueError("spline must be an element of [a_spline, smoothing_spline, p_spline, mono_p_spline], got %s." % 
-                         self.spline)
-
+        if self.spline not in ["a_spline", "smoothing_spline_mgcv", "smoothing_spline_bigsplines", "p_spline", "mono_p_spline"]:
+            raise ValueError("spline must be an element of [a_spline, smoothing_spline_mgcv, smoothing_spline_bigsplines, p_spline, mono_p_spline], got %s." % self.spline)
+        
         if not isinstance(self.reg_lambda, str):
             if (self.reg_lambda < 0) or (self.reg_lambda > 1):
                 raise ValueError("reg_lambda must be >= 0 and <=1, got %s." % self.reg_lambda)
@@ -734,10 +731,12 @@ class SimRegressor(BaseSim, RegressorMixin):
         
         "ols": Least squares estimation subject to hard thresholding
 
-    spline : str, optional. default="smoothing_spline"
+    spline : str, optional. default="smoothing_spline_mgcv"
         The type of spline for fitting the curve
       
-        "smoothing_spline": Smoothing spline
+        "smoothing_spline_bigsplines": Smoothing spline based on bigsplines package in R
+
+        "smoothing_spline_mgcv": Smoothing spline based on mgcv package in R
 
         "p_spline": P-spline
 
@@ -758,12 +757,18 @@ class SimRegressor(BaseSim, RegressorMixin):
     reg_gamma : float, optional. default=0.1
         Roughness penalty strength of the spline algorithm
     
-        For spline="smoothing_spline", it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to "GCV".
+        For spline="smoothing_spline_bigsplines", it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to "GCV".
+
+        For spline="smoothing_spline_mgcv", it ranges from 0 to :math:`+\infty`, and it can be set to "GCV".
 
         For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to :math:`+\infty`
     
     degree : int, optional. default=3
-        The order of the spline. For spline="smoothing_spline", possible values include 1 and 3.
+        The order of the spline.
+        
+        For spline="smoothing_spline_bigsplines", possible values include 1 and 3.
+    
+        For spline="smoothing_spline_mgcv", possible values include 3, 4, ....
     
     knot_num : int, optional. default=10
         Number of knots
@@ -854,10 +859,17 @@ class SimRegressor(BaseSim, RegressorMixin):
             self.shape_fit_ = ASplineRegressor(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
                                     xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
-        elif self.spline == "smoothing_spline":
+        elif self.spline == "smoothing_spline_bigsplines":
+            from .splines.smspline_bigsplines import SMSplineRegressor
             self.shape_fit_ = SMSplineRegressor(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
                                     xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
+        elif self.spline == "smoothing_spline_mgcv":
+            from .splines.smspline_mgcv import SMSplineRegressor
+            self.shape_fit_ = SMSplineRegressor(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
+                                    xmin=xmin, xmax=xmax, degree=self.degree)
+            self.shape_fit_.fit(x, y, sample_weight)
+
         elif self.spline == "p_spline":
             self.shape_fit_ = PSplineRegressor(knot_num=self.knot_num, reg_gamma=self.reg_gamma,
                                     xmin=xmin, xmax=xmax, degree=self.degree)
@@ -904,10 +916,12 @@ class SimClassifier(BaseSim, ClassifierMixin):
         
         "ols": Least squares estimation subject to hard thresholding
 
-    spline : str, optional. default="smoothing_spline"
+    spline : str, optional. default="smoothing_spline_mgcv"
         The type of spline for fitting the curve
       
-        "smoothing_spline": Smoothing spline
+        "smoothing_spline_bigsplines": Smoothing spline based on bigsplines package in R
+
+        "smoothing_spline_mgcv": Smoothing spline based on mgcv package in R
 
         "p_spline": P-spline
 
@@ -928,13 +942,18 @@ class SimClassifier(BaseSim, ClassifierMixin):
     reg_gamma : float, optional. default=0.1
         Roughness penalty strength of the spline algorithm
     
-        For spline="smoothing_spline", it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to "GCV".
+        For spline="smoothing_spline_bigsplines", it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to "GCV".
+
+        For spline="smoothing_spline_mgcv", it ranges from 0 to :math:`+\infty`, and it can be set to "GCV".
 
         For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to :math:`+\infty`
     
     degree : int, optional. default=3
-        The order of the spline. For spline="smoothing_spline", possible values include 1 and 3.
+        The order of the spline.
+        
+        For spline="smoothing_spline_bigsplines", possible values include 1 and 3.
     
+        For spline="smoothing_spline_mgcv", possible values include 3, 4, ....
 
     knot_num : int, optional. default=10
         Number of knots
@@ -1034,6 +1053,12 @@ class SimClassifier(BaseSim, ClassifierMixin):
                              xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
         elif self.spline == "smoothing_spline":
+            from .splines.smspline_bigsplines import SMSplineClassifier
+            self.shape_fit_ = SMSplineRegressor(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
+                                    xmin=xmin, xmax=xmax, degree=self.degree)
+            self.shape_fit_.fit(x, y, sample_weight)
+        elif self.spline == "smoothing_spline_mgcv":
+            from .splines.smspline_mgcv import SMSplineClassifier
             self.shape_fit_ = SMSplineClassifier(knot_num=self.knot_num, reg_gamma=self.reg_gamma, knot_dist=self.knot_dist,
                                      xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)

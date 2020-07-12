@@ -66,9 +66,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             if not isinstance(self.meta_info, dict):
                 raise ValueError("meta_info must be None or a dict, got %s." % self.meta_info)
 
-        if self.spline not in ["a_spline", "smoothing_spline", "p_spline", "mono_p_spline"]:
-            raise ValueError("spline must be an element of [a_spline, smoothing_spline, p_spline, mono_p_spline], got %s." % 
-                         self.spline)
+        if self.spline not in ["a_spline", "smoothing_spline_mgcv", "smoothing_spline_bigsplines", "p_spline", "mono_p_spline"]:
+            raise ValueError("spline must be an element of [a_spline, smoothing_spline_mgcv, smoothing_spline_bigsplines, p_spline, mono_p_spline], got %s." % self.spline)
         
         if isinstance(self.prjection_method, list):
             for val in self.prjection_method:
@@ -720,10 +719,12 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
 
         If None, then all the features will be treated as continuous
         
-    spline : str, optional. default="smoothing_spline"
+    spline : str, optional. default="smoothing_spline_mgcv"
         The type of spline for fitting the curve
       
-        "smoothing_spline": Smoothing spline
+        "smoothing_spline_bigsplines": Smoothing spline based on bigsplines package in R
+
+        "smoothing_spline_mgcv": Smoothing spline based on mgcv package in R
 
         "p_spline": P-spline
 
@@ -757,12 +758,18 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     reg_gamma : float, optional. default=0.1
         Roughness penalty strength of the spline algorithm
     
-        For spline="smoothing_spline", it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to "GCV".
+        For spline="smoothing_spline_bigsplines", it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to "GCV".
+
+        For spline="smoothing_spline_mgcv", it ranges from 0 to :math:`+\infty`, and it can be set to "GCV".
 
         For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to :math:`+\infty`
     
     degree : int, optional. default=3
-        The order of the spline, not used for spline="smoothing_spline"
+        The order of the spline.
+        
+        For spline="smoothing_spline_bigsplines", possible values include 1 and 3.
+    
+        For spline="smoothing_spline_mgcv", possible values include 3, 4, ....
     
     knot_num : int, optional. default=10
         Number of knots
@@ -1017,10 +1024,12 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
 
         If None, then all the features will be treated as continuous
         
-    spline : str, optional. default="smoothing_spline"
+    spline : str, optional. default="smoothing_spline_mgcv"
         The type of spline for fitting the curve
       
-        "smoothing_spline": Smoothing spline
+        "smoothing_spline_bigsplines": Smoothing spline based on bigsplines package in R
+
+        "smoothing_spline_mgcv": Smoothing spline based on mgcv package in R
 
         "p_spline": P-spline
 
@@ -1054,12 +1063,18 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
     reg_gamma : float, optional. default=0.1
         Roughness penalty strength of the spline algorithm
     
-        For spline="smoothing_spline", it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to "GCV".
+        For spline="smoothing_spline_bigsplines", it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to "GCV".
+
+        For spline="smoothing_spline_mgcv", it ranges from 0 to :math:`+\infty`, and it can be set to "GCV".
 
         For spline="p_spline","mono_p_spline" or "a_spline", it ranges from 0 to :math:`+\infty`
     
     degree : int, optional. default=3
-        The order of the spline, not used for spline="smoothing_spline"
+        The order of the spline.
+        
+        For spline="smoothing_spline_bigsplines", possible values include 1 and 3.
+    
+        For spline="smoothing_spline_mgcv", possible values include 3, 4, ....
     
     knot_num : int, optional. default=10
         Number of knots
