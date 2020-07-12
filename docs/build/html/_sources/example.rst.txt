@@ -34,8 +34,8 @@ Sim for Regression
         param_grid = {"method": ["first_order", "second_order", "first_order_thres", "marginal_regression", "ols"],
                       "knot_dist": ["uniform", "quantile"],
                       "reg_lambda": [0.1, 0.2, 0.3, 0.4, 0.5], 
-                      "reg_gamma": [0.2, 0.4, 0.6, 0.8, 1.0]}
-        grid = GridSearchCV(SimRegressor(spline="smoothing_spline", knot_num=20, random_state=0), iid=False,
+                      "reg_gamma": [0.1, 1, 10]}
+        grid = GridSearchCV(SimRegressor(spline="smoothing_spline_mgcv", knot_num=20, random_state=0), iid=False,
                             cv=KFold(3, shuffle=True, random_state=0), param_grid=param_grid, n_jobs=-1, verbose=2, error_score=np.nan)
         grid.fit(x, y)
         
@@ -88,8 +88,8 @@ Sim for Classification
         param_grid = {"method": ["first_order", "second_order", "first_order_thres", "marginal_regression", "ols"],
                       "knot_dist": ["uniform", "quantile"],
                       "reg_lambda": [0.1, 0.2, 0.3, 0.4, 0.5], 
-                      "reg_gamma": [0.2, 0.4, 0.6, 0.8, 1.0]}
-        grid = GridSearchCV(SimClassifier(spline="smoothing_spline", knot_num=20, random_state=0), iid=False,
+                      "reg_gamma": [0.1, 1, 10]}
+        grid = GridSearchCV(SimClassifier(spline="smoothing_spline_mgcv", knot_num=20, random_state=0), iid=False,
                             cv=KFold(3, shuffle=True, random_state=0), param_grid=param_grid, n_jobs=-1, verbose=2, error_score=np.nan)
         grid.fit(x, y) 
         
@@ -140,9 +140,9 @@ Sim Boosting
                        3 * (np.dot(x, beta2)) ** 2 + 2.5 * np.sin(np.pi * 1.5 * np.dot(x, beta3)), [-1, 1]) + noise
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2, random_state=random_state)
         
-        clf = SimBoostRegressor(n_estimators=50, knot_num=10, knot_dist="quantile", spline="smoothing_spline", learning_rate=1,
+        clf = SimBoostRegressor(n_estimators=50, knot_num=10, knot_dist="quantile", spline="smoothing_spline_mgcv", learning_rate=1,
                         reg_lambda=[0.1, 0.2, 0.3, 0.4, 0.5],
-                        reg_gamma=[1e-9, 1e-6, 1e-3], inner_update="bfgs", meta_info=None, pruning=False)
+                        reg_gamma=[0.1, 1, 10], inner_update="bfgs", meta_info=None, pruning=False)
         clf.fit(train_x, train_y)
         
         clf.visualize()
