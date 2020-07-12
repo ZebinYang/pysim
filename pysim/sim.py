@@ -89,7 +89,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
                 raise ValueError("reg_lambda must be >= 0 and <=1, got %s." % self.reg_lambda)
 
         if not isinstance(self.reg_gamma, str):
-            if (self.reg_gamma < 0) or (self.reg_gamma > 1):
+            if self.reg_gamma < 0:
                 raise ValueError("reg_lambda must be >= 0, got %s." % self.reg_gamma)
 
 
