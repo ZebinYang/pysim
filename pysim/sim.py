@@ -687,7 +687,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             ax2.set_ylim(-1, len(self.beta_))
             ax2.axvline(0, linestyle="dotted", color="black")
         else:
-            right = np.round(np.linspace(0, np.round(len(self.beta_) * 0.4).astype(int), 5))
+            right = np.round(np.linspace(0, np.round(len(self.beta_) * 0.45).astype(int), 5))
             left = len(self.beta_) - 1 - right
             input_ticks = np.unique(np.hstack([left, right])).astype(int)
 
