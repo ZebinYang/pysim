@@ -12,7 +12,7 @@ Note pysim will call the R package fps (https://github.com/vqv/fps) using rpy2 i
 
 ```python
 from pysim import SimClassifier
-clf = SimClassifier(method="first_order", spline="smoothing_spline", reg_lambda=0.1, reg_gamma=10, knot_num=20, knot_dist="uniform", degree=2, random_state=0)
+clf = SimClassifier(method="first_order", spline="smoothing_spline_mgcv", reg_lambda=0.1, reg_gamma=10, knot_num=20, knot_dist="uniform", degree=2, random_state=0)
 ## clf.fit(x, y)
 ```
 
@@ -44,7 +44,6 @@ clf = SimClassifier(method="first_order", spline="smoothing_spline", reg_lambda=
 
         "a_spline": Adaptive B-spline
 
-
 - reg_gamma: The regularization strength of the spline algorithm. default=0.1. 
 
         For spline="smoothing_spline_bigsplines", it ranges from 0 to 1, and the suggested tuning grid is 1e-9 to 1e-1; and it can be set to "GCV".
@@ -58,7 +57,6 @@ clf = SimClassifier(method="first_order", spline="smoothing_spline", reg_lambda=
         For spline="smoothing_spline_bigsplines", possible values include 1 and 3.
     
         For spline="smoothing_spline_mgcv", possible values include 3, 4, ....
-
 
 - knot_num: The number of knots. default=10
 

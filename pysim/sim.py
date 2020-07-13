@@ -691,7 +691,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             left = len(self.beta_) - 1 - right
             input_ticks = np.unique(np.hstack([left, right])).astype(int)
 
-            rects = plt.barh(np.arange(len(self.beta_)), [beta for beta in self.beta_.ravel()][::-1])
+            rects = ax2.barh(np.arange(len(self.beta_)), [beta for beta in self.beta_.ravel()][::-1])
             ax2.set_yticks(input_ticks)
             ax2.set_yticklabels(["X" + str(idx + 1) for idx in input_ticks][::-1])
             ax2.set_xlim(xlim_min, xlim_max)
