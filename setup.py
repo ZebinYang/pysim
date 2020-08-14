@@ -9,5 +9,5 @@ setup(name='pysim',
       license='GPL',
       packages=['pysim', 'pysim.splines'],
       install_requires=[
-          'matplotlib', 'numpy', 'sklearn'],
+          'matplotlib', 'numpy', 'sklearn', 'pygam'],
       zip_safe=False)
