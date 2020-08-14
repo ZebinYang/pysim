@@ -6,3 +6,4 @@ rpy2
 numpy>=1.15.2
 sklearn
 matplotlib>=2.2.2
+pygam
