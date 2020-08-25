@@ -408,6 +408,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 save_path = folder + name
                 fig.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
             if save_eps:
+                if not os.path.exists(folder):
                     os.makedirs(folder)
                 save_path = folder + name
                 fig.savefig("%s.eps" % save_path, bbox_inches="tight", dpi=100)
