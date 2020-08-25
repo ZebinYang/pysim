@@ -406,12 +406,11 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 if not os.path.exists(folder):
                     os.makedirs(folder)
                 save_path = folder + name
-                f.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
+                fig.savefig("%s.png" % save_path, bbox_inches="tight", dpi=100)
             if save_eps:
-                if not os.path.exists(folder):
                     os.makedirs(folder)
                 save_path = folder + name
-                f.savefig("%s.eps" % save_path, bbox_inches="tight", dpi=100)
+                fig.savefig("%s.eps" % save_path, bbox_inches="tight", dpi=100)
 
 
     def local_visualize(self, x, y=None, folder="./results/", name="local_plot", save_png=False, save_eps=False):
