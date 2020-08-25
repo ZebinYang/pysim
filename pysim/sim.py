@@ -235,7 +235,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             the normalized projection inidce
         """
 
-        zbar = np.average(y.reshape(-1, 1) * x, axis=0, weights=sample_weight)
+        mu = np.average(x, axis=0, weights=sample_weight) 
+        zbar = np.average(y.reshape(-1, 1) * (x - mu), axis=0, weights=sample_weight)
         if proj_mat is not None:
             zbar = np.dot(proj_mat, zbar)
         zbar[np.abs(zbar) < self.reg_lambda * np.max(np.abs(zbar))] = 0
