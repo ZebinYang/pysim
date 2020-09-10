@@ -61,8 +61,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         """method to validate model parameters
         """
 
-        if self.method not in ["first_order", "second_order", "first_order_thres", "marginal_regression", "ols"]:
-            raise ValueError("method must be an element of [first_order, second_order,\
+        if self.method not in ["random", "first_order", "second_order", "first_order_thres", "marginal_regression", "ols"]:
+            raise ValueError("method must be an element of [random, first_order, second_order,\
                          first_order_thres, marginal_regression, ols], got %s." % self.method)
                 
         if not isinstance(self.degree, int):
@@ -287,6 +287,9 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
             self.beta_ = self._ols(x, y, sample_weight, proj_mat)
         elif self.method == "marginal_regression":
             self.beta_ = self._marginal_regression(x, y, sample_weight, proj_mat)
+        elif self.method == "random":
+            self.beta_ = np.random.randn(x.shape[1],1)
+            self.beta_ = self.beta_/np.linalg.norm(self.beta_)
         
         if len(self.beta_[np.abs(self.beta_) > 0]) > 0:
             if (self.beta_[np.abs(self.beta_) > 0][0] < 0):
@@ -712,6 +715,8 @@ class SimRegressor(BaseSim, RegressorMixin):
     ----------
     method : str, optional. default="first_order"
         The base method for estimating the projection coefficients in sparse SIM
+
+        "random": Randomized initialization from the unit sphere
         
         "first_order": First-order Stein's Identity via sparse PCA solver
 
@@ -898,6 +903,8 @@ class SimClassifier(BaseSim, ClassifierMixin):
     method : str, optional. default="first_order"
         The base method for estimating the projection coefficients in sparse SIM
         
+        "random": Randomized initialization from the unit sphere
+
         "first_order": First-order Stein's Identity via sparse PCA solver
 
         "second_order": Second-order Stein's Identity via sparse PCA solver

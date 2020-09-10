@@ -72,14 +72,14 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         
         if isinstance(self.prjection_method, list):
             for val in self.prjection_method:
-                if val not in ["first_order", "second_order", "first_order_thres", "marginal_regression", "marginal_regression", "ols"]:
-                    raise ValueError("method must be an element of [first_order, second_order,\
+                if val not in ["random", "first_order", "second_order", "first_order_thres", "marginal_regression", "marginal_regression", "ols"]:
+                    raise ValueError("method must be an element of [random, first_order, second_order,\
                                 first_order_thres, marginal_regression, ols], got %s." % 
                                  self.prjection_method)
             self.prjection_method_list = self.prjection_method  
         elif isinstance(self.prjection_method, str):
-            if self.prjection_method not in ["first_order", "second_order", "first_order_thres", "marginal_regression", "ols"]:
-                raise ValueError("method must be an element of [first_order, second_order, first_order_thres,\
+            if self.prjection_method not in ["random", "first_order", "second_order", "first_order_thres", "marginal_regression", "ols"]:
+                raise ValueError("method must be an element of [random, first_order, second_order, first_order_thres,\
                                  marginal_regression, ols], got %s." % 
                                  self.prjection_method)
             self.prjection_method_list = [self.prjection_method]
@@ -728,6 +728,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     prjection_method : str, optional. default="marginal_regression"
         The base method for estimating the projection coefficients in sparse SIM
         
+        "random": Randomized initialization from the unit sphere
+
         "first_order": First-order Stein's Identity via sparse PCA solver
 
         "second_order": Second-order Stein's Identity via sparse PCA solver
@@ -1033,6 +1035,8 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
     prjection_method : str, optional. default="marginal_regression"
         The base method for estimating the projection coefficients in sparse SIM
         
+        "random": Randomized initialization from the unit sphere
+
         "first_order": First-order Stein's Identity via sparse PCA solver
 
         "second_order": Second-order Stein's Identity via sparse PCA solver
