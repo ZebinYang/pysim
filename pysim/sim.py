@@ -816,7 +816,7 @@ class SimRegressor(BaseSim, RegressorMixin):
             beta = zbar / np.linalg.norm(zbar)
         else:
             beta = zbar
-        return beta
+        return beta.reshape(-1,1)
 
     def _validate_input(self, x, y):
                 
