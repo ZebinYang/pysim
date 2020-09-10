@@ -807,7 +807,8 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
     def __init__(self, n_estimators, meta_info=None, prjection_method="marginal_regression", spline="smoothing_spline_mgcv", knot_dist="quantile",
                  reg_lambda=0.1, reg_gamma="GCV", degree=3, knot_num=10, middle_update=None,
                  val_ratio=0.2, learning_rate=1.0, ortho_shrink=1,
-                 early_stop_thres=np.inf, pruning=False, loss_threshold=0.01, random_state=0):
+                 early_stop_thres=np.inf, pruning=False, loss_threshold=0.01, elimination_threshold=0.05,
+                 random_state=0):
 
         super(SimBoostRegressor, self).__init__(n_estimators=n_estimators,
                                    meta_info=meta_info,
@@ -825,6 +826,7 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
                                    early_stop_thres=early_stop_thres,
                                    pruning=pruning,
                                    loss_threshold=loss_threshold,
+                                   elimination_threshold=elimination_threshold,
                                    random_state=random_state)
 
     def _validate_input(self, x, y):
@@ -1120,7 +1122,9 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
     def __init__(self, n_estimators, meta_info=None, prjection_method="marginal_regression", spline="smoothing_spline_mgcv", knot_dist="quantile",
                  reg_lambda=0.1, reg_gamma="GCV", degree=3, knot_num=10, middle_update=None,
                  val_ratio=0.2, learning_rate=1.0, ortho_shrink=1,
-                 early_stop_thres=np.inf, pruning=False, loss_threshold=0.01, random_state=0):
+                 early_stop_thres=np.inf, pruning=False, loss_threshold=0.01, 
+                 elimination_threshold=0.05,
+                 random_state=0):
 
         super(SimBoostClassifier, self).__init__(n_estimators=n_estimators,
                                     meta_info=meta_info,
@@ -1138,6 +1142,7 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
                                     early_stop_thres=early_stop_thres,
                                     pruning=pruning,
                                     loss_threshold=loss_threshold,
+                                    elimination_threshold=elimination_threshold,
                                     random_state=random_state)
 
     def _validate_input(self, x, y):
