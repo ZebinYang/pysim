@@ -29,7 +29,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
     def __init__(self, n_estimators, meta_info=None, prjection_method="marginal_regression", spline="smoothing_spline_mgcv", knot_dist="quantile",
                  reg_lambda=0.1, reg_gamma="GCV", degree=3, knot_num=10, middle_update=None,
                  val_ratio=0.2, learning_rate=1.0, ortho_shrink=1,
-                 early_stop_thres=np.inf, pruning=False, loss_threshold=0.01, random_state=0):
+                 early_stop_thres=np.inf, pruning=False, loss_threshold=0.01, elimination_threshold=0.05, random_state=0):
 
         self.n_estimators = n_estimators
         self.meta_info = meta_info
@@ -50,6 +50,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         self.pruning = pruning
         self.loss_threshold = loss_threshold
         self.early_stop_thres = early_stop_thres
+        self.elimination_threshold = elimination_threshold
 
         self.random_state = random_state        
 
@@ -146,8 +147,15 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("pruning must be a bool, got %s." % self.pruning)
 
         if not isinstance(self.loss_threshold, float):
-            raise ValueError("pruning must be a float, got %s." % self.loss_threshold)
+            raise ValueError("loss_threshold must be a float, got %s." % self.loss_threshold)
 
+        if not isinstance(self.elimination_threshold, float):
+                raise ValueError("elimination_threshold must be a float, got %s." % self.elimination_threshold)
+        if self.elimination_threshold < 0:
+            raise ValueError("elimination_threshold must be >= 0, got" % self.elimination_threshold)
+        elif self.elimination_threshold > 1:
+            raise ValueError("elimination_threshold must be <= 1, got" % self.elimination_threshold)
+        
         if self.early_stop_thres < 1:
             raise ValueError("early_stop_thres must be greater than 1, got %s." % self.early_stop_thres)
             
@@ -959,6 +967,13 @@ class SimBoostRegressor(BaseSimBooster, RegressorMixin):
         self.component_importance_ = dict(sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1][:best_idx])
         self.activate_cfeature_index_ = [est[0].kw_args["idx"] for est in self.best_estimators_ if "dummy_lr" in est.named_steps.keys()]
 
+        if self.elimination_threshold:
+            eli_idx = np.sum([True if item['ir']>self.elimination_threshold else False for key,item in self.importance_ratios_.items()])
+            self.best_weights_ = self.weights_[:eli_idx]
+            self.best_estimators_ = self.estimators_[:eli_idx]
+            self.component_importance_ = dict(sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1][:eli_idx])
+            self.activate_cfeature_index_ = [est[0].kw_args["idx"] for est in self.best_estimators_ if "dummy_lr" in est.named_steps.keys()]
+
     def predict(self, x):
 
         """output prediction for given samples
@@ -1311,6 +1326,14 @@ class SimBoostClassifier(BaseSimBooster, ClassifierMixin):
         self.best_estimators_ = self.estimators_[:best_idx]
         self.component_importance_ = dict(sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1][:best_idx])
         self.activate_cfeature_index_ = [est[0].kw_args["idx"] for est in self.best_estimators_ if "dummy_lr" in est.named_steps.keys()]
+
+        if self.elimination_threshold:
+            eli_idx = np.sum([True if item['ir']>self.elimination_threshold else False for key,item in self.importance_ratios_.items()])
+            self.best_weights_ = self.weights_[:eli_idx]
+            self.best_estimators_ = self.estimators_[:eli_idx]
+            self.component_importance_ = dict(sorted(component_importance.items(), key=lambda item: item[1]["importance"])[::-1][:eli_idx])
+            self.activate_cfeature_index_ = [est[0].kw_args["idx"] for est in self.best_estimators_ if "dummy_lr" in est.named_steps.keys()]
+
 
     def predict_proba(self, x):
 
