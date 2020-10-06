@@ -18,25 +18,6 @@ from abc import ABCMeta, abstractmethod
 from .splines.aspline import ASplineClassifier, ASplineRegressor
 from .splines.pspline import PSplineClassifier, PSplineRegressor
 
-from rpy2 import robjects as ro
-from rpy2.robjects import numpy2ri
-from rpy2.robjects.packages import importr
-
-
-try:
-    fps = importr("fps")
-except:
-    try:
-        devtools = importr("devtools")
-    except:
-        utils = importr("utils")
-        utils.install_packages("devtools")
-        devtools = importr("devtools")
-    devtools.install_github("https://github.com/vqv/fps")
-    fps = importr("fps")
-    
-numpy2ri.activate()
-
 __all__ = ["SimRegressor", "SimClassifier"]
 
 
@@ -144,7 +125,7 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
 
     def _first_order(self, x, y, sample_weight=None, proj_mat=None):
 
-        """calculate the projection indice using the first order stein's identity using Sparse PCA solver via fps package in R
+        """calculate the projection indice using the first order stein's identity using PCA solver
 
         Parameters
         ---------
@@ -173,14 +154,17 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         u, s, v = np.linalg.svd(sigmat)
         sigmat = np.dot(np.dot(u, np.diag(s)), u.T)
         
-        reg_lambda_max = np.max(np.abs(sigmat) - np.abs(sigmat) * np.eye(sigmat.shape[0]), axis=0).max()
-        spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * reg_lambda_max))
-        beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * reg_lambda_max))
+        beta = np.linalg.svd(sigmat)[0][:, :1]
+        beta[np.abs(beta) < self.reg_lambda * np.max(np.abs(beta))] = 0
+
+        if np.linalg.norm(beta) > 0:
+            beta = beta / np.linalg.norm(beta)
+
         return beta
 
     def _second_order(self, x, y, sample_weight=None, proj_mat=None):
 
-        """calculate the projection indice using the second order stein's identity using Sparse PCA solver via fps package in R
+        """calculate the projection indice using the second order stein's identity using PCA solver
 
         Parameters
         ---------
@@ -210,9 +194,11 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         u, s, v = np.linalg.svd(sigmat)
         sigmat = np.dot(np.dot(u, np.diag(s)), u.T)
 
-        reg_lambda_max = np.max(np.abs(sigmat) - np.abs(sigmat) * np.eye(sigmat.shape[0]), axis=0).max()
-        spca_solver = fps.fps(sigmat, 1, 1, -1, -1, ro.r.c(self.reg_lambda * reg_lambda_max))
-        beta = np.array(fps.coef_fps(spca_solver, self.reg_lambda * reg_lambda_max))
+        beta = np.linalg.svd(sigmat)[0][:, :1]
+        beta[np.abs(beta) < self.reg_lambda * np.max(np.abs(beta))] = 0
+
+        if np.linalg.norm(beta) > 0:
+            beta = beta / np.linalg.norm(beta)
         return beta
     
     def _marginal_regression(self, x, y, sample_weight=None, proj_mat=None):
