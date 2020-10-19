@@ -68,8 +68,8 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
             if not isinstance(self.meta_info, dict):
                 raise ValueError("meta_info must be None or a dict, got %s." % self.meta_info)
 
-        if self.spline not in ["a_spline", "smoothing_spline_mgcv", "smoothing_spline_bigsplines", "p_spline", "mono_p_spline"]:
-            raise ValueError("spline must be an element of [a_spline, smoothing_spline_mgcv, smoothing_spline_bigsplines, p_spline, mono_p_spline], got %s." % self.spline)
+        if self.spline not in ["a_spline", "smoothing_spline_mgcv", "smoothing_spline_bigsplines", "smoothing_spline_csaps", "p_spline", "mono_p_spline"]:
+            raise ValueError("spline must be an element of [a_spline, smoothing_spline_mgcv, smoothing_spline_bigsplines, smoothing_spline_csaps, p_spline, mono_p_spline], got %s." % self.spline)
         
         if isinstance(self.prjection_method, list):
             for val in self.prjection_method:

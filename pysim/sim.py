@@ -59,8 +59,8 @@ class BaseSim(BaseEstimator, metaclass=ABCMeta):
         if self.knot_dist not in ["uniform", "quantile"]:
             raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
 
-        if self.spline not in ["a_spline", "smoothing_spline_mgcv", "smoothing_spline_bigsplines", "p_spline", "mono_p_spline"]:
-            raise ValueError("spline must be an element of [a_spline, smoothing_spline_mgcv, smoothing_spline_bigsplines, p_spline, mono_p_spline], got %s." % self.spline)
+        if self.spline not in ["a_spline", "smoothing_spline_mgcv", "smoothing_spline_bigsplines", "p_spline", "mono_p_spline", "smoothing_spline_csaps"]:
+            raise ValueError("spline must be an element of [a_spline, smoothing_spline_mgcv, smoothing_spline_bigsplines, smoothing_spline_csaps, p_spline, mono_p_spline], got %s." % self.spline)
         
         if not isinstance(self.reg_lambda, str):
             if (self.reg_lambda < 0) or (self.reg_lambda > 1):
@@ -851,6 +851,10 @@ class SimRegressor(BaseSim, RegressorMixin):
             from .splines.smspline_mgcv import SMSplineRegressor
             self.shape_fit_ = SMSplineRegressor(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
                                     xmin=xmin, xmax=xmax, degree=self.degree)
+            self.shape_fit_.fit(x, y, sample_weight)
+        elif self.spline == 'smoothing_spline_csaps':
+            from .splines.smspline_csaps import SMSplineRegressor
+            self.shape_fit_ = SMSplineRegressor(reg_gamma=self.reg_gamma, xmin=xmin, xmax=xmax)
             self.shape_fit_.fit(x, y, sample_weight)
 
         elif self.spline == "p_spline":
