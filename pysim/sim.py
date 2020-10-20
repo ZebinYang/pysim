@@ -1041,7 +1041,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
             self.shape_fit_ = ASplineClassifier(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
                              xmin=xmin, xmax=xmax, degree=self.degree)
             self.shape_fit_.fit(x, y, sample_weight)
-        elif self.spline == "smoothing_spline":
+        elif self.spline == "smoothing_spline_bigsplines":
             from .splines.smspline_bigsplines import SMSplineClassifier
             self.shape_fit_ = SMSplineRegressor(knot_num=self.knot_num, knot_dist=self.knot_dist, reg_gamma=self.reg_gamma,
                                     xmin=xmin, xmax=xmax, degree=self.degree)
