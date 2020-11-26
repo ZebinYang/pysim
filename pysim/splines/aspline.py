@@ -82,12 +82,12 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
         if not isinstance(self.degree, int):
             raise ValueError("degree must be an integer, got %s." % self.degree)
         elif self.degree < 0:
-            raise ValueError("degree must be >= 0, got" % self.degree)
+            raise ValueError("degree must be >= 0, got %s." % self.degree)
         
         if not isinstance(self.knot_num, int):
             raise ValueError("knot_num must be an integer, got %s." % self.knot_num)
         elif self.knot_num <= 0:
-            raise ValueError("knot_num must be > 0, got" % self.knot_num)
+            raise ValueError("knot_num must be > 0, got %s." % self.knot_num)
 
         if self.knot_dist not in ["uniform", "quantile"]:
             raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
@@ -108,7 +108,7 @@ class BaseASpline(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("maxiter must be an integer, got %s." % self.maxiter)
 
         if self.maxiter <= 0:
-            raise ValueError("maxiter must be > 0, got" % self.maxiter)
+            raise ValueError("maxiter must be > 0, got %s." % self.maxiter)
 
     def _create_basis(self, inputs, p, knot_vector):
 

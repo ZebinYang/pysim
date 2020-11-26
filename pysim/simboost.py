@@ -62,7 +62,7 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         if not isinstance(self.n_estimators, int):
             raise ValueError("n_estimators must be an integer, got %s." % self.n_estimators)
         elif self.n_estimators < 0:
-            raise ValueError("n_estimators must be >= 0, got" % self.n_estimators)
+            raise ValueError("n_estimators must be >= 0, got %s." % self.n_estimators)
 
         if self.meta_info is not None:
             if not isinstance(self.meta_info, dict):
@@ -110,12 +110,12 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         if not isinstance(self.degree, int):
             raise ValueError("degree must be an integer, got %s." % self.degree)
         elif self.degree < 0:
-            raise ValueError("degree must be >= 0, got" % self.degree)
+            raise ValueError("degree must be >= 0, got %s." % self.degree)
         
         if not isinstance(self.knot_num, int):
             raise ValueError("knot_num must be an integer, got %s." % self.knot_num)
         elif self.knot_num <= 0:
-            raise ValueError("knot_num must be > 0, got" % self.knot_num)
+            raise ValueError("knot_num must be > 0, got %s." % self.knot_num)
 
         if self.knot_dist not in ["uniform", "quantile"]:
             raise ValueError("knot_dist must be an element of [uniform, quantile], got %s." % self.knot_dist)
@@ -129,19 +129,19 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
                 raise ValueError("middle_update must be None or a dict containing middle_update %s." % self.middle_update)
 
         if self.val_ratio <= 0:
-            raise ValueError("val_ratio must be > 0, got" % self.val_ratio)
+            raise ValueError("val_ratio must be > 0, got %s." % self.val_ratio)
         elif self.val_ratio >= 1:
             raise ValueError("val_ratio must be < 1, got %s." % self.val_ratio)
 
         if self.learning_rate <= 0:
-            raise ValueError("learning_rate must be > 0, got" % self.learning_rate)
+            raise ValueError("learning_rate must be > 0, got %s." % self.learning_rate)
         elif self.learning_rate > 1:
-            raise ValueError("learning_rate must be <= 1, got" % self.learning_rate)
+            raise ValueError("learning_rate must be <= 1, got %s." % self.learning_rate)
   
         if self.ortho_shrink <= 0:
-            raise ValueError("ortho_shrink must be > 0, got" % self.ortho_shrink)
+            raise ValueError("ortho_shrink must be > 0, got %s." % self.ortho_shrink)
         elif self.ortho_shrink > 1:
-            raise ValueError("ortho_shrink must be <= 1, got" % self.ortho_shrink)
+            raise ValueError("ortho_shrink must be <= 1, got %s." % self.ortho_shrink)
 
         if not isinstance(self.pruning, bool):
             raise ValueError("pruning must be a bool, got %s." % self.pruning)
@@ -152,9 +152,9 @@ class BaseSimBooster(BaseEstimator, metaclass=ABCMeta):
         if not isinstance(self.elimination_threshold, float):
                 raise ValueError("elimination_threshold must be a float, got %s." % self.elimination_threshold)
         if self.elimination_threshold < 0:
-            raise ValueError("elimination_threshold must be >= 0, got" % self.elimination_threshold)
+            raise ValueError("elimination_threshold must be >= 0, got %s." % self.elimination_threshold)
         elif self.elimination_threshold > 1:
-            raise ValueError("elimination_threshold must be <= 1, got" % self.elimination_threshold)
+            raise ValueError("elimination_threshold must be <= 1, got %s." % self.elimination_threshold)
         
         if self.early_stop_thres < 1:
             raise ValueError("early_stop_thres must be greater than 1, got %s." % self.early_stop_thres)

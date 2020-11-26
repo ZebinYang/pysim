@@ -65,7 +65,7 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("knot_num must be an integer, got %s." % self.knot_num)
         
         if self.knot_num <= 0:
-            raise ValueError("knot_num must be > 0, got" % self.knot_num)
+            raise ValueError("knot_num must be > 0, got %s." % self.knot_num)
 
         if self.knot_dist not in ["uniform", "quantile"]:
             raise ValueError("method must be an element of [uniform, quantile], got %s." % self.knot_dist)
@@ -73,7 +73,7 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         if not isinstance(self.degree, int):
             raise ValueError("degree must be an integer, got %s." % self.degree)
         elif self.degree <= 2:
-            raise ValueError("degree greater than 2, got" % self.degree)
+            raise ValueError("degree greater than 2, got %s." % self.degree)
 
         if not isinstance(self.reg_gamma, str):
             if self.reg_gamma < 0 :

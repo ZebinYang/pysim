@@ -49,13 +49,13 @@ class BasePSpline(BaseEstimator, metaclass=ABCMeta):
             raise ValueError("degree must be an integer, got %s." % self.degree)
 
         if self.degree < 0:
-            raise ValueError("degree must be >= 0, got" % self.degree)
+            raise ValueError("degree must be >= 0, got %s." % self.degree)
         
         if not isinstance(self.knot_num, int):
             raise ValueError("knot_num must be an integer, got %s." % self.knot_num)
 
         if self.knot_num <= 0:
-            raise ValueError("knot_num must be > 0, got" % self.knot_num)
+            raise ValueError("knot_num must be > 0, got %s." % self.knot_num)
 
         if self.reg_gamma < 0:
             raise ValueError("reg_gamma must be >= 0, got %s." % self.reg_gamma)
