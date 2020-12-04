@@ -95,16 +95,18 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         order : int
             order of derivative
         """
-        if order == 1:
-            x1 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x), type = 'lpmatrix')
-            x2 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x + EPSILON), type = 'lpmatrix')
-            derivative = np.dot((x2 - x1) / EPSILON, self.sm_[0]).ravel()
-            
-        elif order == 2:
-            x1 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x - EPSILON), type = 'lpmatrix')
-            x2 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x), type = 'lpmatrix')
-            x3 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x + EPSILON), type = 'lpmatrix')
-            derivative = np.dot((x3 + x1 - 2 * x2) / EPSILON ** 2, self.sm_[0]).ravel()
+        if isinstance(self.sm_, (np.ndarray, np.int, int, np.floating, float)):
+            derivative = np.zeros((x.shape[0], 1))
+        else:
+            if order == 1:
+                x1 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x), type = 'lpmatrix')
+                x2 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x + EPSILON), type = 'lpmatrix')
+                derivative = np.dot((x2 - x1) / EPSILON, self.sm_[0]).ravel()
+            elif order == 2:
+                x1 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x - EPSILON), type = 'lpmatrix')
+                x2 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x), type = 'lpmatrix')
+                x3 = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x + EPSILON), type = 'lpmatrix')
+                derivative = np.dot((x3 + x1 - 2 * x2) / EPSILON ** 2, self.sm_[0]).ravel()
         return derivative
 
     def visualize(self):
@@ -151,10 +153,7 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
         x = x.copy()
         x[x < self.xmin] = self.xmin
         x[x > self.xmax] = self.xmax
-        if isinstance(self.sm_, np.ndarray):
-            pred = self.sm_ * np.ones(x.shape[0])
-
-        elif isinstance(self.sm_, float):
+        if isinstance(self.sm_, (np.ndarray, np.int, int, np.floating, float)):
             pred = self.sm_ * np.ones(x.shape[0])
         else:
             pred = mgcv.predict_gam(self.sm_, ro.r("data.frame")(x=x))
