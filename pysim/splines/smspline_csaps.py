@@ -220,6 +220,7 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
             y_uni = y[idx_uni]
             x_uni_ord = np.sort(x_uni)
             y_uni_ord = y_uni[np.argsort(x_uni)]
+            sample_weight = sample_weight[idx_uni]
             
             self.sm_ = CubicSmoothingSpline(xdata=x_uni_ord,
                            ydata=y_uni_ord,
