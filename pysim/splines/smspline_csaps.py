@@ -218,13 +218,14 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
             
             x_uni, idx_uni = np.unique(x,return_index=True)
             y_uni = y[idx_uni]
-            x_uni_ord = np.sort(x_uni)
-            y_uni_ord = y_uni[np.argsort(x_uni)]
-            sample_weight = sample_weight[idx_uni]
+            sort_idx = np.argsort(x_uni)
+            x_uni_ord = x_uni[sort_idx]
+            y_uni_ord = y_uni[sort_idx]
+            sample_weight_uni_ord = sample_weight[idx_uni][sort_idx]
             
             self.sm_ = CubicSmoothingSpline(xdata=x_uni_ord,
                            ydata=y_uni_ord,
-                           weights=sample_weight,
+                           weights=sample_weight_uni_ord,
                            smooth=self.reg_gamma)
         else:
             self.sm_ = LinearRegression()
