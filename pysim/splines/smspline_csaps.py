@@ -113,9 +113,11 @@ class BaseSMSpline(BaseEstimator, metaclass=ABCMeta):
 
         check_is_fitted(self, "sm_")
         x = x.copy()
-        try:
-            pred = self.sm_(x)
-        except:
+        if isinstance(self.sm_, CubicSmoothingSpline):
+            x[x < self.xmin] = self.xmin
+            x[x > self.xmax] = self.xmax
+            pred = self.sm_(x.ravel())
+        else:
             pred = self.sm_.predict(x.reshape(-1,1))
         return pred.flatten()
 
