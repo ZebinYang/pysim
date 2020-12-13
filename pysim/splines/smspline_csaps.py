@@ -144,8 +144,7 @@ class SMSplineRegressor(BaseSMSpline, RegressorMixin):
 
     def __init__(self, reg_gamma=0.1, xmin=-1, xmax=1):
 
-        super(SMSplineRegressor, self).__init__(
-                                  reg_gamma=reg_gamma,
+        super(SMSplineRegressor, self).__init__(reg_gamma=reg_gamma,
                                   xmin=xmin,
                                   xmax=xmax)
 

@@ -985,7 +985,7 @@ class SimClassifier(BaseSim, ClassifierMixin):
 
         ls = LogisticRegression()
         ls.fit(x, y, sample_weight=sample_weight)
-        zbar = ls.coef_
+        zbar = ls.coef_.reshape(-1, 1)
         if proj_mat is not None:
             zbar = np.dot(proj_mat, zbar)
         zbar[np.abs(zbar) < self.reg_lambda * np.max(np.abs(zbar))] = 0
